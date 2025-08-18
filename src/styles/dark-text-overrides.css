@@ -1,0 +1,7 @@
+/* Override: em modo escuro, tornar text-gray-900 claro (equivalente ~ gray-200) */
+@layer utilities {
+  .dark .text-gray-900 {
+    --tw-text-opacity: 1;
+    color: rgb(229 231 235 / var(--tw-text-opacity));
+  }
+}

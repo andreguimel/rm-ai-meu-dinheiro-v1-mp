@@ -1,0 +1,248 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+
+interface SubscriptionData {
+  subscribed: boolean;
+  subscription_tier?: string | null;
+  subscription_end?: string | null;
+  subscription_start?: string | null;
+  current_period_start?: string | null;
+  current_period_end?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  status?: string | null;
+  cancel_at_period_end?: boolean | null;
+  trial_end?: string | null;
+  payment_method?: {
+    type: string;
+    last4?: string;
+    brand?: string;
+    exp_month?: number;
+    exp_year?: number;
+  } | null;
+  discount?: {
+    coupon: {
+      id: string;
+      name?: string;
+      percent_off?: number;
+      amount_off?: number;
+    };
+    end?: string | null;
+  } | null;
+}
+
+export const useSubscription = () => {
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData>({
+    subscribed: false,
+    subscription_tier: null,
+    subscription_end: null,
+    subscription_start: null,
+    current_period_start: null,
+    current_period_end: null,
+    amount: null,
+    currency: null,
+    status: null,
+    cancel_at_period_end: null,
+    trial_end: null,
+    payment_method: null,
+    discount: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const checkSubscription = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Primeiro verificar se o usuário é admin
+      const { data: isAdmin, error: adminError } = await supabase
+        .rpc('is_admin');
+      
+      if (adminError) {
+        console.error('Error checking admin status:', adminError);
+      }
+
+      // Se for admin, considerar como subscribed
+      if (isAdmin) {
+        setSubscriptionData({
+          subscribed: true,
+          subscription_tier: 'admin',
+          status: 'active',
+          subscription_start: new Date().toISOString(),
+          subscription_end: null,
+          current_period_start: new Date().toISOString(),
+          current_period_end: null,
+          amount: null,
+          currency: null,
+          cancel_at_period_end: false,
+          trial_end: null,
+          payment_method: null,
+          discount: null,
+        });
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('check-mercadopago-subscription');
+      
+      if (error) {
+        console.error('Error checking subscription:', error);
+        toast({
+          title: "Erro ao verificar assinatura",
+          description: "Não foi possível verificar o status da assinatura.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSubscriptionData(data);
+    } catch (error) {
+      console.error('Error in checkSubscription:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao verificar assinatura.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createCheckout = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para assinar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-mercadopago-subscription');
+      
+      if (error) {
+        console.error('Error creating checkout:', error);
+        toast({
+          title: "Erro ao criar checkout",
+          description: "Não foi possível criar a sessão de pagamento.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Open MercadoPago checkout in a new tab
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Error in createCheckout:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao criar checkout.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openCustomerPortal = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para gerenciar assinatura.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // For MercadoPago, we handle cancellation directly
+      const shouldCancel = confirm('Deseja cancelar sua assinatura? Esta ação não pode ser desfeita.');
+      if (!shouldCancel) return;
+
+      const { data, error } = await supabase.functions.invoke('manage-mercadopago-subscription', {
+        body: { action: 'cancel' }
+      });
+      
+      if (error) {
+        console.error('Error canceling subscription:', error);
+        toast({
+          title: "Erro ao cancelar assinatura",
+          description: "Não foi possível cancelar a assinatura.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.success) {
+        toast({
+          title: "Assinatura cancelada",
+          description: data.message || "Sua assinatura foi cancelada com sucesso.",
+        });
+        // Refresh subscription status
+        await checkSubscription();
+      }
+    } catch (error) {
+      console.error('Error in openCustomerPortal:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao gerenciar assinatura.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getPaymentHistory = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para acessar o histórico.",
+        variant: "destructive",
+      });
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('mercadopago-payment-history');
+      
+      if (error) {
+        console.error('Error fetching payment history:', error);
+        toast({
+          title: "Erro ao buscar histórico",
+          description: "Não foi possível buscar o histórico de pagamentos.",
+          variant: "destructive",
+        });
+        return [];
+      }
+
+      return data.payments || [];
+    } catch (error) {
+      console.error('Error in getPaymentHistory:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao buscar histórico.",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      checkSubscription();
+    }
+  }, [user]);
+
+  return {
+    subscriptionData,
+    loading,
+    checkSubscription,
+    createCheckout,
+    openCustomerPortal,
+    getPaymentHistory,
+  };
+};
