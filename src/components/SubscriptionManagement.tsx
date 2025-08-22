@@ -92,7 +92,35 @@ export const SubscriptionManagement = () => {
     );
   }
 
-  const { subscribed, subscription_tier, subscription_end, status, amount, currency, current_period_end, subscription_start, cancel_at_period_end, trial_end, payment_method, discount } = subscriptionData;
+  const { subscribed, subscription_tier, subscription_end, status, amount, currency, current_period_end, subscription_start, cancel_at_period_end, trial_end, payment_method: rawPaymentMethod, discount } = subscriptionData;
+
+  // Normaliza diferentes formatos que podem vir do backend:
+  // - pagamento simples: { type, brand, last4 }
+  // - pagamento completo: { brand, last4, exp_month, exp_year, ... }
+  // - forma antiga: { card: { brand, last4, ... }, type: 'card' }
+  const paymentMethod = (() => {
+    if (!rawPaymentMethod) return null;
+    // Caso venha dentro de uma chave `card`
+    if ((rawPaymentMethod as any).card) {
+      const c = (rawPaymentMethod as any).card;
+      return {
+        type: (rawPaymentMethod as any).type || 'card',
+        brand: c.brand || null,
+        last4: c.last4 || c.last_four_digits || null,
+        exp_month: c.exp_month || null,
+        exp_year: c.exp_year || null,
+      };
+    }
+
+    // Caso já venha no formato simplificado/normalizado
+    return {
+      type: (rawPaymentMethod as any).type || 'card',
+      brand: (rawPaymentMethod as any).brand || null,
+      last4: (rawPaymentMethod as any).last4 || (rawPaymentMethod as any).last_four_digits || null,
+      exp_month: (rawPaymentMethod as any).exp_month || null,
+      exp_year: (rawPaymentMethod as any).exp_year || null,
+    };
+  })();
 
   if (!subscribed) {
     return (
@@ -200,7 +228,7 @@ export const SubscriptionManagement = () => {
       </Card>
 
       {/* Método de Pagamento */}
-      {payment_method && (
+      {paymentMethod && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -216,11 +244,15 @@ export const SubscriptionManagement = () => {
                 </div>
                 <div>
                   <p className="font-medium">
-                    {payment_method.brand?.toUpperCase()} •••• {payment_method.last4}
+                    {(paymentMethod.brand || paymentMethod.type || 'Cartão').toString().toUpperCase()} {paymentMethod.last4 ? ` •••• ${paymentMethod.last4}` : ''}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Expira em {payment_method.exp_month}/{payment_method.exp_year}
-                  </p>
+                  {paymentMethod.exp_month && paymentMethod.exp_year ? (
+                    <p className="text-sm text-muted-foreground">
+                      Expira em {String(paymentMethod.exp_month).padStart(2, '0')}/{String(paymentMethod.exp_year)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Informações de validade indisponíveis</p>
+                  )}
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={openCustomerPortal}>

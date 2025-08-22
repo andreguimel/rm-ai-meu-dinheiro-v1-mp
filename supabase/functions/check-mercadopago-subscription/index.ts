@@ -97,9 +97,45 @@ serve(async (req) => {
     const preapproval = activePreapprovals[0];
     logStep("Active preapproval found", { id: preapproval.id, status: preapproval.status });
 
+    // Tentar obter o último pagamento aprovado para o usuário (para extrair método de pagamento)
+    let paymentMethod: { type?: string; last4?: string | null; brand?: string | null; exp_month?: number | null; exp_year?: number | null } | null = null;
+    try {
+      const paymentsResp = await fetch(
+        `https://api.mercadopago.com/v1/payments/search?external_reference=${user.id}&status=approved&sort=date_created&criteria=desc`,
+        {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (paymentsResp.ok) {
+        const paymentsJson = await paymentsResp.json();
+        const latestPayment = (paymentsJson.results && paymentsJson.results[0]) || null;
+        if (latestPayment) {
+          paymentMethod = {
+            type: latestPayment.payment_method_id,
+            last4: latestPayment.card?.last_four_digits ?? latestPayment.card?.last4 ?? null,
+            brand: latestPayment.card?.brand ?? null,
+            // Alguns retornos do MercadoPago podem expor mês/ano em campos diferentes; tentamos mapear com fallback
+            exp_month: latestPayment.card?.expiration_month ?? latestPayment.card?.exp_month ?? null,
+            exp_year: latestPayment.card?.expiration_year ?? latestPayment.card?.exp_year ?? null,
+          };
+          logStep("Latest approved payment found", { paymentId: latestPayment.id, payment_method: paymentMethod });
+        } else {
+          logStep("No approved payments found for user to extract payment_method");
+        }
+      } else {
+        logStep("Payments search API returned non-ok for payment_method lookup", { status: paymentsResp.status });
+      }
+    } catch (err) {
+      logStep("Error while fetching latest payment for payment_method", { err: String(err) });
+    }
+    
     let subscriptionTier = "Premium"; // Default tier for MercadoPago subscription
     let subscriptionEnd = null;
-
+ 
     // Calculate next billing date (monthly subscription)
     if (preapproval.date_created) {
       const createdDate = new Date(preapproval.date_created);
@@ -108,6 +144,13 @@ serve(async (req) => {
       subscriptionEnd = nextBilling.toISOString();
     }
 
+    // Normalizar campos separados para o banco
+    const payment_method_type = paymentMethod?.type ?? null;
+    const payment_method_brand = paymentMethod?.brand ?? null;
+    const payment_method_last4 = paymentMethod?.last4 ?? null;
+    const payment_method_exp_month = paymentMethod?.exp_month ?? null;
+    const payment_method_exp_year = paymentMethod?.exp_year ?? null;
+ 
     await supabaseClient.from("subscribers").upsert({
       email: user.email,
       user_id: user.id,
@@ -115,19 +158,32 @@ serve(async (req) => {
       subscribed: true,
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd,
+      // Campos separados para padronizar no backend
+      payment_method: paymentMethod, // mantém o JSON completo (se a coluna existir)
+      payment_method_type,
+      payment_method_brand,
+      payment_method_last4,
+      payment_method_exp_month,
+      payment_method_exp_year,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
-
+ 
     logStep("Updated database with subscription info", { subscribed: true, subscriptionTier });
     
     return new Response(JSON.stringify({
       subscribed: true,
       subscription_tier: subscriptionTier,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      payment_method: paymentMethod,
+      payment_method_type,
+      payment_method_brand,
+      payment_method_last4,
+      payment_method_exp_month,
+      payment_method_exp_year,
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+       headers: { ...corsHeaders, "Content-Type": "application/json" },
+       status: 200,
+     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in check-mercadopago-subscription", { message: errorMessage });
