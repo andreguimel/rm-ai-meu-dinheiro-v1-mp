@@ -99,9 +99,13 @@ serve(async (req) => {
 
     // Tentar obter o último pagamento aprovado para o usuário (para extrair método de pagamento)
     let paymentMethod: { type?: string; last4?: string | null; brand?: string | null; exp_month?: number | null; exp_year?: number | null } | null = null;
+    let lastPaymentAmount: number | null = null;
+    let lastPaymentCurrency: string | null = null;
+    let lastPaymentStatus: string | null = null;
+    let lastPaymentDate: string | null = null;
     try {
       const paymentsResp = await fetch(
-        `https://api.mercadopago.com/v1/payments/search?external_reference=${user.id}&status=approved&sort=date_created&criteria=desc`,
+        `https://api.mercadopago.com/v1/payments/search?external_reference=${user.id}&sort=date_created&criteria=desc`,
         {
           headers: {
             "Authorization": `Bearer ${accessToken}`,
@@ -122,6 +126,17 @@ serve(async (req) => {
             exp_month: latestPayment.card?.expiration_month ?? latestPayment.card?.exp_month ?? null,
             exp_year: latestPayment.card?.expiration_year ?? latestPayment.card?.exp_year ?? null,
           };
+          // Extrair dados do último pagamento para uso no dashboard (normalizamos para centavos)
+          if (typeof latestPayment.transaction_amount === "number") {
+            lastPaymentAmount = Math.round(latestPayment.transaction_amount * 100);
+          } else if (typeof latestPayment.amount === "number") {
+            lastPaymentAmount = Math.round(latestPayment.amount * 100);
+          } else {
+            lastPaymentAmount = null;
+          }
+          lastPaymentCurrency = latestPayment.currency_id ? latestPayment.currency_id.toLowerCase() : (latestPayment.currency ? latestPayment.currency.toLowerCase() : null);
+          lastPaymentStatus = latestPayment.status ?? null;
+          lastPaymentDate = latestPayment.date_created ?? null;
           logStep("Latest approved payment found", { paymentId: latestPayment.id, payment_method: paymentMethod });
         } else {
           logStep("No approved payments found for user to extract payment_method");
@@ -165,6 +180,11 @@ serve(async (req) => {
       payment_method_last4,
       payment_method_exp_month,
       payment_method_exp_year,
+      // Último pagamento (padronizado)
+      last_payment_amount: lastPaymentAmount,
+      last_payment_currency: lastPaymentCurrency,
+      last_payment_status: lastPaymentStatus,
+      last_payment_date: lastPaymentDate,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
  
@@ -180,6 +200,10 @@ serve(async (req) => {
       payment_method_last4,
       payment_method_exp_month,
       payment_method_exp_year,
+      last_payment_amount: lastPaymentAmount,
+      last_payment_currency: lastPaymentCurrency,
+      last_payment_status: lastPaymentStatus,
+      last_payment_date: lastPaymentDate,
     }), {
        headers: { ...corsHeaders, "Content-Type": "application/json" },
        status: 200,

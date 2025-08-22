@@ -92,27 +92,21 @@ export const SubscriptionManagement = () => {
     );
   }
 
-  const { subscribed, subscription_tier, subscription_end, status, amount, currency, current_period_end, subscription_start, cancel_at_period_end, trial_end, payment_method: rawPaymentMethod, discount } = subscriptionData;
+  const { subscribed, subscription_tier, subscription_end, status, amount, currency, current_period_end, subscription_start, cancel_at_period_end, trial_end, payment_method: rawPaymentMethod, last_payment_amount, last_payment_currency, last_payment_status, discount } = subscriptionData;
 
   // Normaliza diferentes formatos que podem vir do backend:
-  // - pagamento simples: { type, brand, last4 }
-  // - pagamento completo: { brand, last4, exp_month, exp_year, ... }
-  // - forma antiga: { card: { brand, last4, ... }, type: 'card' }
   const paymentMethod = (() => {
     if (!rawPaymentMethod) return null;
-    // Caso venha dentro de uma chave `card`
     if ((rawPaymentMethod as any).card) {
       const c = (rawPaymentMethod as any).card;
       return {
         type: (rawPaymentMethod as any).type || 'card',
         brand: c.brand || null,
         last4: c.last4 || c.last_four_digits || null,
-        exp_month: c.exp_month || null,
-        exp_year: c.exp_year || null,
+        exp_month: c.exp_month || c.expiration_month || null,
+        exp_year: c.exp_year || c.expiration_year || null,
       };
     }
-
-    // Caso já venha no formato simplificado/normalizado
     return {
       type: (rawPaymentMethod as any).type || 'card',
       brand: (rawPaymentMethod as any).brand || null,
@@ -121,6 +115,13 @@ export const SubscriptionManagement = () => {
       exp_year: (rawPaymentMethod as any).exp_year || null,
     };
   })();
+
+  // helper para considerar vários status de sucesso (MercadoPago usa 'approved', 'authorized', etc.)
+  const isSuccessStatus = (s: string | null | undefined) => {
+    if (!s) return false;
+    const normalized = s.toString().toLowerCase();
+    return ["succeeded", "approved", "authorized", "paid"].includes(normalized);
+  };
 
   if (!subscribed) {
     return (
@@ -173,13 +174,17 @@ export const SubscriptionManagement = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Status</p>
-              <Badge variant={getStatusBadgeVariant(status || '')} className="mt-1">
-                {getStatusText(status || '')}
+              <Badge variant={getStatusBadgeVariant(status || (last_payment_status ?? ''))} className="mt-1">
+                {status ? getStatusText(status) : (last_payment_status ? (isSuccessStatus(last_payment_status) ? 'Pago' : last_payment_status) : '—')}
               </Badge>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Valor</p>
-              <p className="font-semibold">{amount && currency ? formatCurrency(amount, currency) : 'N/A'}</p>
+              <p className="font-semibold">
+                {amount && currency
+                  ? formatCurrency(amount, currency)
+                  : (last_payment_amount && last_payment_currency ? formatCurrency(last_payment_amount, last_payment_currency) : 'N/A')}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Próxima cobrança</p>
@@ -289,13 +294,13 @@ export const SubscriptionManagement = () => {
                     <div>
                       <p className="font-medium">{formatCurrency(payment.amount, payment.currency)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(payment.created)} • {payment.payment_method_details.card?.brand?.toUpperCase()} •••• {payment.payment_method_details.card?.last4}
+                        {formatDate(payment.created)} • {(payment.payment_method_details.type || (payment.payment_method_details.card?.brand) || 'CARD').toString().toUpperCase()} {payment.payment_method_details.card?.last4 ? ` •••• ${payment.payment_method_details.card?.last4}` : ''}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={payment.status === 'succeeded' ? 'default' : 'destructive'}>
-                      {payment.status === 'succeeded' ? 'Pago' : 'Falhou'}
+                    <Badge variant={isSuccessStatus(payment.status) ? 'default' : 'destructive'}>
+                      {isSuccessStatus(payment.status) ? 'Pago' : 'Falhou'}
                     </Badge>
                     {payment.receipt_url && (
                       <Button variant="ghost" size="sm" asChild>
