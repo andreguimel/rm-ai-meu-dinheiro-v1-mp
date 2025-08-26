@@ -4,6 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // Expor Location para que clientes possam ler o header de redirecionamento se necessário
+  "Access-Control-Expose-Headers": "Location",
 };
 
 // Helper logging function for enhanced debugging
@@ -57,45 +59,90 @@ serve(async (req) => {
 
     if (!searchResponse.ok) {
       logStep("No active subscription found or API error", { status: searchResponse.status });
+
+      // Definir período de teste gratuito de 7 dias a partir de agora
+      const now = new Date();
+      const trialEndDate = new Date(now);
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+      const trialStartISO = now.toISOString();
+      const trialEndISO = trialEndDate.toISOString();
+      const trialDaysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+ 
       await supabaseClient.from("subscribers").upsert({
         email: user.email,
         user_id: user.id,
         stripe_customer_id: null, // Keeping for compatibility, will contain MP preapproval ID
-        subscribed: false,
-        subscription_tier: null,
-        subscription_end: null,
+        // Conceder trial de 7 dias
+        subscribed: true,
+        subscription_tier: "Trial",
+        subscription_start: trialStartISO,
+        subscription_end: trialEndISO,
+        trial_start: trialStartISO,
+        trial_end: trialEndISO,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'email' });
-
-      return new Response(JSON.stringify({ subscribed: false, subscription_tier: null, subscription_end: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    const searchData = await searchResponse.json();
-    const activePreapprovals = searchData.results?.filter((p: any) => p.status === 'authorized') || [];
-    
-    if (activePreapprovals.length === 0) {
-      logStep("No active preapprovals found");
+ 
+       // Redirecionar para página inicial e informar para ativar conta via e-mail
+       return new Response(JSON.stringify({
+         message: "Cadastro realizado com sucesso. Você tem 7 dias grátis. Por favor, abra seu e-mail para ativar a conta.",
+         subscribed: true,
+         subscription_tier: "Trial",
+         subscription_start: trialStartISO,
+         subscription_end: trialEndISO,
+         trial_start: trialStartISO,
+         trial_end: trialEndISO,
+         trial_days_remaining: trialDaysRemaining,
+       }), {
+         headers: { ...corsHeaders, "Content-Type": "application/json", "Location": "/" },
+         status: 302,
+       });
+     }
+ 
+     const searchData = await searchResponse.json();
+     const activePreapprovals = searchData.results?.filter((p: any) => p.status === 'authorized') || [];
+     
+     if (activePreapprovals.length === 0) {
+       logStep("No active preapprovals found");
+      // Definir período de teste gratuito de 7 dias a partir de agora
+      const now2 = new Date();
+      const trialEndDate2 = new Date(now2);
+      trialEndDate2.setDate(trialEndDate2.getDate() + 7);
+      const trialStartISO2 = now2.toISOString();
+      const trialEndISO2 = trialEndDate2.toISOString();
+      const trialDaysRemaining2 = Math.ceil((trialEndDate2.getTime() - now2.getTime()) / (1000 * 60 * 60 * 24));
+ 
       await supabaseClient.from("subscribers").upsert({
         email: user.email,
         user_id: user.id,
         stripe_customer_id: null,
-        subscribed: false,
-        subscription_tier: null,
-        subscription_end: null,
+        // Conceder trial de 7 dias
+        subscribed: true,
+        subscription_tier: "Trial",
+        subscription_start: trialStartISO2,
+        subscription_end: trialEndISO2,
+        trial_start: trialStartISO2,
+        trial_end: trialEndISO2,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'email' });
-
-      return new Response(JSON.stringify({ subscribed: false, subscription_tier: null, subscription_end: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    const preapproval = activePreapprovals[0];
-    logStep("Active preapproval found", { id: preapproval.id, status: preapproval.status });
+ 
+       // Redirecionar para página inicial e informar para ativar conta via e-mail
+       return new Response(JSON.stringify({
+         message: "Cadastro realizado com sucesso. Você tem 7 dias grátis. Por favor, abra seu e-mail para ativar a conta.",
+         subscribed: true,
+         subscription_tier: "Trial",
+         subscription_start: trialStartISO2,
+         subscription_end: trialEndISO2,
+         trial_start: trialStartISO2,
+         trial_end: trialEndISO2,
+         trial_days_remaining: trialDaysRemaining2,
+       }), {
+         headers: { ...corsHeaders, "Content-Type": "application/json", "Location": "/" },
+         status: 302,
+       });
+     }
+ 
+     const preapproval = activePreapprovals[0];
+     logStep("Active preapproval found", { id: preapproval.id, status: preapproval.status });
 
     // Tentar obter o último pagamento aprovado para o usuário (para extrair método de pagamento)
     let paymentMethod: { type?: string; last4?: string | null; brand?: string | null; exp_month?: number | null; exp_year?: number | null } | null = null;
@@ -187,10 +234,12 @@ serve(async (req) => {
       last_payment_date: lastPaymentDate,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
- 
+  
     logStep("Updated database with subscription info", { subscribed: true, subscriptionTier });
     
+    // Redirecionar para página inicial e informar para ativar conta via e-mail
     return new Response(JSON.stringify({
+      message: "Cadastro realizado com sucesso. Por favor, abra seu e-mail para ativar a conta.",
       subscribed: true,
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd,
@@ -205,8 +254,8 @@ serve(async (req) => {
       last_payment_status: lastPaymentStatus,
       last_payment_date: lastPaymentDate,
     }), {
-       headers: { ...corsHeaders, "Content-Type": "application/json" },
-       status: 200,
+       headers: { ...corsHeaders, "Content-Type": "application/json", "Location": "/" },
+       status: 302,
      });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
