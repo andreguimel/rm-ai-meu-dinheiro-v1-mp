@@ -20,8 +20,17 @@ export const useAuth = () => {
       
       // Check subscription status when user logs in
       if (session?.user && event === 'SIGNED_IN') {
-        setTimeout(() => {
-          supabase.functions.invoke('check-subscription').catch(console.error);
+        setTimeout(async () => {
+          try {
+            const token = session.access_token;
+            if (token) {
+              await supabase.functions.invoke('check-subscription', { headers: { Authorization: `Bearer ${token}` } });
+            } else {
+              await supabase.functions.invoke('check-subscription').catch(console.error);
+            }
+          } catch (err) {
+            console.error(err);
+          }
         }, 1000);
       }
     });
@@ -34,8 +43,17 @@ export const useAuth = () => {
       
       // Check subscription status for existing session
       if (session?.user) {
-        setTimeout(() => {
-          supabase.functions.invoke('check-subscription').catch(console.error);
+        setTimeout(async () => {
+          try {
+            const token = session.access_token;
+            if (token) {
+              await supabase.functions.invoke('check-subscription', { headers: { Authorization: `Bearer ${token}` } });
+            } else {
+              await supabase.functions.invoke('check-subscription').catch(console.error);
+            }
+          } catch (err) {
+            console.error(err);
+          }
         }, 1000);
       }
     });

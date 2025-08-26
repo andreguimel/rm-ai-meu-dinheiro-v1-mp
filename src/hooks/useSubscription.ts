@@ -307,10 +307,11 @@ export const useSubscription = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    // Wait for a valid session to be present to ensure access_token is available
+    if (session) {
       checkSubscription();
     }
-  }, [user]);
+  }, [session]);
 
   return {
     subscriptionData,
