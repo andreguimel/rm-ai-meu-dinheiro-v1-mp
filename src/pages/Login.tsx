@@ -25,21 +25,22 @@ const Login = () => {
   };
   return <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        {/* Reduced card padding to tighten top/bottom spacing */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <div className="rounded-lg p-2">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center mb-2">
+              <div className="rounded-lg p-0">
                 <img
                   src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
                   alt="Meu Dinheiro"
-                  className="h-15 shadow-amber-15 object-contain transform"
+                  className="h-28 shadow-amber-15 object-contain transform"
                   style={{ transform: 'scale(0.7)' }}
                 />
               </div>
             </div>
             
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-1">
               {mode === "login" && "Faça login em sua conta"}
               {mode === "register" && "Crie sua conta"}
               {mode === "forgot-password" && "Recupere sua senha"}
