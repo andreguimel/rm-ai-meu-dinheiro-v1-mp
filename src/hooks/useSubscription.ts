@@ -125,19 +125,52 @@ export const useSubscription = () => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-mercadopago-subscription');
-      
+      const { data, error } = await supabase.functions.invoke('check-mercadopago-subscription');
+
       if (error) {
-        console.error('Error creating checkout:', error);
+        console.error('Error checking subscription:', error);
         toast({
-          title: "Erro ao criar checkout",
-          description: "Não foi possível criar a sessão de pagamento.",
+          title: "Erro ao verificar assinatura",
+          description: "N\u00e3o foi poss\u00edvel verificar o status da assinatura.",
           variant: "destructive",
         });
         return;
       }
 
-      // Open MercadoPago checkout in a new tab
+      // Normalizar payload recebido do backend (MercadoPago + supabase function)
+      // O backend pode retornar `subscription_end` em vez de `current_period_end`,
+      // e campos de payment_method podem vir separados (payment_method_type, etc.).
+      const normalized: SubscriptionData = {
+        subscribed: data?.subscribed ?? false,
+        subscription_tier: data?.subscription_tier ?? data?.subscriptionTier ?? null,
+        subscription_end: data?.subscription_end ?? data?.subscriptionEnd ?? null,
+        subscription_start: data?.subscription_start ?? data?.subscriptionStart ?? null,
+        // Mapear current_period_end para o campo usado pela UI
+        current_period_start: data?.current_period_start ?? data?.current_periodStart ?? null,
+        current_period_end: data?.current_period_end ?? data?.currentPeriodEnd ?? data?.subscription_end ?? data?.subscriptionEnd ?? null,
+        amount: data?.amount ?? null,
+        currency: data?.currency ?? null,
+        status: data?.status ?? null,
+        cancel_at_period_end: data?.cancel_at_period_end ?? data?.cancelAtPeriodEnd ?? null,
+        trial_end: data?.trial_end ?? data?.trialEnd ?? data?.trial_end ?? null,
+        // Reconstruir payment_method se necessário
+        payment_method: data?.payment_method ?? (data?.payment_method_type ? {
+          type: data.payment_method_type,
+          last4: data.payment_method_last4 ?? data.payment_method_last_four ?? undefined,
+          brand: data.payment_method_brand ?? undefined,
+          exp_month: data.payment_method_exp_month ?? undefined,
+          exp_year: data.payment_method_exp_year ?? undefined,
+        } : null),
+        discount: data?.discount ?? null,
+      };
+
+      // Incluir dados do \"ultimo pagamento\" padronizados (usados como fallback)
+      // Campos mantidos com nomes originais para compatibilidade com o front-end
+      (normalized as any).last_payment_amount = data?.last_payment_amount ?? data?.lastPaymentAmount ?? null;
+      (normalized as any).last_payment_currency = data?.last_payment_currency ?? data?.lastPaymentCurrency ?? null;
+      (normalized as any).last_payment_status = data?.last_payment_status ?? data?.lastPaymentStatus ?? null;
+
+      setSubscriptionData(normalized);
       window.open(data.url, '_blank');
     } catch (error) {
       console.error('Error in createCheckout:', error);
