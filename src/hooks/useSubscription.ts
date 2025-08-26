@@ -101,7 +101,7 @@ export const useSubscription = () => {
       }
 
   const headers = await getAuthHeaders();
-  const { data, error } = await supabase.functions.invoke('create-mercadopago-subscription', { headers });
+  const { data, error } = await supabase.functions.invoke('check-mercadopago-subscription', { headers });
 
       if (error) {
         console.error('Error checking subscription:', error);

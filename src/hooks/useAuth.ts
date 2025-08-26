@@ -24,9 +24,9 @@ export const useAuth = () => {
           try {
             const token = session.access_token;
             if (token) {
-              await supabase.functions.invoke('check-subscription', { headers: { Authorization: `Bearer ${token}` } });
+              await supabase.functions.invoke('check-mercadopago-subscription', { headers: { Authorization: `Bearer ${token}` } });
             } else {
-              await supabase.functions.invoke('check-subscription').catch(console.error);
+              await supabase.functions.invoke('check-mercadopago-subscription').catch(console.error);
             }
           } catch (err) {
             console.error(err);
@@ -47,9 +47,9 @@ export const useAuth = () => {
           try {
             const token = session.access_token;
             if (token) {
-              await supabase.functions.invoke('check-subscription', { headers: { Authorization: `Bearer ${token}` } });
+              await supabase.functions.invoke('check-mercadopago-subscription', { headers: { Authorization: `Bearer ${token}` } });
             } else {
-              await supabase.functions.invoke('check-subscription').catch(console.error);
+              await supabase.functions.invoke('check-mercadopago-subscription').catch(console.error);
             }
           } catch (err) {
             console.error(err);
