@@ -34,14 +34,28 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     checkAdminStatus();
   }, [user]);
 
+  // Considera trial ativo: assinado se `subscribed === true` ou `trial_end` no futuro
+  const isEffectivelySubscribed = (() => {
+    try {
+      if (subscriptionData.subscribed) return true;
+      if (subscriptionData.trial_end) {
+        const t = new Date(subscriptionData.trial_end);
+        return t.getTime() > Date.now();
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  })();
+
   useEffect(() => {
-    if (!loading && !adminLoading && !subscriptionData.subscribed && !isAdmin) {
-      // Se não tem assinatura ativa, não é admin e não está no perfil, redireciona para o perfil
+    if (!loading && !adminLoading && !isEffectivelySubscribed && !isAdmin) {
+      // Se não tem assinatura ativa (nem trial válido), não é admin e não está no perfil, redireciona para o perfil
       if (location.pathname !== "/perfil") {
         navigate("/perfil");
       }
     }
-  }, [subscriptionData.subscribed, loading, adminLoading, isAdmin, location.pathname, navigate]);
+  }, [isEffectivelySubscribed, loading, adminLoading, isAdmin, location.pathname, navigate]);
 
   if (loading || adminLoading) {
     return (
@@ -51,8 +65,8 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     );
   }
 
-  // Se não tem assinatura, não é admin e não está no perfil, não renderiza o conteúdo
-  if (!subscriptionData.subscribed && !isAdmin && location.pathname !== "/perfil") {
+  // Se não tem assinatura efetiva (assinatura ativa ou trial não expirado), não é admin e não está no perfil, não renderiza o conteúdo
+  if (!isEffectivelySubscribed && !isAdmin && location.pathname !== "/perfil") {
     return null;
   }
 

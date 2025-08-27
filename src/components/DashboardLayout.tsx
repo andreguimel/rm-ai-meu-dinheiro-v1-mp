@@ -19,6 +19,19 @@ export const DashboardLayout = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { subscriptionData } = useSubscription();
+  // Compute effective subscription: subscribed OR active trial
+  const isEffectivelySubscribed = (() => {
+    try {
+      if (subscriptionData.subscribed) return true;
+      if (subscriptionData.trial_end) {
+        const t = new Date(subscriptionData.trial_end);
+        return t.getTime() > Date.now();
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  })();
   const menuItems = [{
     icon: Home,
     label: "Dashboard",
@@ -145,8 +158,8 @@ export const DashboardLayout = ({
         <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-1">
             {menuItems.map(item => {
-              // Se não tem assinatura ativa, apenas permite acesso ao perfil
-              const isSubscribed = subscriptionData.subscribed;
+              // Se não tem assinatura efetiva (assinatura ativa ou trial válido), apenas permite acesso ao perfil
+              const isSubscribed = isEffectivelySubscribed;
               const isProfilePage = item.path === "/perfil";
               
               if (!isSubscribed && !isProfilePage) {

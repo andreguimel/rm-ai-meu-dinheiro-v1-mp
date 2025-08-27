@@ -97,6 +97,13 @@ export const useAuth = () => {
       description: "Verifique seu email para confirmar a conta.",
     });
 
+    // Redirect to login page after successful signup
+    try {
+      window.location.href = '/login';
+    } catch (err) {
+      // fallback: do nothing, caller can handle navigation
+    }
+
     return { error: null };
   };
 

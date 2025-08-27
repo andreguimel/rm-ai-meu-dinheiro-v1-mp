@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { applyPhoneMask, cleanPhone, formatPhoneBrazil } from "@/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { DeleteAccountModal } from "@/components/auth/DeleteAccountModal";
 import { SharedUsersModal } from "@/components/SharedUsersModal";
@@ -20,6 +21,19 @@ const Perfil = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile, loading, updateProfile, uploadAvatar } = useProfile();
+  const { subscriptionData } = useSubscription();
+
+  const trialDaysLeft = (() => {
+    try {
+      const t = subscriptionData?.trial_end ? new Date(subscriptionData.trial_end).getTime() : 0;
+      if (!t) return 0;
+      const diff = t - Date.now();
+      if (diff <= 0) return 0;
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    } catch (err) {
+      return 0;
+    }
+  })();
   const { sharedUsers, canManageSharedUsers, isAccountOwner } = useSharedUsers();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -169,7 +183,14 @@ const Perfil = () => {
       <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight dark:text-gray-200">Perfil</h2>
+            <div className="flex items-center space-x-3">
+              <h2 className="text-3xl font-bold tracking-tight dark:text-gray-200">Perfil</h2>
+              {subscriptionData?.trial_end && (new Date(subscriptionData.trial_end).getTime() > Date.now()) && (
+                <span className="inline-flex items-center px-2 py-1 rounded-md bg-amber-100 text-amber-700 text-sm font-medium">
+                  Teste{trialDaysLeft > 0 ? ` — ${trialDaysLeft} ${trialDaysLeft === 1 ? 'dia' : 'dias'}` : ''}
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground dark:text-gray-400">
               Gerencie suas informações pessoais
             </p>
