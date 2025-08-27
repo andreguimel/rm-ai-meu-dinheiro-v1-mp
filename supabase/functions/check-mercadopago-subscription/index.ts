@@ -71,7 +71,8 @@ serve(async (req) => {
           email: user.email,
           user_id: user.id,
           stripe_customer_id: null,
-          subscribed: true,
+          // Mark trial users as not fully subscribed — trial grants access but is not an active paid subscription
+          subscribed: false,
           subscription_tier: "Trial",
           subscription_start: trialStartISO,
           subscription_end: trialEndISO,
@@ -115,7 +116,7 @@ serve(async (req) => {
           email: user.email,
           user_id: user.id,
           stripe_customer_id: null,
-          subscribed: true,
+          subscribed: false,
           subscription_tier: "Trial",
           subscription_start: trialStartISO2,
           subscription_end: trialEndISO2,

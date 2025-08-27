@@ -123,6 +123,32 @@ export const SubscriptionManagement = () => {
     return ["succeeded", "approved", "authorized", "paid"].includes(normalized);
   };
 
+  // If not subscribed but has an active trial, show trial card
+  const hasActiveTrial = !!trial_end && new Date(trial_end).getTime() > Date.now();
+
+  if (!subscribed && hasActiveTrial) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <Crown className="h-12 w-12 text-primary mx-auto mb-2" />
+          <CardTitle className="text-xl">Teste</CardTitle>
+          <CardDescription>
+            Você está em período de teste. Aproveite os recursos até o término do teste.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <Button onClick={createCheckout} className="w-full gap-2" size="lg">
+            <Crown className="h-4 w-4" />
+            Assinar Premium - R$ 39,90/mês
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Seu teste termina em {format(new Date(trial_end), "dd/MM/yyyy", { locale: ptBR })}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!subscribed) {
     return (
       <Card className="w-full">
