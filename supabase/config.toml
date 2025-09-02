@@ -1,4 +1,4 @@
-project_id = "ponxumxwjodpgwhepwxc"
+project_id = "SEU_NOVO_PROJECT_ID"
 
 [api]
 enabled = true
@@ -19,7 +19,7 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-ip_version = "ipv6"
+ip_version = "IPv4"
 
 [studio]
 enabled = true
@@ -41,12 +41,11 @@ enabled = true
 additional_redirect_urls = ["https://ponxumxwjodpgwhepwxc.supabase.co/auth/v1/callback"]
 jwt_expiry = 3600
 enable_signup = true
-email_double_confirm_changes = true
 enable_anonymous_sign_ins = false
 
 [auth.email]
 enable_signup = true
-double_confirm_changes = true
+double_confirm_changes = false
 enable_confirmations = false
 
 [functions.create-mercadopago-subscription]
@@ -70,6 +69,3 @@ verify_jwt = true
 [functions.find-user-by-email]
 verify_jwt = true
 
-[edge-runtime]
-enabled = true
-inspector_port = 8083

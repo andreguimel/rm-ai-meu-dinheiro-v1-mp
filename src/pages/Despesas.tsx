@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,10 +35,16 @@ import {
   Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useDespesas } from "@/hooks/useDespesas";
 import { EditarDespesaModal } from "@/components/EditarDespesaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
+import { CreatedByBadge } from "@/components/CreatedByBadge";
+import { SharedUserSelector } from "@/components/SharedUserSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Despesa {
   id: string;
@@ -51,6 +57,9 @@ interface Despesa {
 
 const Despesas = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { sharedUsers } = useSharedUsers();
   const { categoriasDespesa } = useCategorias();
   const { despesas, createDespesa, updateDespesa, deleteDespesa } =
     useDespesas();
@@ -62,10 +71,12 @@ const Despesas = () => {
     categoria: "",
     data: "",
     tipo: "variavel" as "fixa" | "variavel",
+    created_by_shared_user_id: "", // ID do usuário compartilhado que está criando
   });
 
   const [filtro, setFiltro] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
+  const [usuarioFiltro, setUsuarioFiltro] = useState("");
 
   // Estados para o modal de edição
   const [despesaEditando, setDespesaEditando] = useState<Despesa | null>(null);
@@ -92,11 +103,22 @@ const Despesas = () => {
       (c) => c.nome === novaDespesa.categoria
     );
 
+    if (!categoria) {
+      toast({
+        title: "Erro",
+        description: "Categoria não encontrada",
+        variant: "destructive",
+      });
+      return;
+    }
+
     await createDespesa({
       descricao: novaDespesa.descricao,
       valor: parseFloat(novaDespesa.valor),
-      categoria_id: categoria?.id,
+      categoria_id: categoria.id,
       data: novaDespesa.data,
+      created_by_shared_user_id:
+        novaDespesa.created_by_shared_user_id || undefined,
     });
 
     setNovaDespesa({
@@ -105,6 +127,7 @@ const Despesas = () => {
       categoria: "",
       data: "",
       tipo: "variavel",
+      created_by_shared_user_id: "",
     });
 
     setActiveTab("lista");
@@ -140,6 +163,33 @@ const Despesas = () => {
     await deleteDespesa(id);
   };
 
+  // Obter lista de usuários únicos que criaram despesas
+  const usuariosUnicos = useMemo(() => {
+    const users = [];
+
+    // Adicionar o usuário atual
+    if (user && profile) {
+      users.push({
+        id: user.id,
+        name: profile.name || user.email?.split("@")[0] || "Você",
+        tipo: "atual",
+      });
+    }
+
+    // Adicionar usuários compartilhados como opção
+    if (sharedUsers) {
+      sharedUsers.forEach((sharedUser) => {
+        users.push({
+          id: sharedUser.id,
+          name: sharedUser.name,
+          tipo: "compartilhado",
+        });
+      });
+    }
+
+    return users;
+  }, [user, profile, sharedUsers]);
+
   const despesasFiltradas = despesas
     .filter((despesa) => {
       const matchDescricao = despesa.descricao
@@ -147,9 +197,20 @@ const Despesas = () => {
         .includes(filtro.toLowerCase());
       const matchCategoria =
         categoriaFiltro === "" || despesa.categorias?.nome === categoriaFiltro;
-      return matchDescricao && matchCategoria;
+
+      // Filtro de usuário: agora usando created_by_shared_user_id quando disponível
+      const matchUsuario =
+        usuarioFiltro === "" ||
+        (usuarioFiltro === user?.id && !despesa.created_by_shared_user_id) ||
+        despesa.created_by_shared_user_id === usuarioFiltro;
+
+      return matchDescricao && matchCategoria && matchUsuario;
     })
-    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at || a.data);
+      const dateB = new Date(b.created_at || b.data);
+      return dateB.getTime() - dateA.getTime();
+    });
 
   const totalDespesas = despesas.reduce(
     (total, despesa) => total + despesa.valor,
@@ -160,6 +221,7 @@ const Despesas = () => {
   const limparFiltros = () => {
     setFiltro("");
     setCategoriaFiltro("");
+    setUsuarioFiltro("");
   };
 
   return (
@@ -284,6 +346,20 @@ const Despesas = () => {
                       </option>
                     ))}
                   </select>
+                  <select
+                    id="usuario-filtro"
+                    title="Filtrar por usuário"
+                    value={usuarioFiltro}
+                    onChange={(e) => setUsuarioFiltro(e.target.value)}
+                    className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Todos os usuários</option>
+                    {usuariosUnicos.map((usuario) => (
+                      <option key={usuario.id} value={usuario.id}>
+                        {usuario.name}
+                      </option>
+                    ))}
+                  </select>
                   <Button
                     variant="outline"
                     onClick={limparFiltros}
@@ -306,6 +382,7 @@ const Despesas = () => {
                       <TableHead>Categoria</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Data</TableHead>
+                      <TableHead>Criado por</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                       <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
@@ -328,6 +405,14 @@ const Despesas = () => {
                           {new Date(
                             despesa.data + "T00:00:00"
                           ).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          <CreatedByBadge
+                            userId={despesa.user_id}
+                            createdBySharedUserId={
+                              despesa.created_by_shared_user_id
+                            }
+                          />
                         </TableCell>
                         <TableCell className="text-right font-bold text-red-600">
                           R${" "}
@@ -432,6 +517,15 @@ const Despesas = () => {
                               minimumFractionDigits: 2,
                             })}
                           </p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-gray-500 text-xs">Criado por</p>
+                          <CreatedByBadge
+                            userId={despesa.user_id}
+                            createdBySharedUserId={
+                              despesa.created_by_shared_user_id
+                            }
+                          />
                         </div>
                       </div>
 
@@ -581,6 +675,20 @@ const Despesas = () => {
                         <span>Despesa Variável</span>
                       </label>
                     </div>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <SharedUserSelector
+                      value={novaDespesa.created_by_shared_user_id}
+                      onChange={(value) =>
+                        setNovaDespesa({
+                          ...novaDespesa,
+                          created_by_shared_user_id: value,
+                        })
+                      }
+                      label="Quem está registrando esta despesa?"
+                      placeholder="Você (conta principal)"
+                    />
                   </div>
                 </div>
 

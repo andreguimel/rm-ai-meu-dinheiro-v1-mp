@@ -1,14 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useSubscription } from '@/hooks/useSubscription';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Crown, Calendar, CreditCard, RefreshCw, Download, AlertCircle, Gift, Settings, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useEffect } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Crown,
+  Calendar,
+  CreditCard,
+  RefreshCw,
+  Download,
+  AlertCircle,
+  Gift,
+  Settings,
+  Trash2,
+} from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PaymentHistoryItem {
   id: string;
@@ -28,8 +44,17 @@ interface PaymentHistoryItem {
 }
 
 export const SubscriptionManagement = () => {
-  const { subscriptionData, loading, checkSubscription, createCheckout, openCustomerPortal, getPaymentHistory } = useSubscription();
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
+  const {
+    subscriptionData,
+    loading,
+    checkSubscription,
+    createCheckout,
+    openCustomerPortal,
+    getPaymentHistory,
+  } = useSubscription();
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>(
+    []
+  );
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
@@ -46,34 +71,47 @@ export const SubscriptionManagement = () => {
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
       currency: currency.toUpperCase(),
     }).format(amount / 100);
   };
 
   const formatDate = (timestamp: number) => {
-    return format(new Date(timestamp * 1000), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    return format(new Date(timestamp * 1000), "dd 'de' MMMM 'de' yyyy", {
+      locale: ptBR,
+    });
   };
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'active': return 'default';
-      case 'trialing': return 'secondary';
-      case 'canceled': return 'destructive';
-      case 'past_due': return 'destructive';
-      default: return 'outline';
+      case "active":
+        return "default";
+      case "trialing":
+        return "secondary";
+      case "canceled":
+        return "destructive";
+      case "past_due":
+        return "destructive";
+      default:
+        return "outline";
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active': return 'Ativa';
-      case 'trialing': return 'Em Teste';
-      case 'canceled': return 'Cancelada';
-      case 'past_due': return 'Vencida';
-      case 'incomplete': return 'Incompleta';
-      default: return status;
+      case "active":
+        return "Ativa";
+      case "trialing":
+        return "Em Teste";
+      case "canceled":
+        return "Cancelada";
+      case "past_due":
+        return "Vencida";
+      case "incomplete":
+        return "Incompleta";
+      default:
+        return status;
     }
   };
 
@@ -92,7 +130,55 @@ export const SubscriptionManagement = () => {
     );
   }
 
-  const { subscribed, subscription_tier, subscription_end, status, amount, currency, current_period_end, subscription_start, cancel_at_period_end, trial_end, payment_method: rawPaymentMethod, last_payment_amount, last_payment_currency, last_payment_status, discount } = subscriptionData;
+  const {
+    subscribed,
+    subscription_tier,
+    subscription_end,
+    status,
+    amount,
+    currency,
+    current_period_end,
+    subscription_start,
+    cancel_at_period_end,
+    trial_end,
+    trial_days_remaining,
+    payment_method: rawPaymentMethod,
+    last_payment_amount,
+    last_payment_currency,
+    last_payment_status,
+    discount,
+  } = subscriptionData;
+
+  // If user is admin, show admin interface instead
+  if (subscription_tier === "admin") {
+    return (
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <Settings className="h-12 w-12 text-blue-500 mx-auto mb-2" />
+          <CardTitle className="text-xl">Acesso Administrativo</CardTitle>
+          <CardDescription>
+            Você tem acesso total ao sistema como administrador
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-center gap-2 text-blue-700 font-medium">
+              <Crown className="h-4 w-4" />
+              <span>Administrador do Sistema</span>
+            </div>
+            <p className="text-sm text-blue-600 mt-1">
+              Acesso ilimitado a todas as funcionalidades
+            </p>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <p>✅ Acesso completo ao dashboard</p>
+            <p>✅ Todas as funcionalidades desbloqueadas</p>
+            <p>✅ Sem limitações de tempo ou recursos</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Normaliza diferentes formatos que podem vir do backend:
   const paymentMethod = (() => {
@@ -100,7 +186,7 @@ export const SubscriptionManagement = () => {
     if ((rawPaymentMethod as any).card) {
       const c = (rawPaymentMethod as any).card;
       return {
-        type: (rawPaymentMethod as any).type || 'card',
+        type: (rawPaymentMethod as any).type || "card",
         brand: c.brand || null,
         last4: c.last4 || c.last_four_digits || null,
         exp_month: c.exp_month || c.expiration_month || null,
@@ -108,9 +194,12 @@ export const SubscriptionManagement = () => {
       };
     }
     return {
-      type: (rawPaymentMethod as any).type || 'card',
+      type: (rawPaymentMethod as any).type || "card",
       brand: (rawPaymentMethod as any).brand || null,
-      last4: (rawPaymentMethod as any).last4 || (rawPaymentMethod as any).last_four_digits || null,
+      last4:
+        (rawPaymentMethod as any).last4 ||
+        (rawPaymentMethod as any).last_four_digits ||
+        null,
       exp_month: (rawPaymentMethod as any).exp_month || null,
       exp_year: (rawPaymentMethod as any).exp_year || null,
     };
@@ -124,48 +213,149 @@ export const SubscriptionManagement = () => {
   };
 
   // If not subscribed but has an active trial, show trial card
-  const hasActiveTrial = !!trial_end && new Date(trial_end).getTime() > Date.now();
+  const hasActiveTrial =
+    !!trial_end && new Date(trial_end).getTime() > Date.now();
 
-  if (!subscribed && hasActiveTrial) {
+  // Calculate trial days remaining
+  const calculateTrialDaysRemaining = (trialEndDate: string | null) => {
+    if (!trialEndDate) return 0;
+    const endDate = new Date(trialEndDate);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  // Use trial_days_remaining from backend if available, otherwise calculate client-side
+  const trialDaysRemaining =
+    trial_days_remaining !== null && trial_days_remaining !== undefined
+      ? trial_days_remaining
+      : calculateTrialDaysRemaining(trial_end);
+
+  // Check if user has a real paid subscription (not just trial)
+  const hasRealSubscription =
+    subscribed &&
+    (subscription_tier === "Premium" || subscription_tier === "admin") &&
+    (last_payment_amount || amount) && // Has payment data
+    (isSuccessStatus(last_payment_status) || isSuccessStatus(status)); // Has successful payment
+
+  // Check if user is in trial (either marked as subscribed with Trial tier or has active trial)
+  const isInTrial =
+    subscribed &&
+    subscription_tier === "Trial" &&
+    hasActiveTrial &&
+    trialDaysRemaining > 0;
+
+  // Check if trial has expired
+  const isTrialExpired =
+    subscription_tier === "Trial" &&
+    (!hasActiveTrial || trialDaysRemaining === 0);
+
+  // If trial has expired, show upgrade message
+  if (isTrialExpired) {
     return (
       <Card className="w-full">
         <CardHeader className="text-center">
-          <Crown className="h-12 w-12 text-primary mx-auto mb-2" />
-          <CardTitle className="text-xl">Teste</CardTitle>
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-2" />
+          <CardTitle className="text-xl">Período de Teste Expirado</CardTitle>
           <CardDescription>
-            Você está em período de teste. Aproveite os recursos até o término do teste.
+            Seu teste gratuito de 7 dias expirou. Assine agora para continuar
+            usando todos os recursos.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-center gap-2 text-red-700 font-medium">
+              <AlertCircle className="h-4 w-4" />
+              <span>Teste expirado</span>
+            </div>
+            <p className="text-sm text-red-600 mt-1">
+              {trial_end &&
+                `Expirou em ${format(new Date(trial_end), "dd/MM/yyyy", {
+                  locale: ptBR,
+                })}`}
+            </p>
+          </div>
           <Button onClick={createCheckout} className="w-full gap-2" size="lg">
             <Crown className="h-4 w-4" />
             Assinar Premium - R$ 39,90/mês
           </Button>
           <p className="text-sm text-muted-foreground">
-            Seu teste termina em {format(new Date(trial_end), "dd/MM/yyyy", { locale: ptBR })}
+            Continue aproveitando todos os recursos com uma assinatura Premium!
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  if (!subscribed) {
+  // If user is in trial (either marked as subscribed trial or active trial), show trial card
+  if (isInTrial) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <Crown className="h-12 w-12 text-primary mx-auto mb-2" />
+          <CardTitle className="text-xl">Período de Teste Gratuito</CardTitle>
+          <CardDescription>
+            Você tem {trialDaysRemaining}{" "}
+            {trialDaysRemaining === 1 ? "dia restante" : "dias restantes"} no
+            seu teste gratuito de 7 dias.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-center gap-2 text-orange-700 font-medium">
+              <Calendar className="h-4 w-4" />
+              <span>
+                {trialDaysRemaining}{" "}
+                {trialDaysRemaining === 1 ? "dia restante" : "dias restantes"}
+              </span>
+            </div>
+            <p className="text-sm text-orange-600 mt-1">
+              Seu teste termina em{" "}
+              {format(new Date(trial_end), "dd/MM/yyyy", { locale: ptBR })}
+            </p>
+          </div>
+          <Button onClick={createCheckout} className="w-full gap-2" size="lg">
+            <Crown className="h-4 w-4" />
+            Assinar Premium - R$ 39,90/mês
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Continue aproveitando todos os recursos após o teste!
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Only show "Upgrade" card if user has no subscription AND no trial history AND is not already marked as Trial
+  // This should rarely happen since trial is auto-created, but serves as fallback
+  if (
+    !hasRealSubscription &&
+    !isInTrial &&
+    !isTrialExpired &&
+    subscription_tier !== "Trial"
+  ) {
     return (
       <Card className="w-full">
         <CardHeader className="text-center">
           <Crown className="h-12 w-12 text-primary mx-auto mb-2" />
           <CardTitle className="text-xl">Assinatura Premium</CardTitle>
           <CardDescription>
-            Desbloqueie todos os recursos do dashboard financeiro
+            Aproveite todos os recursos do seu dashboard financeiro
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <Button onClick={createCheckout} className="w-full gap-2" size="lg">
-            <Crown className="h-4 w-4" />
-            Assinar Premium - R$ 39,90/mês
-          </Button>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-center gap-2 text-blue-700 font-medium">
+              <Crown className="h-4 w-4" />
+              <span>Bem-vindo! Seu teste gratuito já está ativo.</span>
+            </div>
+            <p className="text-sm text-blue-600 mt-1">
+              Aproveite 7 dias grátis com todos os recursos
+            </p>
+          </div>
           <p className="text-sm text-muted-foreground">
-            Acesso completo a relatórios avançados, análises de IA e muito mais
+            Seu período de teste será exibido aqui em instantes...
           </p>
         </CardContent>
       </Card>
@@ -186,22 +376,42 @@ export const SubscriptionManagement = () => {
               Gerencie sua assinatura e informações de pagamento
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={checkSubscription} className="gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={checkSubscription}
+            className="gap-2"
+          >
             <RefreshCw className="h-4 w-4" />
             Atualizar
           </Button>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Plano</p>
-              <Badge variant="outline" className="mt-1">{subscription_tier}</Badge>
+              <Badge variant="outline" className="mt-1">
+                {subscription_tier}
+              </Badge>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Status</p>
-              <Badge variant={getStatusBadgeVariant(status || (last_payment_status ?? ''))} className="mt-1">
-                {status ? getStatusText(status) : (last_payment_status ? (isSuccessStatus(last_payment_status) ? 'Pago' : last_payment_status) : '—')}
+              <p className="text-sm font-medium text-muted-foreground">
+                Status
+              </p>
+              <Badge
+                variant={getStatusBadgeVariant(
+                  status || (last_payment_status ?? "")
+                )}
+                className="mt-1"
+              >
+                {status
+                  ? getStatusText(status)
+                  : last_payment_status
+                  ? isSuccessStatus(last_payment_status)
+                    ? "Pago"
+                    : last_payment_status
+                  : "—"}
               </Badge>
             </div>
             <div>
@@ -209,13 +419,21 @@ export const SubscriptionManagement = () => {
               <p className="font-semibold">
                 {amount && currency
                   ? formatCurrency(amount, currency)
-                  : (last_payment_amount && last_payment_currency ? formatCurrency(last_payment_amount, last_payment_currency) : 'N/A')}
+                  : last_payment_amount && last_payment_currency
+                  ? formatCurrency(last_payment_amount, last_payment_currency)
+                  : "N/A"}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Próxima cobrança</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Próxima cobrança
+              </p>
               <p className="text-sm">
-                {current_period_end ? format(new Date(current_period_end), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
+                {current_period_end
+                  ? format(new Date(current_period_end), "dd/MM/yyyy", {
+                      locale: ptBR,
+                    })
+                  : "N/A"}
               </p>
             </div>
           </div>
@@ -223,7 +441,12 @@ export const SubscriptionManagement = () => {
           {subscription_start && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Assinante desde {format(new Date(subscription_start), "MMMM 'de' yyyy", { locale: ptBR })}</span>
+              <span>
+                Assinante desde{" "}
+                {format(new Date(subscription_start), "MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
+              </span>
             </div>
           )}
 
@@ -231,7 +454,12 @@ export const SubscriptionManagement = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Sua assinatura será cancelada em {current_period_end ? format(new Date(current_period_end), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
+                Sua assinatura será cancelada em{" "}
+                {current_period_end
+                  ? format(new Date(current_period_end), "dd/MM/yyyy", {
+                      locale: ptBR,
+                    })
+                  : "N/A"}
               </AlertDescription>
             </Alert>
           )}
@@ -240,7 +468,8 @@ export const SubscriptionManagement = () => {
             <Alert>
               <Gift className="h-4 w-4" />
               <AlertDescription>
-                Período de teste até {format(new Date(trial_end), "dd/MM/yyyy", { locale: ptBR })}
+                Período de teste até{" "}
+                {format(new Date(trial_end), "dd/MM/yyyy", { locale: ptBR })}
               </AlertDescription>
             </Alert>
           )}
@@ -250,8 +479,12 @@ export const SubscriptionManagement = () => {
               <Gift className="h-4 w-4" />
               <AlertDescription>
                 Desconto ativo: {discount.coupon.name || discount.coupon.id}
-                {discount.coupon.percent_off && ` (${discount.coupon.percent_off}% off)`}
-                {discount.end && ` até ${format(new Date(discount.end), "dd/MM/yyyy", { locale: ptBR })}`}
+                {discount.coupon.percent_off &&
+                  ` (${discount.coupon.percent_off}% off)`}
+                {discount.end &&
+                  ` até ${format(new Date(discount.end), "dd/MM/yyyy", {
+                    locale: ptBR,
+                  })}`}
               </AlertDescription>
             </Alert>
           )}
@@ -275,14 +508,21 @@ export const SubscriptionManagement = () => {
                 </div>
                 <div>
                   <p className="font-medium">
-                    {(paymentMethod.brand || paymentMethod.type || 'Cartão').toString().toUpperCase()} {paymentMethod.last4 ? ` •••• ${paymentMethod.last4}` : ''}
+                    {(paymentMethod.brand || paymentMethod.type || "Cartão")
+                      .toString()
+                      .toUpperCase()}{" "}
+                    {paymentMethod.last4 ? ` •••• ${paymentMethod.last4}` : ""}
                   </p>
                   {paymentMethod.exp_month && paymentMethod.exp_year ? (
                     <p className="text-sm text-muted-foreground">
-                      Expira em {String(paymentMethod.exp_month).padStart(2, '0')}/{String(paymentMethod.exp_year)}
+                      Expira em{" "}
+                      {String(paymentMethod.exp_month).padStart(2, "0")}/
+                      {String(paymentMethod.exp_year)}
                     </p>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Informações de validade indisponíveis</p>
+                    <p className="text-sm text-muted-foreground">
+                      Informações de validade indisponíveis
+                    </p>
                   )}
                 </div>
               </div>
@@ -298,8 +538,15 @@ export const SubscriptionManagement = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Histórico de Pagamentos</CardTitle>
-          <Button variant="outline" size="sm" onClick={loadPaymentHistory} disabled={loadingHistory}>
-            <RefreshCw className={`h-4 w-4 ${loadingHistory ? 'animate-spin' : ''}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadPaymentHistory}
+            disabled={loadingHistory}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${loadingHistory ? "animate-spin" : ""}`}
+            />
           </Button>
         </CardHeader>
         <CardContent>
@@ -312,25 +559,50 @@ export const SubscriptionManagement = () => {
           ) : paymentHistory.length > 0 ? (
             <div className="space-y-3">
               {paymentHistory.slice(0, 5).map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
                       <CreditCard className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="font-medium">{formatCurrency(payment.amount, payment.currency)}</p>
+                      <p className="font-medium">
+                        {formatCurrency(payment.amount, payment.currency)}
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(payment.created)} • {(payment.payment_method_details.type || (payment.payment_method_details.card?.brand) || 'CARD').toString().toUpperCase()} {payment.payment_method_details.card?.last4 ? ` •••• ${payment.payment_method_details.card?.last4}` : ''}
+                        {formatDate(payment.created)} •{" "}
+                        {(
+                          payment.payment_method_details.type ||
+                          payment.payment_method_details.card?.brand ||
+                          "CARD"
+                        )
+                          .toString()
+                          .toUpperCase()}{" "}
+                        {payment.payment_method_details.card?.last4
+                          ? ` •••• ${payment.payment_method_details.card?.last4}`
+                          : ""}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={isSuccessStatus(payment.status) ? 'default' : 'destructive'}>
-                      {isSuccessStatus(payment.status) ? 'Pago' : 'Falhou'}
+                    <Badge
+                      variant={
+                        isSuccessStatus(payment.status)
+                          ? "default"
+                          : "destructive"
+                      }
+                    >
+                      {isSuccessStatus(payment.status) ? "Pago" : "Falhou"}
                     </Badge>
                     {payment.receipt_url && (
                       <Button variant="ghost" size="sm" asChild>
-                        <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
+                        <a
+                          href={payment.receipt_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           <Download className="h-4 w-4" />
                         </a>
                       </Button>
@@ -356,12 +628,17 @@ export const SubscriptionManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button onClick={openCustomerPortal} className="w-full gap-2" variant="outline">
+          <Button
+            onClick={openCustomerPortal}
+            className="w-full gap-2"
+            variant="outline"
+          >
             <Settings className="h-4 w-4" />
             Cancelar Assinatura
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            Gerencie sua assinatura do MercadoPago. Você pode cancelar sua assinatura a qualquer momento.
+            Gerencie sua assinatura do MercadoPago. Você pode cancelar sua
+            assinatura a qualquer momento.
           </p>
         </CardContent>
       </Card>

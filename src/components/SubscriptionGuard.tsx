@@ -20,12 +20,12 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     const checkAdminStatus = async () => {
       if (user) {
         try {
-          const { data, error } = await supabase.rpc('is_admin');
+          const { data, error } = await supabase.rpc("is_admin");
           if (!error) {
             setIsAdmin(data || false);
           }
         } catch (error) {
-          console.error('Error checking admin status:', error);
+          console.error("Error checking admin status:", error);
         }
       }
       setAdminLoading(false);
@@ -34,28 +34,54 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     checkAdminStatus();
   }, [user]);
 
-  // Considera trial ativo: assinado se `subscribed === true` ou `trial_end` no futuro
+  // Check if user has valid subscription
   const isEffectivelySubscribed = (() => {
     try {
-      if (subscriptionData.subscribed) return true;
-      if (subscriptionData.trial_end) {
-        const t = new Date(subscriptionData.trial_end);
-        return t.getTime() > Date.now();
+      console.log("🛡️ SubscriptionGuard - Verificando acesso");
+      console.log("🛡️ isAdmin:", isAdmin);
+      console.log("🛡️ subscriptionData:", subscriptionData);
+
+      // Admin users have full access
+      if (isAdmin) {
+        console.log("✅ Acesso liberado - Usuário é admin");
+        return true;
       }
+
+      // Check if user has active subscription (qualquer tier que não seja trial)
+      if (subscriptionData.subscribed) {
+        console.log("✅ Usuário tem assinatura ativa");
+        console.log("🔍 Tier:", subscriptionData.subscription_tier);
+        console.log("🔍 Status:", subscriptionData.status);
+
+        // Se não é trial, liberar acesso
+        if (subscriptionData.subscription_tier !== "Trial") {
+          console.log("✅ Acesso liberado - Assinatura válida");
+          return true;
+        }
+      }
+
+      console.log("❌ Acesso negado - Sem assinatura válida");
       return false;
     } catch (err) {
+      console.error("SubscriptionGuard - Error checking subscription:", err);
       return false;
     }
   })();
 
   useEffect(() => {
-    if (!loading && !adminLoading && !isEffectivelySubscribed && !isAdmin) {
-      // Se não tem assinatura ativa (nem trial válido), não é admin e não está no perfil, redireciona para o perfil
+    if (!loading && !adminLoading && !isEffectivelySubscribed) {
+      // If no valid subscription and not on profile page, redirect to profile
       if (location.pathname !== "/perfil") {
         navigate("/perfil");
       }
     }
-  }, [isEffectivelySubscribed, loading, adminLoading, isAdmin, location.pathname, navigate]);
+  }, [
+    isEffectivelySubscribed,
+    loading,
+    adminLoading,
+    location.pathname,
+    navigate,
+  ]);
 
   if (loading || adminLoading) {
     return (
@@ -65,8 +91,8 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     );
   }
 
-  // Se não tem assinatura efetiva (assinatura ativa ou trial não expirado), não é admin e não está no perfil, não renderiza o conteúdo
-  if (!isEffectivelySubscribed && !isAdmin && location.pathname !== "/perfil") {
+  // Block access if no valid subscription and not on profile page
+  if (!isEffectivelySubscribed && location.pathname !== "/perfil") {
     return null;
   }
 

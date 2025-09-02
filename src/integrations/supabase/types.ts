@@ -721,6 +721,8 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          // NOTE: legacy column name. Originally for Stripe customer IDs. Now used to store
+          // MercadoPago preapproval IDs (preapproval.id). Keep name for backward compatibility.
           stripe_customer_id?: string | null
           subscribed?: boolean
           subscription_end?: string | null

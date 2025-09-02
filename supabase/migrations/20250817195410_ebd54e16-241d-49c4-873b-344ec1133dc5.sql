@@ -3,6 +3,9 @@ CREATE TABLE public.subscribers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL UNIQUE,
+  -- NOTE: legacy column name. Originally for Stripe customer IDs. Now used to store
+  -- MercadoPago preapproval IDs (preapproval.id). Renaming this column would require
+  -- a migration; keep the name for backward compatibility.
   stripe_customer_id TEXT,
   subscribed BOOLEAN NOT NULL DEFAULT false,
   subscription_tier TEXT,

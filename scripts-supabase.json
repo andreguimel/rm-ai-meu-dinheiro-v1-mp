@@ -1,0 +1,21 @@
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:types": "supabase gen types typescript --local > src/types/database.types.ts",
+    "supabase:deploy": "supabase functions deploy",
+    "supabase:deploy:check": "supabase functions deploy check-mercadopago-subscription",
+    "supabase:deploy:create": "supabase functions deploy create-mercadopago-subscription",
+    "supabase:deploy:manage": "supabase functions deploy manage-mercadopago-subscription",
+    "supabase:deploy:history": "supabase functions deploy mercadopago-payment-history",
+    "supabase:logs": "supabase functions logs",
+    "supabase:push": "supabase db push",
+    "supabase:reset": "supabase db reset",
+    "supabase:link": "supabase link --project-ref ponxumxwjodpgwhepwxc"
+  }
+}

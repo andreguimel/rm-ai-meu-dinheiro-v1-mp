@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { applyPhoneMask, cleanPhone } from "@/lib/utils";
 
 interface RegisterFormProps {
@@ -21,32 +22,157 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
-    if (password !== confirmPassword) {
+    // Validações básicas
+    if (!name.trim()) {
+      setError("Nome é obrigatório");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!organizationName.trim()) {
+      setError("Nome da organização é obrigatório");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Email é obrigatório");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!email.includes("@") || !email.includes(".")) {
+      setError("Email deve ter um formato válido");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Senha é obrigatória");
       setIsLoading(false);
       return;
     }
 
     if (password.length < 6) {
+      setError("Senha deve ter pelo menos 6 caracteres");
       setIsLoading(false);
       return;
     }
 
-    const { error } = await signUp(email, password, name, organizationName, cleanPhone(telefone));
-    
-    // Note: With email confirmation enabled, user won't be automatically signed in
-    // They need to verify their email first
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!telefone.trim()) {
+      setError("Telefone é obrigatório");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log("📝 Tentando criar conta para:", {
+        email: email.trim(),
+        name,
+        organizationName,
+      });
+
+      // Preparar metadata do usuário
+      const metadata = {
+        name: name.trim(),
+        organization_name: organizationName.trim(),
+        telefone: cleanPhone(telefone),
+      };
+
+      const { data, error: authError } = await signUp(
+        email.trim(),
+        password,
+        metadata
+      );
+
+      console.log("📝 Resultado do registro:", { data, authError });
+
+      if (authError) {
+        console.error("❌ Erro de registro:", authError);
+
+        // Tratar diferentes tipos de erro
+        let errorMessage = "Erro ao criar conta";
+
+        if (authError.message?.includes("User already registered")) {
+          errorMessage = "Este email já está cadastrado";
+        } else if (authError.message?.includes("Password should be at least")) {
+          errorMessage = "Senha deve ter pelo menos 6 caracteres";
+        } else if (authError.message?.includes("Invalid email")) {
+          errorMessage = "Email inválido";
+        } else if (authError.message?.includes("weak password")) {
+          errorMessage = "Senha muito fraca. Use pelo menos 6 caracteres";
+        } else if (authError.message) {
+          errorMessage = authError.message;
+        }
+
+        setError(errorMessage);
+        toast({
+          title: "Erro ao criar conta",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else if (data?.user) {
+        console.log("✅ Conta criada com sucesso:", data.user.email);
+
+        // Verificar se precisa confirmar email
+        if (data.session) {
+          // Usuario logado automaticamente
+          toast({
+            title: "Conta criada!",
+            description: `Bem-vindo(a), ${data.user.email}!`,
+          });
+          navigate("/dashboard");
+        } else {
+          // Precisa confirmar email
+          toast({
+            title: "Conta criada!",
+            description:
+              "Verifique seu email para confirmar a conta e depois faça login.",
+          });
+          onSwitchToLogin();
+        }
+      } else {
+        setError("Erro inesperado durante o registro");
+        console.error("❌ Registro falhou sem erro específico");
+      }
+    } catch (err) {
+      console.error("❌ Erro inesperado no registro:", err);
+      setError("Erro inesperado. Tente novamente");
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente",
+        variant: "destructive",
+      });
+    }
+
     setIsLoading(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <span className="text-sm text-red-700">{error}</span>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="name">Nome completo</Label>
         <Input

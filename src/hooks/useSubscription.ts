@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SubscriptionData {
   subscribed: boolean;
@@ -15,6 +15,8 @@ interface SubscriptionData {
   status?: string | null;
   cancel_at_period_end?: boolean | null;
   trial_end?: string | null;
+  trial_start?: string | null;
+  trial_days_remaining?: number | null;
   payment_method?: {
     type: string;
     last4?: string;
@@ -31,60 +33,94 @@ interface SubscriptionData {
     };
     end?: string | null;
   } | null;
-  // Último pagamento (facilitador para a UI)
   last_payment_amount?: number | null;
   last_payment_currency?: string | null;
   last_payment_status?: string | null;
 }
 
+interface SubscriptionState {
+  data: SubscriptionData;
+  loading: boolean;
+  error: string | null;
+}
+
 export const useSubscription = () => {
-  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData>({
-    subscribed: false,
-    subscription_tier: null,
-    subscription_end: null,
-    subscription_start: null,
-    current_period_start: null,
-    current_period_end: null,
-    amount: null,
-    currency: null,
-    status: null,
-    cancel_at_period_end: null,
-    trial_end: null,
-    payment_method: null,
-    discount: null,
+  const [state, setState] = useState<SubscriptionState>({
+    data: {
+      subscribed: false,
+      subscription_tier: null,
+      subscription_end: null,
+      subscription_start: null,
+      current_period_start: null,
+      current_period_end: null,
+      amount: null,
+      currency: null,
+      status: null,
+      cancel_at_period_end: null,
+      trial_end: null,
+      trial_start: null,
+      trial_days_remaining: null,
+      payment_method: null,
+      discount: null,
+    },
+    loading: true,
+    error: null,
   });
-  const [loading, setLoading] = useState(true);
+
   const { toast } = useToast();
   const { user, session } = useAuth();
 
-  // Helper to build Authorization headers for supabase functions
-  const getAuthHeaders = async () => {
-    // Prefer session from hook, fallback to client
-    const token = session?.access_token ?? (await supabase.auth.getSession()).data?.session?.access_token;
+  // Helper para obter headers de autenticação
+  const getAuthHeaders = useCallback(async () => {
+    const token =
+      session?.access_token ??
+      (await supabase.auth.getSession()).data?.session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  }, [session]);
 
-  const checkSubscription = async () => {
+  // Definir dados de assinatura
+  const setSubscriptionData = useCallback((data: SubscriptionData) => {
+    setState((prev) => ({ ...prev, data, error: null }));
+  }, []);
+
+  // Definir loading
+  const setLoading = useCallback((loading: boolean) => {
+    setState((prev) => ({ ...prev, loading }));
+  }, []);
+
+  // Definir erro
+  const setError = useCallback((error: string | null) => {
+    setState((prev) => ({ ...prev, error }));
+  }, []);
+
+  // Verificar assinatura
+  const checkSubscription = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
     }
 
     try {
-      // Primeiro verificar se o usuário é admin
-      const { data: isAdmin, error: adminError } = await supabase
-        .rpc('is_admin');
-      
+      setLoading(true);
+      setError(null);
+
+      console.log("🔍 Verificando assinatura para usuário:", user.email);
+
+      // 1. Primeiro verificar se é admin
+      const { data: isAdmin, error: adminError } = await supabase.rpc(
+        "is_admin"
+      );
+
       if (adminError) {
-        console.error('Error checking admin status:', adminError);
+        console.error("Erro ao verificar admin:", adminError);
       }
 
-      // Se for admin, considerar como subscribed
       if (isAdmin) {
+        console.log("✅ Usuário é admin - definindo acesso completo");
         setSubscriptionData({
           subscribed: true,
-          subscription_tier: 'admin',
-          status: 'active',
+          subscription_tier: "admin",
+          status: "active",
           subscription_start: new Date().toISOString(),
           subscription_end: null,
           current_period_start: new Date().toISOString(),
@@ -93,67 +129,102 @@ export const useSubscription = () => {
           currency: null,
           cancel_at_period_end: false,
           trial_end: null,
+          trial_start: null,
+          trial_days_remaining: null,
           payment_method: null,
           discount: null,
         });
-        setLoading(false);
         return;
       }
 
-  const headers = await getAuthHeaders();
-  const { data, error } = await supabase.functions.invoke('check-mercadopago-subscription', { headers });
+      // 2. Verificar assinatura via Edge Function
+      const headers = await getAuthHeaders();
+      const { data, error } = await supabase.functions.invoke(
+        "check-mercadopago-subscription",
+        { headers }
+      );
+
+      console.log("🔍 Resposta da verificação:", { data, error });
 
       if (error) {
-        console.error('Error checking subscription:', error);
-        toast({
-          title: "Erro ao verificar assinatura",
-          description: "Não foi possível verificar o status da assinatura.",
-          variant: "destructive",
+        console.warn("Erro ao verificar assinatura:", error.message);
+        // Se há erro, assumir sem assinatura
+        setSubscriptionData({
+          subscribed: false,
+          subscription_tier: null,
+          subscription_end: null,
+          subscription_start: null,
+          current_period_start: null,
+          current_period_end: null,
+          amount: null,
+          currency: null,
+          status: null,
+          cancel_at_period_end: null,
+          trial_end: null,
+          trial_start: null,
+          trial_days_remaining: null,
+          payment_method: null,
+          discount: null,
         });
         return;
       }
 
-      // Normalizar payload recebido do backend (MercadoPago + supabase function)
+      // 3. Normalizar dados da resposta
       const normalized: SubscriptionData = {
         subscribed: data?.subscribed ?? false,
-        subscription_tier: data?.subscription_tier ?? data?.subscriptionTier ?? null,
-        subscription_end: data?.subscription_end ?? data?.subscriptionEnd ?? null,
-        subscription_start: data?.subscription_start ?? data?.subscriptionStart ?? null,
-        current_period_start: data?.current_period_start ?? data?.currentPeriodStart ?? null,
-        current_period_end: data?.current_period_end ?? data?.currentPeriodEnd ?? data?.subscription_end ?? data?.subscriptionEnd ?? null,
+        subscription_tier:
+          data?.subscription_tier ?? data?.subscriptionTier ?? null,
+        subscription_end:
+          data?.subscription_end ?? data?.subscriptionEnd ?? null,
+        subscription_start:
+          data?.subscription_start ?? data?.subscriptionStart ?? null,
+        current_period_start:
+          data?.current_period_start ?? data?.currentPeriodStart ?? null,
+        current_period_end:
+          data?.current_period_end ?? data?.currentPeriodEnd ?? null,
         amount: data?.amount ?? data?.last_payment_amount ?? null,
         currency: data?.currency ?? data?.last_payment_currency ?? null,
         status: data?.status ?? data?.last_payment_status ?? null,
-        cancel_at_period_end: data?.cancel_at_period_end ?? data?.cancelAtPeriodEnd ?? null,
+        cancel_at_period_end:
+          data?.cancel_at_period_end ?? data?.cancelAtPeriodEnd ?? null,
         trial_end: data?.trial_end ?? data?.trialEnd ?? null,
-        payment_method: data?.payment_method ?? (data?.payment_method_type ? {
-          type: data.payment_method_type,
-          last4: data.payment_method_last4 ?? data.payment_method_last_four ?? undefined,
-          brand: data.payment_method_brand ?? undefined,
-          exp_month: data.payment_method_exp_month ?? undefined,
-          exp_year: data.payment_method_exp_year ?? undefined,
-        } : null),
+        trial_start: data?.trial_start ?? data?.trialStart ?? null,
+        trial_days_remaining: data?.trial_days_remaining ?? null,
+        payment_method: data?.payment_method ?? null,
         discount: data?.discount ?? null,
-        last_payment_amount: data?.last_payment_amount ?? data?.lastPaymentAmount ?? null,
-        last_payment_currency: data?.last_payment_currency ?? data?.lastPaymentCurrency ?? null,
-        last_payment_status: data?.last_payment_status ?? data?.lastPaymentStatus ?? null,
+        last_payment_amount:
+          data?.last_payment_amount ?? data?.lastPaymentAmount ?? null,
+        last_payment_currency:
+          data?.last_payment_currency ?? data?.lastPaymentCurrency ?? null,
+        last_payment_status:
+          data?.last_payment_status ?? data?.lastPaymentStatus ?? null,
       };
+
+      console.log("✅ Dados normalizados:", normalized);
+      console.log(
+        "🔍 Status final - subscribed:",
+        normalized.subscribed,
+        "tier:",
+        normalized.subscription_tier
+      );
 
       setSubscriptionData(normalized);
     } catch (error) {
-      console.error('Error in checkSubscription:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao verificar assinatura.",
-        variant: "destructive",
-      });
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro inesperado";
+      console.error("Erro na verificação de assinatura:", error);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, getAuthHeaders, setLoading, setError, setSubscriptionData]);
 
-  const createCheckout = async () => {
+  // Criar checkout
+  const createCheckout = useCallback(async () => {
+    console.log("🛒 createCheckout chamado");
+
     if (!user) {
+      console.log("❌ Usuário não logado");
       toast({
         title: "Erro",
         description: "Você precisa estar logado para assinar.",
@@ -162,163 +233,126 @@ export const useSubscription = () => {
       return;
     }
 
-    try {
-        const headers = await getAuthHeaders();
-        const { data, error } = await supabase.functions.invoke('check-mercadopago-subscription', { headers });
-
-      if (error) {
-        console.error('Error checking subscription:', error);
-        toast({
-          title: "Erro ao verificar assinatura",
-          description: "N\u00e3o foi poss\u00edvel verificar o status da assinatura.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Normalizar payload recebido do backend (MercadoPago + supabase function)
-      // O backend pode retornar `subscription_end` em vez de `current_period_end`,
-      // e campos de payment_method podem vir separados (payment_method_type, etc.).
-      const normalized: SubscriptionData = {
-        subscribed: data?.subscribed ?? false,
-        subscription_tier: data?.subscription_tier ?? data?.subscriptionTier ?? null,
-        subscription_end: data?.subscription_end ?? data?.subscriptionEnd ?? null,
-        subscription_start: data?.subscription_start ?? data?.subscriptionStart ?? null,
-        // Mapear current_period_end para o campo usado pela UI
-        current_period_start: data?.current_period_start ?? data?.current_periodStart ?? null,
-        current_period_end: data?.current_period_end ?? data?.currentPeriodEnd ?? data?.subscription_end ?? data?.subscriptionEnd ?? null,
-        amount: data?.amount ?? null,
-        currency: data?.currency ?? null,
-        status: data?.status ?? null,
-        cancel_at_period_end: data?.cancel_at_period_end ?? data?.cancelAtPeriodEnd ?? null,
-        trial_end: data?.trial_end ?? data?.trialEnd ?? data?.trial_end ?? null,
-        // Reconstruir payment_method se necessário
-        payment_method: data?.payment_method ?? (data?.payment_method_type ? {
-          type: data.payment_method_type,
-          last4: data.payment_method_last4 ?? data.payment_method_last_four ?? undefined,
-          brand: data.payment_method_brand ?? undefined,
-          exp_month: data.payment_method_exp_month ?? undefined,
-          exp_year: data.payment_method_exp_year ?? undefined,
-        } : null),
-        discount: data?.discount ?? null,
-      };
-
-      // Incluir dados do \"ultimo pagamento\" padronizados (usados como fallback)
-      // Campos mantidos com nomes originais para compatibilidade com o front-end
-      (normalized as any).last_payment_amount = data?.last_payment_amount ?? data?.lastPaymentAmount ?? null;
-      (normalized as any).last_payment_currency = data?.last_payment_currency ?? data?.lastPaymentCurrency ?? null;
-      (normalized as any).last_payment_status = data?.last_payment_status ?? data?.lastPaymentStatus ?? null;
-
-  setSubscriptionData(normalized);
-  if (data?.url) window.open(data.url, '_blank');
-    } catch (error) {
-      console.error('Error in createCheckout:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao criar checkout.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const openCustomerPortal = async () => {
-    if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para gerenciar assinatura.",
-        variant: "destructive",
-      });
-      return;
-    }
+    console.log("✅ Usuário logado:", user.email);
 
     try {
-      // For MercadoPago, we handle cancellation directly
-      const shouldCancel = confirm('Deseja cancelar sua assinatura? Esta ação não pode ser desfeita.');
-      if (!shouldCancel) return;
+      setLoading(true);
+      console.log("🔄 Definindo loading como true");
 
-        const headers = await getAuthHeaders();
-        const { data, error } = await supabase.functions.invoke('manage-mercadopago-subscription', {
-          body: { action: 'cancel' },
-          headers,
-        });
-      
-      if (error) {
-        console.error('Error canceling subscription:', error);
-        toast({
-          title: "Erro ao cancelar assinatura",
-          description: "Não foi possível cancelar a assinatura.",
-          variant: "destructive",
-        });
-        return;
+      const headers = await getAuthHeaders();
+      console.log("🔑 Headers obtidos:", !!headers.Authorization);
+
+      if (!headers.Authorization) {
+        throw new Error("Sessão expirada. Faça login novamente.");
       }
 
-      if (data.success) {
+      console.log("🚀 Chamando Edge Function simple-checkout (TOKEN VÁLIDO!)");
+      console.log("📝 Body sendo enviado:", { planId: "monthly" });
+
+      const { data, error } = await supabase.functions.invoke(
+        "simple-checkout",
+        {
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: { planId: "monthly" },
+        }
+      );
+
+      console.log("📊 Resposta da Edge Function:");
+      console.log("  - Data:", data);
+      console.log("  - Error:", error);
+
+      if (error) {
+        console.error("❌ Erro na Edge Function:", error);
+        throw new Error(
+          `Erro ao criar checkout: ${error.message || JSON.stringify(error)}`
+        );
+      }
+
+      if (!data) {
+        console.error("❌ Resposta vazia do servidor");
+        throw new Error("Resposta vazia do servidor de checkout");
+      }
+
+      console.log("🔍 Validando dados retornados:", data);
+
+      if (
+        data?.url &&
+        typeof data.url === "string" &&
+        data.url.startsWith("http")
+      ) {
+        console.log("✅ URL válida encontrada:", data.url);
+        console.log("🌐 Tentando abrir janela...");
+
+        const newWindow = window.open(
+          data.url,
+          "_blank",
+          "noopener,noreferrer"
+        );
+        console.log("🪟 Janela criada:", !!newWindow);
+
+        if (!newWindow) {
+          console.error("❌ Popup bloqueado");
+          toast({
+            title: "Popup bloqueado",
+            description: "Permita popups para este site e tente novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("✅ Checkout aberto com sucesso!");
         toast({
-          title: "Assinatura cancelada",
-          description: data.message || "Sua assinatura foi cancelada com sucesso.",
+          title: "Checkout criado",
+          description:
+            "Você foi redirecionado para o pagamento em uma nova aba.",
         });
-        // Refresh subscription status
-        await checkSubscription();
+      } else {
+        console.error("❌ URL inválida ou ausente:", data);
+        throw new Error("URL de checkout inválida retornada pelo servidor");
       }
     } catch (error) {
-      console.error('Error in openCustomerPortal:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao gerenciar assinatura.",
-        variant: "destructive",
-      });
-    }
-  };
+      let errorMessage = "Erro inesperado ao criar checkout";
 
-  const getPaymentHistory = async () => {
-    if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para acessar o histórico.",
-        variant: "destructive",
-      });
-      return [];
-    }
-
-    try {
-        const headers = await getAuthHeaders();
-        const { data, error } = await supabase.functions.invoke('mercadopago-payment-history', { headers });
-      
-      if (error) {
-        console.error('Error fetching payment history:', error);
-        toast({
-          title: "Erro ao buscar histórico",
-          description: "Não foi possível buscar o histórico de pagamentos.",
-          variant: "destructive",
-        });
-        return [];
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "object" && error !== null) {
+        errorMessage = JSON.stringify(error);
       }
 
-      return data.payments || [];
-    } catch (error) {
-      console.error('Error in getPaymentHistory:', error);
+      console.error("❌ Erro completo:", error);
+
       toast({
-        title: "Erro",
-        description: "Erro inesperado ao buscar histórico.",
+        title: "Erro ao criar checkout",
+        description: errorMessage,
         variant: "destructive",
       });
-      return [];
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user, getAuthHeaders, setLoading, toast]);
 
+  // Forçar refresh da assinatura
+  const forceRefreshSubscription = useCallback(async () => {
+    console.log("🔄 FORÇANDO REFRESH COMPLETO DA ASSINATURA");
+    await checkSubscription();
+  }, [checkSubscription]);
+
+  // useEffect para verificar assinatura quando sessão muda
   useEffect(() => {
-    // Wait for a valid session to be present to ensure access_token is available
     if (session) {
       checkSubscription();
     }
-  }, [session]);
+  }, [session, checkSubscription]);
 
   return {
-    subscriptionData,
-    loading,
+    subscriptionData: state.data,
+    loading: state.loading,
+    error: state.error,
     checkSubscription,
     createCheckout,
-    openCustomerPortal,
-    getPaymentHistory,
+    forceRefreshSubscription,
   };
 };

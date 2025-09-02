@@ -24,6 +24,7 @@ import { useManutencoesPendentes } from "@/hooks/useManutencoesPendentes";
 import { useProfile } from "@/hooks/useProfile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
+import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { useToast } from "@/hooks/use-toast";
 
 // Função para formatar a data corretamente
@@ -105,21 +106,22 @@ const Dashboard = () => {
   const { profile } = useProfile();
   const { subscriptionData, checkSubscription } = useSubscription();
 
-  // Handle Stripe checkout success/cancel
+  // Handle checkout success/cancel (generic)
   useEffect(() => {
-    const success = searchParams.get('success');
-    const canceled = searchParams.get('canceled');
-    
-    if (success === 'true') {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+
+    if (success === "true") {
       toast({
         title: "Pagamento realizado com sucesso!",
-        description: "Sua assinatura foi ativada. Aguarde alguns segundos para atualização.",
+        description:
+          "Sua assinatura foi ativada. Aguarde alguns segundos para atualização.",
       });
       // Refresh subscription status after successful payment
       setTimeout(() => {
         checkSubscription();
       }, 3000);
-    } else if (canceled === 'true') {
+    } else if (canceled === "true") {
       toast({
         title: "Pagamento cancelado",
         description: "O processo de assinatura foi cancelado.",
@@ -176,9 +178,11 @@ const Dashboard = () => {
       totalReceitas > 0 ? (totalDespesas / totalReceitas) * 100 : 0;
 
     return {
-      transacoesFiltradas: transacoesFiltradas.sort((a, b) =>
-        b.data.localeCompare(a.data)
-      ),
+      transacoesFiltradas: transacoesFiltradas.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.data);
+        const dateB = new Date(b.created_at || b.data);
+        return dateB.getTime() - dateA.getTime();
+      }),
       totalReceitas,
       totalDespesas,
       saldoPeriodo,
@@ -251,6 +255,8 @@ const Dashboard = () => {
     .slice(0, 5)
     .map((transacao) => ({
       id: transacao.id,
+      user_id: transacao.user_id,
+      created_by_shared_user_id: transacao.created_by_shared_user_id,
       description: transacao.descricao,
       date: formatarData(transacao.data),
       category: transacao.categorias?.nome || "Sem categoria",
@@ -498,9 +504,18 @@ const Dashboard = () => {
                       <p className="text-sm md:text-base font-medium text-gray-900 dark:text-gray-200">
                         {transaction.description}
                       </p>
-                      <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                        {transaction.date}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                          {transaction.date}
+                        </p>
+                        <CreatedByBadge
+                          userId={transaction.user_id}
+                          createdBySharedUserId={
+                            transaction.created_by_shared_user_id
+                          }
+                          className="text-xs"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end space-x-3 md:space-x-4">

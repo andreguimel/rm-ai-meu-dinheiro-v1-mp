@@ -42,7 +42,7 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Search for payments associated with this user
+    // Search for payments associated with this user - with security validation
     const paymentsResponse = await fetch(
       `https://api.mercadopago.com/v1/payments/search?external_reference=${user.id}&sort=date_created&criteria=desc&range=date_created&begin_date=NOW-1YEAR&end_date=NOW`,
       {
@@ -64,7 +64,20 @@ serve(async (req) => {
     const paymentsData = await paymentsResponse.json();
     const payments = paymentsData.results || [];
 
-    const formattedPayments = payments.map((payment: any) => ({
+    // CRITICAL: Filter payments to ensure they belong to current user only
+    const userPayments = payments.filter((payment: any) => {
+      const belongsToUser = payment.external_reference === user.id;
+      if (!belongsToUser) {
+        logStep("SECURITY WARNING: Payment does not belong to current user", { 
+          payment_id: payment.id,
+          payment_external_ref: payment.external_reference, 
+          user_id: user.id 
+        });
+      }
+      return belongsToUser;
+    });
+
+    const formattedPayments = userPayments.map((payment: any) => ({
       id: payment.id,
       amount: payment.transaction_amount * 100, // Convert to cents for compatibility
       currency: payment.currency_id.toLowerCase(),
@@ -81,7 +94,7 @@ serve(async (req) => {
       },
     }));
 
-    logStep("Payment history retrieved", { count: formattedPayments.length });
+    logStep("Payment history retrieved and validated", { count: formattedPayments.length, userId: user.id });
 
     return new Response(JSON.stringify({ payments: formattedPayments }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

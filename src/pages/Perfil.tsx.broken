@@ -1,0 +1,637 @@
+import { useState, useRef, useEffect } from "react";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Camera,
+  Lock,
+  Trash2,
+  Users,
+  UserPlus,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useSharedUsers } from "@/hooks/useSharedUsers";
+import {
+  applyPhoneMask,
+  cleanPhone,
+  formatPhoneBrazil,
+} from "@/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
+import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
+import { DeleteAccountModal } from "@/components/auth/DeleteAccountModal";
+import { SharedUsersModal } from "@/components/SharedUsersModal";
+import { SubscriptionManagement } from "@/components/SubscriptionManagement";
+
+const Perfil = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { profile, loading, updateProfile, uploadAvatar } = useProfile();
+  const { subscriptionData } = useSubscription();
+    subscriptionData?.subscription_tier
+  );
+  console.log(
+    "🔍 DEBUG Perfil - trial_days_remaining:",
+    subscriptionData?.trial_days_remaining
+  );
+  console.log("🔍 DEBUG Perfil - trial_end:", subscriptionData?.trial_end);
+  console.log("🔍 DEBUG Perfil - subscribed:", subscriptionData?.subscribed);
+
+  const { sharedUsers, canManageSharedUsers, isAccountOwner } =
+    useSharedUsers();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [sharedUsersModalOpen, setSharedUsersModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    telefone: "",
+    endereco: "",
+    avatar: "",
+  });
+
+  // Carregar dados do perfil quando disponível
+  useEffect(() => {
+    if (profile && user) {
+      setFormData({
+        name: profile.name || "",
+        email: user.email || "",
+        telefone: formatPhoneBrazil(profile.telefone || ""),
+        endereco: profile.endereco || "",
+        avatar: profile.avatar_url || "",
+      });
+    }
+  }, [profile, user]);
+
+  const handleInputChange = (field: string, value: string) => {
+    if (field === "telefone") {
+      // Aplica máscara de telefone brasileiro
+      const maskedValue = applyPhoneMask(value);
+      setFormData((prev) => ({
+        ...prev,
+        [field]: maskedValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verificar se é uma imagem
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar tamanho do arquivo (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fazer upload real para Supabase Storage
+      const avatarUrl = await uploadAvatar(file);
+
+      if (avatarUrl) {
+        // Atualizar o estado local para mostrar a nova imagem
+        setFormData((prev) => ({
+          ...prev,
+          avatar: avatarUrl,
+        }));
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    if (!profile) return;
+
+    const success = await updateProfile({
+      name: formData.name,
+      telefone: cleanPhone(formData.telefone),
+      endereco: formData.endereco,
+      avatar_url: formData.avatar,
+    });
+
+    if (success) {
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Resetar para dados originais
+    if (profile && user) {
+      setFormData({
+        name: profile.name || "",
+        email: user.email || "",
+        telefone: formatPhoneBrazil(profile.telefone || ""),
+        endereco: profile.endereco || "",
+        avatar: profile.avatar_url || "",
+      });
+    }
+  };
+
+  // Função para obter as iniciais do nome
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Formatação de data de registro
+  const formatRegistrationDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("pt-BR", {
+      year: "numeric",
+      month: "long",
+    });
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+            <p className="mt-4 text-muted-foreground dark:text-gray-400">
+              Carregando perfil...
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center space-x-3">
+              <h2 className="text-3xl font-bold tracking-tight dark:text-gray-200">
+                Perfil
+              </h2>
+            </div>
+            <p className="text-muted-foreground dark:text-gray-400">
+              Gerencie suas informações pessoais
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Avatar e informações básicas */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center">
+                <div className="relative">
+                  <Avatar
+                    className="w-24 h-24 cursor-pointer"
+                    onClick={handleAvatarClick}
+                  >
+                    <AvatarImage src={formData.avatar} />
+                    <AvatarFallback>
+                      {getInitials(formData.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="absolute -bottom-2 -right-2 rounded-full w-8 h-8"
+                    onClick={handleAvatarClick}
+                  >
+                    <Camera className="w-4 h-4" />
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+              <CardTitle className="mt-4 dark:text-gray-200">
+                {formData.name}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">{formData.email}</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center space-x-2 text-sm">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span>
+                  Membro desde{" "}
+                  {profile ? formatRegistrationDate(profile.created_at) : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <span>{formData.endereco}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Status do Trial */}
+          {subscriptionData && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clock className="w-5 h-5 mr-2 text-orange-500" />
+                  Status da Assinatura
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {subscriptionData?.subscribed ? (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-800">
+                          ✅ Assinatura Ativa
+                        </h3>
+                        <p className="text-green-700 mt-1">
+                          Plano: {subscriptionData.subscription_tier || "Premium"}
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={createCheckout}
+                          disabled={loading}
+                          className="border-green-300 text-green-700 hover:bg-green-50"
+                        >
+                          Gerenciar Assinatura
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-800">
+                          📋 Sem Assinatura
+                        </h3>
+                        <p className="text-blue-700 mt-1">
+                          Assine para ter acesso completo à plataforma
+                        </p>
+                      </div>
+                      <Button
+                        onClick={createCheckout}
+                        disabled={loading}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {loading ? "Carregando..." : "Assinar Agora"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                            ? "dia restante"
+                            : "dias restantes"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : subscriptionData?.subscription_tier === "Trial" &&
+                  subscriptionData?.trial_days_remaining <= 0 ? (
+                  <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-red-800 flex items-center">
+                          <AlertTriangle className="w-5 h-5 mr-2" />
+                          Teste Expirado
+                        </h3>
+                        <p className="text-red-700 mt-1">
+                          Seu período de teste de 7 dias terminou
+                        </p>
+                        {subscriptionData?.trial_end && (
+                          <p className="text-sm text-red-600 mt-2">
+                            Expirou em{" "}
+                            {new Date(
+                              subscriptionData.trial_end
+                            ).toLocaleDateString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-red-600">0</div>
+                        <div className="text-sm text-red-600">
+                          dias restantes
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : subscriptionData?.subscription_tier === "Premium" ? (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-800">
+                          ✅ Assinatura Premium Ativa
+                        </h3>
+                        <p className="text-green-700 mt-1">
+                          Acesso completo a todos os recursos
+                        </p>
+                        {subscriptionData?.subscription_end && (
+                          <p className="text-sm text-green-600 mt-2">
+                            Próxima cobrança:{" "}
+                            {new Date(
+                              subscriptionData.subscription_end
+                            ).toLocaleDateString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-green-600">
+                          ✨
+                        </div>
+                        <div className="text-sm text-green-600">Premium</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : subscriptionData?.trial_end && trialDaysLeft > 0 ? (
+                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-orange-800">
+                          🎁 Teste Gratuito Ativo
+                        </h3>
+                        <p className="text-orange-700 mt-1">
+                          {formatDaysRemaining(trialDaysLeft, true)}
+                        </p>
+                        <p className="text-sm text-orange-600 mt-2">
+                          Seu teste termina em{" "}
+                          {new Date(
+                            subscriptionData.trial_end
+                          ).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-orange-600">
+                          {trialDaysLeft}
+                        </div>
+                        <div className="text-sm text-orange-600">
+                          {trialDaysLeft === 1
+                            ? "dia restante"
+                            : "dias restantes"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : subscriptionData?.trial_end && trialDaysLeft <= 0 ? (
+                  <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-red-800 flex items-center">
+                          <AlertTriangle className="w-5 h-5 mr-2" />
+                          Teste Expirado
+                        </h3>
+                        <p className="text-red-700 mt-1">
+                          Seu período de teste terminou
+                        </p>
+                        <p className="text-sm text-red-600 mt-2">
+                          Expirou em{" "}
+                          {new Date(
+                            subscriptionData.trial_end
+                          ).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-red-600">0</div>
+                        <div className="text-sm text-red-600">
+                          dias restantes
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : subscriptionData?.subscription_tier === "Premium" ? (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-800">
+                          ✅ Assinatura Premium Ativa
+                        </h3>
+                        <p className="text-green-700 mt-1">
+                          Acesso completo a todos os recursos
+                        </p>
+                        {subscriptionData?.subscription_end && (
+                          <p className="text-sm text-green-600 mt-2">
+                            Próxima cobrança:{" "}
+                            {new Date(
+                              subscriptionData.subscription_end
+                            ).toLocaleDateString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-green-600">
+                          ♾️
+                        </div>
+                        <div className="text-sm text-green-600">Premium</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-800">
+                          ℹ️ Configurando Assinatura
+                        </h3>
+                        <p className="text-blue-700 mt-1">
+                          Finalizando configuração da sua conta
+                        </p>
+                        <p className="text-sm text-blue-600 mt-2">
+                          Seu trial será ativado em breve
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          ⏳
+                        </div>
+                        <div className="text-sm text-blue-600">Aguardando</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Configurações de segurança */}
+          <Card
+            className={
+              subscriptionData?.trial_end ? "lg:col-span-3" : "lg:col-span-2"
+            }
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Lock className="w-5 h-5 mr-2 text-orange-500" />
+                Segurança
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Shared Users Section */}
+              <Button
+                variant="outline"
+                className="w-full justify-start h-12"
+                onClick={() => setSharedUsersModalOpen(true)}
+              >
+                <Users className="w-4 h-4 mr-3" />
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Usuários Compartilhados</span>
+                  <span className="text-xs text-muted-foreground">
+                    {isAccountOwner()
+                      ? `Gerencie o acesso à sua conta (${sharedUsers.length}/3)`
+                      : "Você está usando uma conta compartilhada"}
+                  </span>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start h-12"
+                onClick={() => setShowChangePasswordModal(true)}
+              >
+                <Lock className="w-4 h-4 mr-3" />
+                Alterar Senha
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start h-12 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => setShowDeleteAccountModal(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-3" />
+                Excluir Conta
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Informações Pessoais */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center">
+              <User className="w-5 h-5 mr-2 text-orange-500" />
+              Informações Pessoais
+            </CardTitle>
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)} variant="outline">
+                Editar
+              </Button>
+            ) : (
+              <div className="flex space-x-2">
+                <Button
+                  onClick={handleSave}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Salvar
+                </Button>
+                <Button onClick={handleCancel} variant="outline">
+                  Cancelar
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  disabled={!isEditing}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  disabled={!isEditing}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input
+                  id="telefone"
+                  value={formData.telefone}
+                  onChange={(e) =>
+                    handleInputChange("telefone", e.target.value)
+                  }
+                  placeholder="(11) 9 9999-9999"
+                  maxLength={16}
+                  disabled={!isEditing}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) =>
+                    handleInputChange("endereco", e.target.value)
+                  }
+                  disabled={!isEditing}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modais */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+      />
+
+      <DeleteAccountModal
+        isOpen={showDeleteAccountModal}
+        onClose={() => setShowDeleteAccountModal(false)}
+      />
+
+      <SharedUsersModal
+        isOpen={sharedUsersModalOpen}
+        onClose={() => setSharedUsersModalOpen(false)}
+      />
+    </DashboardLayout>
+  );
+};
+
+export default Perfil;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +22,10 @@ import {
 } from "lucide-react";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useTransacoes } from "@/hooks/useTransacoes";
+import { useAuth } from "@/hooks/useAuth";
+import { useSharedUsers } from "@/hooks/useSharedUsers";
+import { useProfile } from "@/hooks/useProfile";
+import { CreatedByBadge } from "@/components/CreatedByBadge";
 
 interface Transacao {
   id: string;
@@ -33,12 +37,16 @@ interface Transacao {
 }
 
 const Transacoes = () => {
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { sharedUsers } = useSharedUsers();
   const { categoriasReceita, categoriasDespesa } = useCategorias();
   const { transacoes } = useTransacoes();
 
   const [filtro, setFiltro] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
+  const [usuarioFiltro, setUsuarioFiltro] = useState("");
 
   const transacoesFiltradas = transacoes
     .filter((transacao) => {
@@ -49,7 +57,16 @@ const Transacoes = () => {
       const matchCategoria =
         categoriaFiltro === "" ||
         transacao.categorias?.nome === categoriaFiltro;
-      return matchDescricao && matchTipo && matchCategoria;
+
+      // Filtro de usuário: agora usando created_by_shared_user_id quando disponível
+      const matchUsuario =
+        usuarioFiltro === "" ||
+        (usuarioFiltro === user?.id &&
+          transacao.user_id === user?.id &&
+          !transacao.created_by_shared_user_id) ||
+        transacao.created_by_shared_user_id === usuarioFiltro;
+
+      return matchDescricao && matchTipo && matchCategoria && matchUsuario;
     })
     .sort(
       (a, b) =>
@@ -65,14 +82,45 @@ const Transacoes = () => {
     .reduce((total, transacao) => total + transacao.valor, 0);
   const saldoTotal = totalReceitas - totalDespesas;
 
-  const categorias = [
-    ...new Set(transacoes.map((t) => t.categorias?.nome).filter(Boolean)),
-  ];
+  const categorias = Array.from(
+    new Set(
+      transacoes.map((transacao) => transacao.categorias?.nome).filter(Boolean)
+    )
+  ).sort();
 
+  // Obter lista de usuários únicos das transações
+  const usuariosUnicos = useMemo(() => {
+    const users = [];
+
+    // Adicionar o usuário atual
+    if (user && profile) {
+      users.push({
+        id: user.id,
+        nome: profile.name,
+        email: user.email,
+        tipo: "atual",
+      });
+    }
+
+    // Adicionar usuários compartilhados como opção de filtro
+    if (sharedUsers) {
+      sharedUsers.forEach((sharedUser) => {
+        users.push({
+          id: sharedUser.id,
+          nome: sharedUser.name,
+          email: sharedUser.whatsapp,
+          tipo: "compartilhado",
+        });
+      });
+    }
+
+    return users;
+  }, [user, profile, sharedUsers]);
   const limparFiltros = () => {
     setFiltro("");
     setTipoFiltro("");
     setCategoriaFiltro("");
+    setUsuarioFiltro("");
   };
 
   return (
@@ -216,6 +264,20 @@ const Transacoes = () => {
                   </option>
                 ))}
               </select>
+              <select
+                id="usuario-filtro"
+                title="Filtrar por usuário"
+                value={usuarioFiltro}
+                onChange={(e) => setUsuarioFiltro(e.target.value)}
+                className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Todos os usuários</option>
+                {usuariosUnicos.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.nome || user.email}
+                  </option>
+                ))}
+              </select>
               <Button
                 variant="outline"
                 onClick={limparFiltros}
@@ -238,6 +300,7 @@ const Transacoes = () => {
                   <TableHead>Categoria</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Data</TableHead>
+                  <TableHead>Criado por</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                 </TableRow>
               </TableHeader>
@@ -265,6 +328,14 @@ const Transacoes = () => {
                       {new Date(
                         transacao.data + "T00:00:00"
                       ).toLocaleDateString("pt-BR")}
+                    </TableCell>
+                    <TableCell>
+                      <CreatedByBadge
+                        userId={transacao.user_id}
+                        createdBySharedUserId={
+                          transacao.created_by_shared_user_id
+                        }
+                      />
                     </TableCell>
                     <TableCell
                       className={`text-right font-bold ${

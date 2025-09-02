@@ -1,183 +1,246 @@
 import { useState, useEffect } from "react";
-import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import type { User, Session, AuthError } from "@supabase/supabase-js";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Check subscription status when user logs in
-      if (session?.user && event === 'SIGNED_IN') {
-        setTimeout(async () => {
-          try {
-            const token = session.access_token;
-            if (token) {
-              await supabase.functions.invoke('check-mercadopago-subscription', { headers: { Authorization: `Bearer ${token}` } });
-            } else {
-              await supabase.functions.invoke('check-mercadopago-subscription').catch(console.error);
-            }
-          } catch (err) {
-            console.error(err);
-          }
-        }, 1000);
-      }
-    });
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Check subscription status for existing session
-      if (session?.user) {
-        setTimeout(async () => {
-          try {
-            const token = session.access_token;
-            if (token) {
-              await supabase.functions.invoke('check-mercadopago-subscription', { headers: { Authorization: `Bearer ${token}` } });
-            } else {
-              await supabase.functions.invoke('check-mercadopago-subscription').catch(console.error);
-            }
-          } catch (err) {
-            console.error(err);
-          }
-        }, 1000);
-      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (
-    email: string,
-    password: string,
-    name: string,
-    organizationName: string,
-    telefone: string
-  ) => {
-    const redirectUrl = `${window.location.origin}/login`;
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name,
-          organization_name: organizationName,
-          telefone,
-        },
-      },
-    });
-
-    if (error) {
-      toast({
-        title: "Erro no cadastro",
-        description: error.message,
-        variant: "destructive",
-      });
-      return { error };
-    }
-
-    toast({
-      title: "Cadastro realizado com sucesso!",
-      description: "Verifique seu email para confirmar a conta.",
-    });
-
-    // Redirect to login page after successful signup
+  const signIn = async (email: string, password: string) => {
     try {
-      window.location.href = '/login';
-    } catch (err) {
-      // fallback: do nothing, caller can handle navigation
-    }
+      console.log("🔐 useAuth.signIn - Iniciando login para:", email);
 
-    return { error: null };
+      // Validação prévia
+      if (!email || !password) {
+        const error = new Error("Email e senha são obrigatórios") as AuthError;
+        console.error("❌ useAuth.signIn - Validação falhou:", error.message);
+        return { data: null, error };
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        console.error("❌ useAuth.signIn - Erro do Supabase:", {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+        });
+      } else {
+        console.log("✅ useAuth.signIn - Login bem-sucedido:", {
+          userId: data.user?.id,
+          email: data.user?.email,
+        });
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error("❌ useAuth.signIn - Erro inesperado:", error);
+      return { data: null, error: error as AuthError };
+    }
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      console.log("📝 useAuth.signUp - Iniciando registro para:", email);
+      console.log("📝 useAuth.signUp - Metadata:", metadata);
 
-    if (error) {
-      toast({
-        title: "Erro no login",
-        description: error.message,
-        variant: "destructive",
+      // Validação prévia
+      if (!email || !password) {
+        const error = new Error("Email e senha são obrigatórios") as AuthError;
+        console.error("❌ useAuth.signUp - Validação falhou:", error.message);
+        return { data: null, error };
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: metadata || {},
+        },
       });
-      return { error };
+
+      if (error) {
+        console.error("❌ useAuth.signUp - Erro do Supabase:", {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+        });
+      } else if (data?.user) {
+        console.log("✅ useAuth.signUp - Registro bem-sucedido:", {
+          userId: data.user?.id,
+          email: data.user?.email,
+          needsConfirmation: !data.session,
+        });
+
+        // Se o usuário foi criado com sucesso, criar perfil e subscriber
+        if (data.user && data.session) {
+          // Usuário logado automaticamente (sem confirmação de email)
+          try {
+            console.log("🔄 Criando perfil do usuário automaticamente...");
+            const { data: onboardingResult, error: onboardingError } =
+              await supabase.rpc("create_user_profile_simple", {
+                user_id: data.user.id,
+                user_email: data.user.email,
+                user_name: metadata?.name || "Usuário",
+                organization_name:
+                  metadata?.organization_name || "Minha Empresa",
+                telefone: metadata?.telefone || "",
+              });
+
+            if (onboardingError) {
+              console.error("❌ Erro no onboarding:", onboardingError);
+            } else {
+              console.log("✅ Onboarding concluído:", onboardingResult);
+            }
+          } catch (onboardingErr) {
+            console.error("❌ Erro inesperado no onboarding:", onboardingErr);
+          }
+        }
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error("❌ useAuth.signUp - Erro inesperado:", error);
+      return { data: null, error: error as AuthError };
     }
-
-    toast({
-      title: "Login realizado com sucesso!",
-      description: "Bem-vindo de volta!",
-    });
-
-    return { error: null };
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast({
-        title: "Erro ao sair",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Logout realizado",
-        description: "Até logo!",
-      });
+    try {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      console.error("Error signing out:", error);
+      return { error: error as AuthError };
     }
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/login?type=recovery`;
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
-
-    if (error) {
-      toast({
-        title: "Erro ao enviar email",
-        description: error.message,
-        variant: "destructive",
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      return { error };
+      return { data, error };
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      return { data: null, error: error as AuthError };
     }
+  };
 
-    toast({
-      title: "Email enviado!",
-      description: "Verifique sua caixa de entrada para redefinir sua senha.",
-    });
+  const updatePassword = async (password: string) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error("Error updating password:", error);
+      return { data: null, error: error as AuthError };
+    }
+  };
 
-    return { error: null };
+  const ensureUserProfile = async () => {
+    try {
+      if (!user) {
+        console.log("⚠️ Usuário não logado, não é possível criar perfil");
+        return { success: false, message: "Usuário não logado" };
+      }
+
+      console.log("🔄 Verificando/criando perfil para:", user.email);
+
+      // Verificar se já existe perfil
+      const { data: existingProfile, error: checkError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (checkError && checkError.code !== "PGRST116") {
+        console.error("❌ Erro ao verificar perfil existente:", checkError);
+        return { success: false, message: checkError.message };
+      }
+
+      if (existingProfile) {
+        console.log("✅ Perfil já existe");
+        return { success: true, data: existingProfile };
+      }
+
+      // Criar novo perfil
+      console.log("🔄 Criando novo perfil...");
+      const { data: newProfile, error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          user_id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || "Usuário",
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("❌ Erro ao inserir perfil:", insertError);
+
+        // Tentar uma inserção mais básica
+        console.log("🔄 Tentando inserção básica...");
+        const { data: basicProfile, error: basicError } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: user.id,
+            email: user.email,
+          })
+          .select()
+          .single();
+
+        if (basicError) {
+          console.error("❌ Erro na inserção básica:", basicError);
+          return { success: false, message: basicError.message };
+        }
+
+        console.log("✅ Perfil básico criado:", basicProfile);
+        return { success: true, data: basicProfile };
+      }
+
+      console.log("✅ Perfil criado com sucesso:", newProfile);
+      return { success: true, data: newProfile };
+    } catch (error) {
+      console.error("❌ Erro inesperado ao criar perfil:", error);
+      return { success: false, message: "Erro inesperado" };
+    }
   };
 
   return {
     user,
     session,
     loading,
-    signUp,
     signIn,
+    signUp,
     signOut,
     resetPassword,
+    updatePassword,
+    ensureUserProfile,
   };
 };

@@ -1,36 +1,44 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
+export const ChangePasswordModal = ({
+  isOpen,
+  onClose,
+}: ChangePasswordModalProps) => {
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { updatePassword } = useAuth();
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.newPassword !== formData.confirmPassword) {
       toast({
         title: "Erro",
@@ -52,32 +60,31 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
     setIsLoading(true);
 
     try {
-      // Alterar senha usando Supabase Auth
-      const { error } = await supabase.auth.updateUser({
-        password: formData.newPassword
-      });
+      // Alterar senha usando o hook useAuth
+      const { error } = await updatePassword(formData.newPassword);
 
       if (error) {
         console.error("Erro ao alterar senha:", error);
         toast({
           title: "Erro",
-          description: error.message || "Erro ao alterar senha. Tente novamente.",
+          description:
+            error.message || "Erro ao alterar senha. Tente novamente.",
           variant: "destructive",
         });
         return;
       }
-      
+
       toast({
         title: "Senha alterada",
         description: "Sua senha foi alterada com sucesso!",
       });
-      
+
       setFormData({
         currentPassword: "",
         newPassword: "",
-        confirmPassword: ""
+        confirmPassword: "",
       });
-      
+
       onClose();
     } catch (error) {
       console.error("Erro inesperado:", error);
@@ -97,7 +104,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
         <DialogHeader>
           <DialogTitle>Alterar Senha</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Senha Atual</Label>
@@ -105,39 +112,39 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
               id="currentPassword"
               type="password"
               value={formData.currentPassword}
-              onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("currentPassword", e.target.value)
+              }
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="newPassword">Nova Senha</Label>
             <Input
               id="newPassword"
               type="password"
               value={formData.newPassword}
-              onChange={(e) => handleInputChange('newPassword', e.target.value)}
+              onChange={(e) => handleInputChange("newPassword", e.target.value)}
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
             <Input
               id="confirmPassword"
               type="password"
               value={formData.confirmPassword}
-              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("confirmPassword", e.target.value)
+              }
               required
             />
           </div>
-          
+
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-            >
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
             <Button

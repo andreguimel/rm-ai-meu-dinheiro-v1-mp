@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,8 +37,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useReceitas } from "@/hooks/useReceitas";
+import { useAuth } from "@/hooks/useAuth";
+import { useSharedUsers } from "@/hooks/useSharedUsers";
+import { useProfile } from "@/hooks/useProfile";
 import { EditarReceitaModal } from "@/components/EditarReceitaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
+import { CreatedByBadge } from "@/components/CreatedByBadge";
+import { SharedUserSelector } from "@/components/SharedUserSelector";
 
 interface Receita {
   id: string;
@@ -51,6 +56,9 @@ interface Receita {
 
 const Receitas = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { sharedUsers } = useSharedUsers();
   const { categoriasReceita } = useCategorias();
   const { receitas, createReceita, updateReceita, deleteReceita } =
     useReceitas();
@@ -62,10 +70,12 @@ const Receitas = () => {
     categoria: "",
     data: "",
     tipo: "variavel" as "fixa" | "variavel",
+    created_by_shared_user_id: "", // ID do usuário compartilhado que está criando
   });
 
   const [filtro, setFiltro] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
+  const [usuarioFiltro, setUsuarioFiltro] = useState("");
 
   // Estados para o modal de edição
   const [receitaEditando, setReceitaEditando] = useState<Receita | null>(null);
@@ -92,11 +102,22 @@ const Receitas = () => {
       (c) => c.nome === novaReceita.categoria
     );
 
+    if (!categoria) {
+      toast({
+        title: "Erro",
+        description: "Categoria não encontrada",
+        variant: "destructive",
+      });
+      return;
+    }
+
     await createReceita({
       descricao: novaReceita.descricao,
       valor: parseFloat(novaReceita.valor),
-      categoria_id: categoria?.id,
+      categoria_id: categoria.id,
       data: novaReceita.data,
+      created_by_shared_user_id:
+        novaReceita.created_by_shared_user_id || undefined,
     });
 
     setNovaReceita({
@@ -105,6 +126,7 @@ const Receitas = () => {
       categoria: "",
       data: "",
       tipo: "variavel",
+      created_by_shared_user_id: "",
     });
 
     setActiveTab("lista");
@@ -147,9 +169,22 @@ const Receitas = () => {
         .includes(filtro.toLowerCase());
       const matchCategoria =
         categoriaFiltro === "" || receita.categorias?.nome === categoriaFiltro;
-      return matchDescricao && matchCategoria;
+
+      // Filtro de usuário: agora usando created_by_shared_user_id quando disponível
+      const matchUsuario =
+        usuarioFiltro === "" ||
+        (usuarioFiltro === user?.id &&
+          receita.user_id === user?.id &&
+          !receita.created_by_shared_user_id) ||
+        receita.created_by_shared_user_id === usuarioFiltro;
+
+      return matchDescricao && matchCategoria && matchUsuario;
     })
-    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at || a.data);
+      const dateB = new Date(b.created_at || b.data);
+      return dateB.getTime() - dateA.getTime();
+    });
 
   const totalReceitas = receitas.reduce(
     (total, receita) => total + receita.valor,
@@ -157,9 +192,37 @@ const Receitas = () => {
   );
   const categorias = categoriasReceita.map((c) => c.nome);
 
+  // Obter lista de usuários únicos que criaram receitas
+  const usuariosUnicos = useMemo(() => {
+    const users = [];
+
+    // Adicionar o usuário atual
+    if (user && profile) {
+      users.push({
+        id: user.id,
+        name: profile.name || user.email?.split("@")[0] || "Você",
+        tipo: "atual",
+      });
+    }
+
+    // Adicionar usuários compartilhados como opção
+    if (sharedUsers) {
+      sharedUsers.forEach((sharedUser) => {
+        users.push({
+          id: sharedUser.id,
+          name: sharedUser.name,
+          tipo: "compartilhado",
+        });
+      });
+    }
+
+    return users;
+  }, [user, profile, sharedUsers]);
+
   const limparFiltros = () => {
     setFiltro("");
     setCategoriaFiltro("");
+    setUsuarioFiltro("");
   };
 
   return (
@@ -284,6 +347,20 @@ const Receitas = () => {
                       </option>
                     ))}
                   </select>
+                  <select
+                    id="usuario-filtro"
+                    title="Filtrar por usuário"
+                    value={usuarioFiltro}
+                    onChange={(e) => setUsuarioFiltro(e.target.value)}
+                    className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Todos os usuários</option>
+                    {usuariosUnicos.map((usuario) => (
+                      <option key={usuario.id} value={usuario.id}>
+                        {usuario.name}
+                      </option>
+                    ))}
+                  </select>
                   <Button
                     variant="outline"
                     onClick={limparFiltros}
@@ -306,6 +383,7 @@ const Receitas = () => {
                       <TableHead>Categoria</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Data</TableHead>
+                      <TableHead>Criado por</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                       <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
@@ -328,6 +406,14 @@ const Receitas = () => {
                           {new Date(
                             receita.data + "T00:00:00"
                           ).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          <CreatedByBadge
+                            userId={receita.user_id}
+                            createdBySharedUserId={
+                              receita.created_by_shared_user_id
+                            }
+                          />
                         </TableCell>
                         <TableCell className="text-right font-bold text-green-600">
                           R${" "}
@@ -424,6 +510,19 @@ const Receitas = () => {
                               receita.data + "T00:00:00"
                             ).toLocaleDateString("pt-BR")}
                           </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-gray-500 text-xs">Criado por</p>
+                          <CreatedByBadge
+                            userId={receita.user_id}
+                            createdBySharedUserId={
+                              receita.created_by_shared_user_id
+                            }
+                            className="mt-1"
+                          />
                         </div>
                       </div>
 
@@ -544,6 +643,20 @@ const Receitas = () => {
                       onChange={(e) =>
                         setNovaReceita({ ...novaReceita, data: e.target.value })
                       }
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <SharedUserSelector
+                      value={novaReceita.created_by_shared_user_id}
+                      onChange={(value) =>
+                        setNovaReceita({
+                          ...novaReceita,
+                          created_by_shared_user_id: value,
+                        })
+                      }
+                      label="Quem está registrando esta receita?"
+                      placeholder="Você (conta principal)"
                     />
                   </div>
 
