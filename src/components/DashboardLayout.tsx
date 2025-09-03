@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  MessageCircle,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -164,6 +165,16 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       });
     }
   };
+
+  const handleWhatsAppClick = () => {
+    const phoneNumber = "5587991977700"; // Número com código do país
+    const message =
+      "Olá! Gostaria de acessar o Assistente Financeiro do Meu Dinheiro.";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
@@ -305,6 +316,30 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             })}
           </div>
         </nav>
+
+        {/* WhatsApp MeuDinheiro */}
+        <div className="px-4 pb-2 flex-shrink-0">
+          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+            <Button
+              variant="ghost"
+              className={`w-full text-green-600 hover:text-green-700 hover:bg-green-100/50 ${
+                isCollapsed ? "justify-center px-0 py-2" : "justify-center py-2"
+              }`}
+              onClick={() => {
+                handleWhatsAppClick();
+                closeMobileMenu();
+              }}
+              title={isCollapsed ? "WhatsApp MeuDinheiro" : undefined}
+            >
+              <div className="flex items-center">
+                <MessageCircle className="w-5 h-5 flex-shrink-0" />
+                {!isCollapsed && (
+                  <span className="ml-2 text-sm">WhatsApp MeuDinheiro</span>
+                )}
+              </div>
+            </Button>
+          </div>
+        </div>
 
         {/* Logout */}
         <div className="p-4 border-t border-border flex-shrink-0">
