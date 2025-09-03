@@ -1,29 +1,67 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Users, Plus, Trash2, Edit, Phone, Mail, UserCheck } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Users,
+  Plus,
+  Trash2,
+  Edit,
+  Phone,
+  Mail,
+  UserCheck,
+} from "lucide-react";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { useToast } from "@/hooks/use-toast";
-import { applyPhoneMask, cleanPhone, formatPhoneBrazil } from "@/lib/utils";
+import {
+  applyPhoneMask,
+  cleanPhoneForStorage,
+  formatPhoneBrazil,
+} from "@/lib/utils";
 
 interface SharedUsersModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => {
-  const { sharedUsers, loading, addSharedUser, removeSharedUser, updateSharedUser, remainingSlots, canManageSharedUsers } = useSharedUsers();
+export const SharedUsersModal = ({
+  isOpen,
+  onClose,
+}: SharedUsersModalProps) => {
+  const {
+    sharedUsers,
+    loading,
+    addSharedUser,
+    removeSharedUser,
+    updateSharedUser,
+    remainingSlots,
+    canManageSharedUsers,
+  } = useSharedUsers();
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({
-    name: '',
-    whatsapp: ''
+    name: "",
+    whatsapp: "",
   });
 
   const handleAddUser = async () => {
@@ -38,18 +76,21 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
 
     const result = await addSharedUser({
       name: newUser.name,
-      whatsapp: cleanPhone(newUser.whatsapp) // Remove formatação antes de salvar
+      whatsapp: cleanPhoneForStorage(newUser.whatsapp), // Remove formatação e o 9 antes de salvar
     });
     if (!result.error) {
-      setNewUser({ name: '', whatsapp: '' });
+      setNewUser({ name: "", whatsapp: "" });
       setIsAdding(false);
     }
   };
 
-  const handleUpdateUser = async (userId: string, updates: { name: string; whatsapp: string }) => {
+  const handleUpdateUser = async (
+    userId: string,
+    updates: { name: string; whatsapp: string }
+  ) => {
     await updateSharedUser(userId, {
       ...updates,
-      whatsapp: cleanPhone(updates.whatsapp) // Remove formatação antes de salvar
+      whatsapp: cleanPhoneForStorage(updates.whatsapp), // Remove formatação e o 9 antes de salvar
     });
     setEditingUser(null);
   };
@@ -72,7 +113,8 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
           <div className="text-center py-6">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">
-              Você está usando uma conta compartilhada. Apenas o proprietário da conta pode gerenciar usuários compartilhados.
+              Você está usando uma conta compartilhada. Apenas o proprietário da
+              conta pode gerenciar usuários compartilhados.
             </p>
           </div>
         </DialogContent>
@@ -120,7 +162,9 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
                   <Input
                     id="name"
                     value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewUser({ ...newUser, name: e.target.value })
+                    }
                     placeholder="Nome completo"
                   />
                 </div>
@@ -142,7 +186,7 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
                     variant="outline"
                     onClick={() => {
                       setIsAdding(false);
-                      setNewUser({ name: '', whatsapp: '' });
+                      setNewUser({ name: "", whatsapp: "" });
                     }}
                     className="flex-1"
                   >
@@ -155,8 +199,10 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
 
           {/* Current shared users */}
           <div>
-            <h3 className="font-medium mb-4">Usuários Compartilhados ({sharedUsers.length}/3)</h3>
-            
+            <h3 className="font-medium mb-4">
+              Usuários Compartilhados ({sharedUsers.length}/3)
+            </h3>
+
             {loading ? (
               <div className="text-center py-4">Carregando...</div>
             ) : sharedUsers.length === 0 ? (
@@ -185,7 +231,10 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
                             </div>
                           </div>
                           <p className="text-xs text-gray-500">
-                            Adicionado em {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                            Adicionado em{" "}
+                            {new Date(user.created_at).toLocaleDateString(
+                              "pt-BR"
+                            )}
                           </p>
                         </div>
                         <div className="flex space-x-2">
@@ -198,15 +247,22 @@ export const SharedUsersModal = ({ isOpen, onClose }: SharedUsersModalProps) => 
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-800"
+                              >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Remover Acesso</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Remover Acesso
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja remover o acesso de {user.name}? Esta ação não pode ser desfeita.
+                                  Tem certeza que deseja remover o acesso de{" "}
+                                  {user.name}? Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -243,7 +299,7 @@ interface EditUserFormProps {
 const EditUserForm = ({ user, onSave, onCancel }: EditUserFormProps) => {
   const [formData, setFormData] = useState({
     name: user.name,
-    whatsapp: formatPhoneBrazil(user.whatsapp) // Formata ao carregar para edição
+    whatsapp: applyPhoneMask(user.whatsapp), // Usa applyPhoneMask para edição
   });
 
   const handleSave = () => {

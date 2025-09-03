@@ -28,7 +28,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
-import { applyPhoneMask, cleanPhone, formatPhoneBrazil } from "@/lib/utils";
+import {
+  applyPhoneMask,
+  cleanPhoneForStorage,
+  formatPhoneBrazil,
+} from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
@@ -92,7 +96,7 @@ const Perfil = () => {
     try {
       await updateProfile({
         name: formData.name,
-        telefone: cleanPhone(formData.phone),
+        telefone: cleanPhoneForStorage(formData.phone),
         endereco: formData.address,
       });
       setIsEditing(false);

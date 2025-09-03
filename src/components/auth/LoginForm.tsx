@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReCaptcha } from "@/components/ui/ReCaptcha";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +22,7 @@ export const LoginForm = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isReCaptchaVerified, setIsReCaptchaVerified] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -51,6 +53,12 @@ export const LoginForm = ({
 
     if (password.length < 6) {
       setError("Senha deve ter pelo menos 6 caracteres");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!isReCaptchaVerified) {
+      setError("Por favor, complete a verificação de segurança");
       setIsLoading(false);
       return;
     }
@@ -171,10 +179,15 @@ export const LoginForm = ({
         </button>
       </div>
 
+      <ReCaptcha
+        onVerify={setIsReCaptchaVerified}
+        isVerified={isReCaptchaVerified}
+      />
+
       <Button
         type="submit"
         className="w-full bg-orange-500 hover:bg-orange-600"
-        disabled={isLoading}
+        disabled={isLoading || !isReCaptchaVerified}
       >
         {isLoading ? "Entrando..." : "Entrar"}
       </Button>

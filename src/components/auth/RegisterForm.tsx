@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReCaptcha } from "@/components/ui/ReCaptcha";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { applyPhoneMask, cleanPhone } from "@/lib/utils";
+import { applyPhoneMask, cleanPhoneForStorage } from "@/lib/utils";
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -14,7 +15,6 @@ interface RegisterFormProps {
 
 export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [name, setName] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,6 +23,7 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isReCaptchaVerified, setIsReCaptchaVerified] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,12 +36,6 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
     // Validações básicas
     if (!name.trim()) {
       setError("Nome é obrigatório");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!organizationName.trim()) {
-      setError("Nome da organização é obrigatório");
       setIsLoading(false);
       return;
     }
@@ -81,18 +76,22 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
       return;
     }
 
+    if (!isReCaptchaVerified) {
+      setError("Por favor, complete a verificação de segurança");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       console.log("📝 Tentando criar conta para:", {
         email: email.trim(),
         name,
-        organizationName,
       });
 
       // Preparar metadata do usuário
       const metadata = {
         name: name.trim(),
-        organization_name: organizationName.trim(),
-        telefone: cleanPhone(telefone),
+        telefone: cleanPhoneForStorage(telefone),
       };
 
       const { data, error: authError } = await signUp(
@@ -186,18 +185,6 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="organizationName">Nome da organização</Label>
-        <Input
-          id="organizationName"
-          type="text"
-          value={organizationName}
-          onChange={(e) => setOrganizationName(e.target.value)}
-          placeholder="Nome da sua empresa ou organização"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="telefone">WhatsApp</Label>
         <Input
           id="telefone"
@@ -276,10 +263,15 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         </div>
       </div>
 
+      <ReCaptcha
+        onVerify={setIsReCaptchaVerified}
+        isVerified={isReCaptchaVerified}
+      />
+
       <Button
         type="submit"
         className="w-full bg-orange-500 hover:bg-orange-600"
-        disabled={isLoading}
+        disabled={isLoading || !isReCaptchaVerified}
       >
         {isLoading ? "Criando conta..." : "Criar conta"}
       </Button>

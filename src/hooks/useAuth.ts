@@ -106,8 +106,7 @@ export const useAuth = () => {
                 user_id: data.user.id,
                 user_email: data.user.email,
                 user_name: metadata?.name || "Usuário",
-                organization_name:
-                  metadata?.organization_name || "Minha Empresa",
+                organization_name: metadata?.name || "Minha Empresa",
                 telefone: metadata?.telefone || "",
               });
 
