@@ -20,11 +20,24 @@ import {
   Gift,
   Settings,
   Trash2,
+  CalendarDays,
+  XCircle,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface PaymentHistoryItem {
   id: string;
@@ -49,25 +62,31 @@ export const SubscriptionManagement = () => {
     loading,
     checkSubscription,
     createCheckout,
-    openCustomerPortal,
-    getPaymentHistory,
+    cancelSubscription,
   } = useSubscription();
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>(
     []
   );
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingCancel, setLoadingCancel] = useState(false);
 
   useEffect(() => {
     if (subscriptionData.subscribed) {
-      loadPaymentHistory();
+      // loadPaymentHistory();
     }
   }, [subscriptionData.subscribed]);
 
   const loadPaymentHistory = async () => {
     setLoadingHistory(true);
-    const history = await getPaymentHistory();
-    setPaymentHistory(history);
+    // const history = await getPaymentHistory();
+    // setPaymentHistory(history);
     setLoadingHistory(false);
+  };
+
+  const handleCancelSubscription = async () => {
+    setLoadingCancel(true);
+    await cancelSubscription();
+    setLoadingCancel(false);
   };
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -388,7 +407,7 @@ export const SubscriptionManagement = () => {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Plano</p>
               <Badge variant="outline" className="mt-1">
@@ -421,22 +440,34 @@ export const SubscriptionManagement = () => {
                   ? formatCurrency(amount, currency)
                   : last_payment_amount && last_payment_currency
                   ? formatCurrency(last_payment_amount, last_payment_currency)
-                  : "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Próxima cobrança
-              </p>
-              <p className="text-sm">
-                {current_period_end
-                  ? format(new Date(current_period_end), "dd/MM/yyyy", {
-                      locale: ptBR,
-                    })
-                  : "N/A"}
+                  : "R$ 39,90/mês"}
               </p>
             </div>
           </div>
+
+          {/* Próxima Renovação - Seção em destaque */}
+          {current_period_end && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CalendarDays className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-blue-900">
+                  Próxima Renovação
+                </h3>
+              </div>
+              <p className="text-blue-700 font-medium">
+                {format(
+                  new Date(current_period_end),
+                  "dd 'de' MMMM 'de' yyyy",
+                  {
+                    locale: ptBR,
+                  }
+                )}
+              </p>
+              <p className="text-sm text-blue-600 mt-1">
+                Sua assinatura será renovada automaticamente nesta data
+              </p>
+            </div>
+          )}
 
           {subscription_start && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -452,14 +483,20 @@ export const SubscriptionManagement = () => {
 
           {cancel_at_period_end && (
             <Alert>
-              <AlertCircle className="h-4 w-4" />
+              <XCircle className="h-4 w-4" />
               <AlertDescription>
-                Sua assinatura será cancelada em{" "}
+                <strong>Cancelamento agendado:</strong> Sua assinatura será
+                cancelada em{" "}
                 {current_period_end
-                  ? format(new Date(current_period_end), "dd/MM/yyyy", {
-                      locale: ptBR,
-                    })
+                  ? format(
+                      new Date(current_period_end),
+                      "dd 'de' MMMM 'de' yyyy",
+                      {
+                        locale: ptBR,
+                      }
+                    )
                   : "N/A"}
+                . Você manterá acesso até esta data.
               </AlertDescription>
             </Alert>
           )}
@@ -521,124 +558,101 @@ export const SubscriptionManagement = () => {
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Informações de validade indisponíveis
+                      Método de pagamento configurado
                     </p>
                   )}
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={openCustomerPortal}>
-                Editar
-              </Button>
             </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Histórico de Pagamentos */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Histórico de Pagamentos</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadPaymentHistory}
-            disabled={loadingHistory}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${loadingHistory ? "animate-spin" : ""}`}
-            />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loadingHistory ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : paymentHistory.length > 0 ? (
-            <div className="space-y-3">
-              {paymentHistory.slice(0, 5).map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
-                      <CreditCard className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {formatCurrency(payment.amount, payment.currency)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(payment.created)} •{" "}
-                        {(
-                          payment.payment_method_details.type ||
-                          payment.payment_method_details.card?.brand ||
-                          "CARD"
-                        )
-                          .toString()
-                          .toUpperCase()}{" "}
-                        {payment.payment_method_details.card?.last4
-                          ? ` •••• ${payment.payment_method_details.card?.last4}`
-                          : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={
-                        isSuccessStatus(payment.status)
-                          ? "default"
-                          : "destructive"
-                      }
-                    >
-                      {isSuccessStatus(payment.status) ? "Pago" : "Falhou"}
-                    </Badge>
-                    {payment.receipt_url && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a
-                          href={payment.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Download className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
-              Nenhum pagamento encontrado
-            </p>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Ações */}
       <Card>
         <CardHeader>
           <CardTitle>Gerenciar Assinatura</CardTitle>
           <CardDescription>
-            Altere seu plano, método de pagamento ou cancele sua assinatura
+            {cancel_at_period_end
+              ? "Sua assinatura está agendada para cancelamento"
+              : "Cancele sua assinatura a qualquer momento"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button
-            onClick={openCustomerPortal}
-            className="w-full gap-2"
-            variant="outline"
-          >
-            <Settings className="h-4 w-4" />
-            Cancelar Assinatura
-          </Button>
+          {!cancel_at_period_end && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  className="w-full gap-2"
+                  disabled={loadingCancel}
+                >
+                  <XCircle className="h-4 w-4" />
+                  {loadingCancel ? "Cancelando..." : "Cancelar Assinatura"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancelar Assinatura</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p>Tem certeza que deseja cancelar sua assinatura?</p>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mt-3">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Importante:</strong> Você manterá acesso a todos
+                        os recursos até{" "}
+                        {current_period_end
+                          ? format(
+                              new Date(current_period_end),
+                              "dd 'de' MMMM 'de' yyyy",
+                              {
+                                locale: ptBR,
+                              }
+                            )
+                          : "o fim do período atual"}
+                        . Após essa data, sua conta será limitada.
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Manter Assinatura</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCancelSubscription}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Sim, Cancelar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {cancel_at_period_end && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-orange-700 font-medium mb-2">
+                <AlertCircle className="h-4 w-4" />
+                <span>Cancelamento Agendado</span>
+              </div>
+              <p className="text-sm text-orange-600">
+                Sua assinatura foi cancelada e você manterá acesso até{" "}
+                {current_period_end
+                  ? format(
+                      new Date(current_period_end),
+                      "dd 'de' MMMM 'de' yyyy",
+                      {
+                        locale: ptBR,
+                      }
+                    )
+                  : "o fim do período atual"}
+                .
+              </p>
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground text-center">
-            Gerencie sua assinatura do MercadoPago. Você pode cancelar sua
-            assinatura a qualquer momento.
+            {cancel_at_period_end
+              ? "Entre em contato conosco se precisar reativar sua assinatura."
+              : "Você pode cancelar sua assinatura a qualquer momento. O cancelamento entrará em vigor no fim do período atual."}
           </p>
         </CardContent>
       </Card>

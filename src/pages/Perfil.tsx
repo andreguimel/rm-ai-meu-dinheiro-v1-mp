@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { DeleteAccountModal } from "@/components/auth/DeleteAccountModal";
 import { SharedUsersModal } from "@/components/SharedUsersModal";
+import { SubscriptionManagement } from "@/components/SubscriptionManagement";
 
 const Perfil = () => {
   const { toast } = useToast();
@@ -523,6 +524,9 @@ const Perfil = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Seção de Gerenciamento de Assinatura - só aparece para assinantes */}
+          {subscriptionData.subscribed && <SubscriptionManagement />}
         </div>
       </div>
 

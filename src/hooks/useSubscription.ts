@@ -340,6 +340,69 @@ export const useSubscription = () => {
     await checkSubscription();
   }, [checkSubscription]);
 
+  // Cancelar assinatura
+  const cancelSubscription = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para cancelar a assinatura.",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+
+    try {
+      setLoading(true);
+
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+
+      console.log("🚫 Cancelando assinatura...");
+
+      const { data, error } = await supabase.functions.invoke(
+        "cancel-mercadopago-subscription",
+        { headers }
+      );
+
+      if (error) {
+        console.error("❌ Erro ao cancelar:", error);
+        throw new Error(error.message || "Erro ao cancelar assinatura");
+      }
+
+      console.log("✅ Cancelamento realizado:", data);
+
+      toast({
+        title: "Assinatura Cancelada",
+        description:
+          data?.message ||
+          "Sua assinatura foi cancelada com sucesso. Você manterá acesso até o fim do período atual.",
+      });
+
+      // Atualizar dados da assinatura
+      await checkSubscription();
+
+      return { success: true, data };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao cancelar assinatura";
+      console.error("❌ Erro no cancelamento:", error);
+
+      toast({
+        title: "Erro ao cancelar",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [user, getAuthHeaders, setLoading, toast, checkSubscription]);
+
   // useEffect para verificar assinatura quando sessão muda
   useEffect(() => {
     if (session) {
@@ -354,5 +417,6 @@ export const useSubscription = () => {
     checkSubscription,
     createCheckout,
     forceRefreshSubscription,
+    cancelSubscription,
   };
 };
