@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     console.log("🔄 Iniciando cancelamento...");
-    
+
     // Verificar se há token
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -27,7 +27,7 @@ serve(async (req) => {
     // Criar cliente Supabase
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("❌ Variáveis de ambiente não configuradas");
       throw new Error("Configuração incorreta");
@@ -39,7 +39,7 @@ serve(async (req) => {
     // Extrair user_id do JWT
     const jwt = authHeader.replace("Bearer ", "");
     let userId: string;
-    
+
     try {
       const parts = jwt.split(".");
       const payload = JSON.parse(atob(parts[1]));

@@ -14,7 +14,12 @@ const Login = () => {
   const renderAuthForm = () => {
     switch (mode) {
       case "login":
-        return <LoginForm onSwitchToRegister={() => setMode("register")} onSwitchToForgot={() => setMode("forgot-password")} />;
+        return (
+          <LoginForm
+            onSwitchToRegister={() => setMode("register")}
+            onSwitchToForgot={() => setMode("forgot-password")}
+          />
+        );
       case "register":
         return <RegisterForm onSwitchToLogin={() => setMode("login")} />;
       case "forgot-password":
@@ -23,7 +28,8 @@ const Login = () => {
         return <ResetPasswordForm onSwitchToLogin={() => setMode("login")} />;
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Reduced card padding to tighten top/bottom spacing */}
         <div className="bg-white rounded-lg shadow-lg p-6">
@@ -38,7 +44,7 @@ const Login = () => {
                 />
               </div>
             </div>
-            
+
             <p className="text-gray-600 mt-1">
               {mode === "login" && "Faça login em sua conta"}
               {mode === "register" && "Crie sua conta"}
@@ -51,6 +57,7 @@ const Login = () => {
           {renderAuthForm()}
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default Login;

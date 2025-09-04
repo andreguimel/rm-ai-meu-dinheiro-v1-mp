@@ -3,12 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 // Helper logging function for debugging
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[MERCADOPAGO-PAYMENT-HISTORY] ${step}${detailsStr}`);
 };
 
@@ -36,10 +37,13 @@ serve(async (req) => {
     logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const { data: userData, error: userError } =
+      await supabaseClient.auth.getUser(token);
+    if (userError)
+      throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email)
+      throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Search for payments associated with this user - with security validation
@@ -47,14 +51,16 @@ serve(async (req) => {
       `https://api.mercadopago.com/v1/payments/search?external_reference=${user.id}&sort=date_created&criteria=desc&range=date_created&begin_date=NOW-1YEAR&end_date=NOW`,
       {
         headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
       }
     );
 
     if (!paymentsResponse.ok) {
-      logStep("No payments found or API error", { status: paymentsResponse.status });
+      logStep("No payments found or API error", {
+        status: paymentsResponse.status,
+      });
       return new Response(JSON.stringify({ payments: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -68,10 +74,10 @@ serve(async (req) => {
     const userPayments = payments.filter((payment: any) => {
       const belongsToUser = payment.external_reference === user.id;
       if (!belongsToUser) {
-        logStep("SECURITY WARNING: Payment does not belong to current user", { 
+        logStep("SECURITY WARNING: Payment does not belong to current user", {
           payment_id: payment.id,
-          payment_external_ref: payment.external_reference, 
-          user_id: user.id 
+          payment_external_ref: payment.external_reference,
+          user_id: user.id,
         });
       }
       return belongsToUser;
@@ -87,14 +93,19 @@ serve(async (req) => {
       receipt_url: null, // MercadoPago doesn't provide direct receipt URLs
       payment_method_details: {
         type: payment.payment_method_id,
-        card: payment.card ? {
-          brand: payment.card.first_six_digits ? 'card' : null,
-          last4: payment.card.last_four_digits || null,
-        } : null,
+        card: payment.card
+          ? {
+              brand: payment.card.first_six_digits ? "card" : null,
+              last4: payment.card.last_four_digits || null,
+            }
+          : null,
       },
     }));
 
-    logStep("Payment history retrieved and validated", { count: formattedPayments.length, userId: user.id });
+    logStep("Payment history retrieved and validated", {
+      count: formattedPayments.length,
+      userId: user.id,
+    });
 
     return new Response(JSON.stringify({ payments: formattedPayments }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

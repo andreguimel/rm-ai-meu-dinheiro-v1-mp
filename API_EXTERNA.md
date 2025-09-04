@@ -11,6 +11,7 @@ POST https://seu-projeto-supabase.functions.supabase.co/external-transaction
 ## Autenticação
 
 Inclua um dos seguintes headers:
+
 - `Authorization: Bearer <jwt-token>` (usuário autenticado)
 - `x-api-key: <sua-api-key>` (para integrações externas)
 
@@ -20,7 +21,7 @@ Inclua um dos seguintes headers:
 {
   "tipo": "receita", // ou "despesa"
   "descricao": "Venda de produto",
-  "valor": 150.50,
+  "valor": 150.5,
   "data": "2025-08-29", // formato YYYY-MM-DD
   "categoria_nome": "Vendas", // opcional
   "shared_user_whatsapp": "+5511999999999", // opcional
@@ -31,6 +32,7 @@ Inclua um dos seguintes headers:
 ## Campos
 
 ### Obrigatórios
+
 - `tipo`: "receita" ou "despesa"
 - `descricao`: Descrição da transação
 - `valor`: Valor numérico (pode ser string ou number)
@@ -38,17 +40,20 @@ Inclua um dos seguintes headers:
 - `account_owner_id`: UUID da conta principal (dono da conta)
 
 ### Opcionais
+
 - `categoria_nome`: Nome da categoria existente
 - `shared_user_whatsapp`: WhatsApp do usuário compartilhado que criou a transação
 
 ## Comportamento
 
 ### Categoria
+
 - Se `categoria_nome` for fornecida, a API busca uma categoria existente com esse nome
 - Se não encontrar, o campo `categoria_id` fica null
 - A categoria deve pertencer ao `account_owner_id` e ter o mesmo `tipo`
 
 ### Usuário Compartilhado
+
 - Se `shared_user_whatsapp` for fornecido, a API busca um shared_user ativo com esse WhatsApp
 - Se encontrar, preenche o campo `created_by_shared_user_id`
 - Isso permite identificar qual usuário compartilhado criou a transação
@@ -57,6 +62,7 @@ Inclua um dos seguintes headers:
 ## Exemplo de Uso com n8n
 
 ### 1. Webhook do WhatsApp
+
 ```javascript
 // No n8n, após receber mensagem do WhatsApp
 const mensagem = $input.first().json.message;
@@ -64,22 +70,23 @@ const whatsapp = $input.first().json.from; // +5511999999999
 const accountOwner = "uuid-da-conta-principal";
 
 // Parse da mensagem: "receita venda produto 150.50"
-const partes = mensagem.split(' ');
+const partes = mensagem.split(" ");
 const tipo = partes[0]; // receita
-const descricao = partes.slice(1, -1).join(' '); // venda produto
+const descricao = partes.slice(1, -1).join(" "); // venda produto
 const valor = parseFloat(partes[partes.length - 1]); // 150.50
 
 return {
   tipo,
   descricao,
   valor,
-  data: new Date().toISOString().split('T')[0],
+  data: new Date().toISOString().split("T")[0],
   shared_user_whatsapp: whatsapp,
-  account_owner_id: accountOwner
+  account_owner_id: accountOwner,
 };
 ```
 
 ### 2. Requisição HTTP no n8n
+
 ```json
 {
   "method": "POST",
@@ -95,6 +102,7 @@ return {
 ## Respostas
 
 ### Sucesso (200)
+
 ```json
 {
   "success": true,
@@ -103,7 +111,7 @@ return {
     "user_id": "uuid-da-conta-principal",
     "created_by_shared_user_id": "uuid-do-shared-user",
     "descricao": "Venda de produto",
-    "valor": 150.50,
+    "valor": 150.5,
     "data": "2025-08-29",
     "categoria_id": "uuid-da-categoria",
     "categorias": {
@@ -119,6 +127,7 @@ return {
 ```
 
 ### Erro de Validação (400)
+
 ```json
 {
   "error": "Campos obrigatórios: tipo, descricao, valor, data, account_owner_id"
@@ -126,6 +135,7 @@ return {
 ```
 
 ### Erro de Autenticação (401)
+
 ```json
 {
   "error": "Authorization required"
@@ -133,6 +143,7 @@ return {
 ```
 
 ### Erro Interno (500)
+
 ```json
 {
   "error": "Erro interno do servidor",
@@ -150,6 +161,7 @@ return {
 ## Filtros e Visualização
 
 Após a criação via API:
+
 - O badge mostrará o nome do usuário compartilhado (se `created_by_shared_user_id` estiver preenchido)
 - Os filtros por usuário funcionarão corretamente
 - A transação aparecerá no dashboard com a identificação correta
@@ -164,7 +176,7 @@ const webhook = $input.first().json;
 const mapping = {
   whatsapp: webhook.from,
   message: webhook.message,
-  accountOwner: "f47ac10b-58cc-4372-a567-0e02b2c3d479" // seu UUID
+  accountOwner: "f47ac10b-58cc-4372-a567-0e02b2c3d479", // seu UUID
 };
 
 // Parse comando: "+receita almoço 35.90" ou "+despesa combustível 120.00"
@@ -172,7 +184,9 @@ const regex = /^\+(receita|despesa)\s+(.+)\s+(\d+\.?\d*)$/;
 const match = mapping.message.match(regex);
 
 if (!match) {
-  throw new Error("Formato inválido. Use: +receita descrição valor ou +despesa descrição valor");
+  throw new Error(
+    "Formato inválido. Use: +receita descrição valor ou +despesa descrição valor"
+  );
 }
 
 const [, tipo, descricao, valor] = match;
@@ -181,13 +195,14 @@ return {
   tipo,
   descricao: descricao.trim(),
   valor: parseFloat(valor),
-  data: new Date().toISOString().split('T')[0],
+  data: new Date().toISOString().split("T")[0],
   shared_user_whatsapp: mapping.whatsapp,
-  account_owner_id: mapping.accountOwner
+  account_owner_id: mapping.accountOwner,
 };
 ```
 
 Este exemplo permite que usuários enviem mensagens como:
+
 - "+receita venda produto 150.50"
 - "+despesa almoço 35.90"
 

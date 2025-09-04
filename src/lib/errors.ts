@@ -6,24 +6,24 @@ export const ERROR_MESSAGES = {
   UNAUTHORIZED: "Você não tem permissão para esta ação.",
   FORBIDDEN: "Acesso negado.",
   NOT_FOUND: "Recurso não encontrado.",
-  
+
   // Auth errors
   INVALID_CREDENTIALS: "Email ou senha incorretos.",
   USER_NOT_FOUND: "Usuário não encontrado.",
   EMAIL_ALREADY_EXISTS: "Este email já está em uso.",
   WEAK_PASSWORD: "A senha é muito fraca.",
-  
+
   // Subscription errors
   SUBSCRIPTION_REQUIRED: "Assinatura necessária para acessar este recurso.",
   TRIAL_EXPIRED: "Seu período de teste expirou.",
   PAYMENT_FAILED: "Falha no pagamento. Verifique seus dados.",
-  
+
   // Data errors
   SAVE_ERROR: "Erro ao salvar dados.",
   DELETE_ERROR: "Erro ao excluir item.",
   LOAD_ERROR: "Erro ao carregar dados.",
   UPDATE_ERROR: "Erro ao atualizar dados.",
-  
+
   // Validation errors
   INVALID_DATA: "Dados inválidos fornecidos.",
   REQUIRED_FIELDS: "Campos obrigatórios não preenchidos.",
@@ -36,12 +36,12 @@ export const ERROR_CODES = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   INTERNAL_SERVER_ERROR: 500,
-  
+
   // Custom error codes
-  SUBSCRIPTION_REQUIRED: 'SUBSCRIPTION_REQUIRED',
-  TRIAL_EXPIRED: 'TRIAL_EXPIRED',
-  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
-  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  SUBSCRIPTION_REQUIRED: "SUBSCRIPTION_REQUIRED",
+  TRIAL_EXPIRED: "TRIAL_EXPIRED",
+  INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
+  PAYMENT_FAILED: "PAYMENT_FAILED",
 } as const;
 
 // Error type definitions
@@ -56,61 +56,64 @@ export interface AppError {
 export class ValidationError extends Error {
   constructor(message: string, public field?: string) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
 export class AuthError extends Error {
   constructor(message: string, public code?: string) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
 
 export class SubscriptionError extends Error {
   constructor(message: string, public code?: string) {
     super(message);
-    this.name = 'SubscriptionError';
+    this.name = "SubscriptionError";
   }
 }
 
 export class NetworkError extends Error {
   constructor(message: string, public statusCode?: number) {
     super(message);
-    this.name = 'NetworkError';
+    this.name = "NetworkError";
   }
 }
 
 // Error translation for common Supabase errors
 export const translateSupabaseError = (error: any): string => {
   if (!error) return ERROR_MESSAGES.GENERIC_ERROR;
-  
-  const message = error.message?.toLowerCase() || '';
-  
+
+  const message = error.message?.toLowerCase() || "";
+
   // Auth errors
-  if (message.includes('invalid login credentials')) {
+  if (message.includes("invalid login credentials")) {
     return ERROR_MESSAGES.INVALID_CREDENTIALS;
   }
-  if (message.includes('user not found')) {
+  if (message.includes("user not found")) {
     return ERROR_MESSAGES.USER_NOT_FOUND;
   }
-  if (message.includes('email already registered')) {
+  if (message.includes("email already registered")) {
     return ERROR_MESSAGES.EMAIL_ALREADY_EXISTS;
   }
-  if (message.includes('password should be at least')) {
+  if (message.includes("password should be at least")) {
     return ERROR_MESSAGES.WEAK_PASSWORD;
   }
-  
+
   // Permission errors
-  if (message.includes('permission denied') || message.includes('insufficient_privilege')) {
+  if (
+    message.includes("permission denied") ||
+    message.includes("insufficient_privilege")
+  ) {
     return ERROR_MESSAGES.UNAUTHORIZED;
   }
-  
+
   // Network errors
-  if (message.includes('network') || message.includes('fetch')) {
+  if (message.includes("network") || message.includes("fetch")) {
     return ERROR_MESSAGES.NETWORK_ERROR;
   }
-  
+
   // Default to generic error
   return error.message || ERROR_MESSAGES.GENERIC_ERROR;
 };
@@ -118,10 +121,10 @@ export const translateSupabaseError = (error: any): string => {
 // Error translation for common MercadoPago errors
 export const translateMercadoPagoError = (error: any): string => {
   if (!error) return ERROR_MESSAGES.PAYMENT_FAILED;
-  
-  const message = error.message?.toLowerCase() || '';
+
+  const message = error.message?.toLowerCase() || "";
   const status = error.status;
-  
+
   switch (status) {
     case 400:
       return "Dados de pagamento inválidos.";
@@ -139,57 +142,57 @@ export const translateMercadoPagoError = (error: any): string => {
 // Generic error handler
 export const handleError = (error: any, context?: string): AppError => {
   const timestamp = new Date();
-  
+
   // Log error for debugging
-  console.error(`Error in ${context || 'unknown context'}:`, error);
-  
+  console.error(`Error in ${context || "unknown context"}:`, error);
+
   // Handle different error types
   if (error instanceof ValidationError) {
     return {
-      code: 'VALIDATION_ERROR',
+      code: "VALIDATION_ERROR",
       message: error.message,
       details: { field: error.field },
       timestamp,
     };
   }
-  
+
   if (error instanceof AuthError) {
     return {
-      code: error.code || 'AUTH_ERROR',
+      code: error.code || "AUTH_ERROR",
       message: error.message,
       timestamp,
     };
   }
-  
+
   if (error instanceof SubscriptionError) {
     return {
-      code: error.code || 'SUBSCRIPTION_ERROR',
+      code: error.code || "SUBSCRIPTION_ERROR",
       message: error.message,
       timestamp,
     };
   }
-  
+
   if (error instanceof NetworkError) {
     return {
-      code: error.statusCode || 'NETWORK_ERROR',
+      code: error.statusCode || "NETWORK_ERROR",
       message: error.message,
       timestamp,
     };
   }
-  
+
   // Handle Supabase errors
   if (error?.code || error?.message) {
     return {
-      code: error.code || 'SUPABASE_ERROR',
+      code: error.code || "SUPABASE_ERROR",
       message: translateSupabaseError(error),
       details: error.details,
       timestamp,
     };
   }
-  
+
   // Generic error fallback
   return {
-    code: 'UNKNOWN_ERROR',
+    code: "UNKNOWN_ERROR",
     message: ERROR_MESSAGES.GENERIC_ERROR,
     details: error,
     timestamp,

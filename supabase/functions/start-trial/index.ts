@@ -3,12 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 // Helper logging function for enhanced debugging
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[START-TRIAL] ${step}${detailsStr}`);
 };
 
@@ -31,10 +32,13 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     logStep("Authenticating user with token");
 
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const { data: userData, error: userError } =
+      await supabaseClient.auth.getUser(token);
+    if (userError)
+      throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email)
+      throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Check if user already has a subscriber record
@@ -62,7 +66,10 @@ serve(async (req) => {
           trial_start: existing.trial_start,
           trial_end: existing.trial_end,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
       );
     }
 
@@ -70,7 +77,7 @@ serve(async (req) => {
     const now = new Date();
     const trialEndDate = new Date(now);
     trialEndDate.setDate(trialEndDate.getDate() + 7);
-    
+
     const trialStartISO = now.toISOString();
     const trialEndISO = trialEndDate.toISOString();
     const trialDaysRemaining = 7;
@@ -80,22 +87,24 @@ serve(async (req) => {
       email: user.email,
       trialStart: trialStartISO,
       trialEnd: trialEndISO,
-      daysRemaining: trialDaysRemaining
+      daysRemaining: trialDaysRemaining,
     });
 
     // Insert new subscriber record with trial
-    const { error: insertError } = await supabaseClient.from("subscribers").insert({
-      email: user.email,
-      user_id: user.id,
-      stripe_customer_id: null,
-      subscribed: false,
-      subscription_tier: "Trial",
-      subscription_start: trialStartISO,
-      subscription_end: trialEndISO,
-      trial_start: trialStartISO,
-      trial_end: trialEndISO,
-      updated_at: new Date().toISOString(),
-    });
+    const { error: insertError } = await supabaseClient
+      .from("subscribers")
+      .insert({
+        email: user.email,
+        user_id: user.id,
+        stripe_customer_id: null,
+        subscribed: false,
+        subscription_tier: "Trial",
+        subscription_start: trialStartISO,
+        subscription_end: trialEndISO,
+        trial_start: trialStartISO,
+        trial_end: trialEndISO,
+        updated_at: new Date().toISOString(),
+      });
 
     if (insertError) {
       logStep("Error creating trial record", { error: insertError });
@@ -104,12 +113,13 @@ serve(async (req) => {
 
     logStep("Trial period created successfully", {
       userId: user.id,
-      trialDaysRemaining
+      trialDaysRemaining,
     });
 
     return new Response(
       JSON.stringify({
-        message: "Período de teste iniciado com sucesso! Você tem 7 dias grátis.",
+        message:
+          "Período de teste iniciado com sucesso! Você tem 7 dias grátis.",
         subscribed: false,
         subscription_tier: "Trial",
         subscription_start: trialStartISO,
@@ -119,14 +129,17 @@ serve(async (req) => {
         trial_days_remaining: trialDaysRemaining,
         trial_created: true,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in start-trial", { message: errorMessage });
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 });

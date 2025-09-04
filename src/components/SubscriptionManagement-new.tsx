@@ -1,21 +1,34 @@
-import { useState } from 'react';
-import { useSubscription } from '@/hooks/useSubscription';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Crown, Calendar, CreditCard, RefreshCw } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  formatDate, 
-  formatCurrency, 
-  calculateDaysRemaining, 
-  formatDaysRemaining, 
-  getSubscriptionStatus, 
-  getSubscriptionBadgeVariant 
-} from '@/lib/utils';
+import { useState } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Crown, Calendar, CreditCard, RefreshCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  formatDate,
+  formatCurrency,
+  calculateDaysRemaining,
+  formatDaysRemaining,
+  getSubscriptionStatus,
+  getSubscriptionBadgeVariant,
+} from "@/lib/utils";
 
 export function SubscriptionManagement() {
-  const { subscriptionData, loading, error, checkSubscription, createCheckout, openCustomerPortal } = useSubscription();
+  const {
+    subscriptionData,
+    loading,
+    error,
+    checkSubscription,
+    createCheckout,
+    openCustomerPortal,
+  } = useSubscription();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
 
   if (loading) {
@@ -63,7 +76,7 @@ export function SubscriptionManagement() {
     try {
       await createCheckout();
     } catch (error) {
-      console.error('Erro ao criar checkout:', error);
+      console.error("Erro ao criar checkout:", error);
     } finally {
       setIsCreatingCheckout(false);
     }
@@ -78,7 +91,8 @@ export function SubscriptionManagement() {
             Assinatura Premium
           </CardTitle>
           <CardDescription>
-            Desbloqueie recursos avançados e tenha controle total das suas finanças
+            Desbloqueie recursos avançados e tenha controle total das suas
+            finanças
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -86,13 +100,13 @@ export function SubscriptionManagement() {
             <div className="text-sm text-muted-foreground">
               Status: <Badge variant="destructive">Não encontrada</Badge>
             </div>
-            <Button 
+            <Button
               onClick={handleCreateCheckout}
               disabled={isCreatingCheckout}
               className="w-full"
             >
               <Crown className="h-4 w-4 mr-2" />
-              {isCreatingCheckout ? 'Criando...' : 'Assinar Premium'}
+              {isCreatingCheckout ? "Criando..." : "Assinar Premium"}
             </Button>
           </div>
         </CardContent>
@@ -101,17 +115,22 @@ export function SubscriptionManagement() {
   }
 
   const daysRemaining = calculateDaysRemaining(
-    subscriptionData.is_trial_period ? subscriptionData.trial_end_date : subscriptionData.next_billing_date
+    subscriptionData.is_trial_period
+      ? subscriptionData.trial_end_date
+      : subscriptionData.next_billing_date
   );
-  
+
   const status = getSubscriptionStatus(
     subscriptionData.is_active,
     subscriptionData.is_trial_period,
     daysRemaining
   );
-  
+
   const badgeVariant = getSubscriptionBadgeVariant(status);
-  const badgeText = formatDaysRemaining(daysRemaining, subscriptionData.is_trial_period);
+  const badgeText = formatDaysRemaining(
+    daysRemaining,
+    subscriptionData.is_trial_period
+  );
 
   return (
     <Card>
@@ -128,9 +147,7 @@ export function SubscriptionManagement() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Status:</span>
-            <Badge variant={badgeVariant}>
-              {badgeText}
-            </Badge>
+            <Badge variant={badgeVariant}>{badgeText}</Badge>
           </div>
 
           {subscriptionData.is_trial_period && (
@@ -142,14 +159,15 @@ export function SubscriptionManagement() {
             </div>
           )}
 
-          {!subscriptionData.is_trial_period && subscriptionData.next_billing_date && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Próximo Pagamento:</span>
-              <span className="text-sm text-muted-foreground">
-                {formatDate(subscriptionData.next_billing_date)}
-              </span>
-            </div>
-          )}
+          {!subscriptionData.is_trial_period &&
+            subscriptionData.next_billing_date && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Próximo Pagamento:</span>
+                <span className="text-sm text-muted-foreground">
+                  {formatDate(subscriptionData.next_billing_date)}
+                </span>
+              </div>
+            )}
 
           {subscriptionData.plan_name && (
             <div className="flex items-center justify-between">
@@ -172,28 +190,29 @@ export function SubscriptionManagement() {
           <div className="flex gap-2 pt-4">
             {/* Só mostra o botão de assinar se não estiver ativo */}
             {!subscriptionData.is_active && (
-              <Button 
+              <Button
                 onClick={handleCreateCheckout}
                 disabled={isCreatingCheckout}
                 className="flex-1"
               >
                 <Crown className="h-4 w-4 mr-2" />
-                {isCreatingCheckout ? 'Criando...' : 'Assinar Premium'}
+                {isCreatingCheckout ? "Criando..." : "Assinar Premium"}
               </Button>
             )}
-            
+
             {/* Só mostra o botão de gerenciar se estiver ativo e não for trial */}
-            {subscriptionData.is_active && !subscriptionData.is_trial_period && (
-              <Button 
-                onClick={openCustomerPortal}
-                variant="outline"
-                className="flex-1"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Gerenciar Assinatura
-              </Button>
-            )}
-            
+            {subscriptionData.is_active &&
+              !subscriptionData.is_trial_period && (
+                <Button
+                  onClick={openCustomerPortal}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Gerenciar Assinatura
+                </Button>
+              )}
+
             <Button onClick={checkSubscription} variant="outline" size="icon">
               <RefreshCw className="h-4 w-4" />
             </Button>

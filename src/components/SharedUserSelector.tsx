@@ -10,11 +10,11 @@ interface SharedUserSelectorProps {
   placeholder?: string;
 }
 
-export function SharedUserSelector({ 
-  value, 
-  onChange, 
+export function SharedUserSelector({
+  value,
+  onChange,
   label = "Quem está registrando?",
-  placeholder = "Selecione quem está registrando"
+  placeholder = "Selecione quem está registrando",
 }: SharedUserSelectorProps) {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -24,15 +24,15 @@ export function SharedUserSelector({
     // Usuário atual (dono da conta)
     {
       id: "",
-      name: profile?.name || user?.email?.split('@')[0] || "Você",
-      type: "owner"
+      name: profile?.name || user?.email?.split("@")[0] || "Você",
+      type: "owner",
     },
     // Usuários compartilhados
-    ...sharedUsers.map(sharedUser => ({
+    ...sharedUsers.map((sharedUser) => ({
       id: sharedUser.id,
       name: sharedUser.name,
-      type: "shared"
-    }))
+      type: "shared",
+    })),
   ];
 
   return (
@@ -47,7 +47,8 @@ export function SharedUserSelector({
         <option value="">{placeholder}</option>
         {options.map((option) => (
           <option key={option.id} value={option.id}>
-            {option.name} {option.type === "owner" ? "(Você)" : "(Compartilhado)"}
+            {option.name}{" "}
+            {option.type === "owner" ? "(Você)" : "(Compartilhado)"}
           </option>
         ))}
       </select>

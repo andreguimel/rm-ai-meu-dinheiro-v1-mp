@@ -51,6 +51,9 @@ enable_confirmations = false
 [functions.create-mercadopago-subscription]
 verify_jwt = true
 
+[functions.cancel-mercadopago-subscription]
+verify_jwt = false
+
 [functions.check-mercadopago-subscription]
 verify_jwt = true
 
