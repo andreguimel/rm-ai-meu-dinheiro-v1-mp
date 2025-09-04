@@ -13,7 +13,7 @@ export interface Divida {
   data_vencimento: string;
   parcelas: number;
   parcelas_pagas: number;
-  status: 'pendente' | 'vencida' | 'quitada';
+  status: "pendente" | "vencida" | "quitada";
   credor: string;
   created_at: string;
   updated_at: string;
@@ -52,12 +52,14 @@ export const useDividas = () => {
   const fetchDividas = async () => {
     try {
       const { data, error } = await supabase
-        .from('dividas')
-        .select(`
+        .from("dividas")
+        .select(
+          `
           *,
           categorias (nome, cor, icone)
-        `)
-        .order('data_vencimento', { ascending: true });
+        `
+        )
+        .order("data_vencimento", { ascending: true });
 
       if (error) throw error;
       setDividas((data || []) as Divida[]);
@@ -75,13 +77,17 @@ export const useDividas = () => {
   const createDivida = async (novaDivida: NovaDivida) => {
     try {
       const user = await supabase.auth.getUser();
-      if (!user.data.user?.id) throw new Error('Usuário não autenticado');
+      if (!user.data.user?.id) throw new Error("Usuário não autenticado");
 
       // Gerar todas as parcelas
       const parcelasParaInserir = [];
       for (let i = 1; i <= novaDivida.parcelas; i++) {
-        const dataVencimento = new Date(novaDivida.ano_inicio, novaDivida.mes_inicio - 1 + (i - 1), novaDivida.dia_vencimento);
-        
+        const dataVencimento = new Date(
+          novaDivida.ano_inicio,
+          novaDivida.mes_inicio - 1 + (i - 1),
+          novaDivida.dia_vencimento
+        );
+
         parcelasParaInserir.push({
           user_id: user.data.user.id,
           descricao: novaDivida.descricao,
@@ -91,7 +97,7 @@ export const useDividas = () => {
           valor_total: novaDivida.valor_parcela,
           valor_pago: 0,
           valor_restante: novaDivida.valor_parcela,
-          data_vencimento: dataVencimento.toISOString().split('T')[0],
+          data_vencimento: dataVencimento.toISOString().split("T")[0],
           parcelas: novaDivida.parcelas,
           parcelas_pagas: 0,
           numero_parcela: i,
@@ -100,28 +106,27 @@ export const useDividas = () => {
           ano_inicio: novaDivida.ano_inicio,
           aviso_pagamento: novaDivida.aviso_pagamento,
           pago: false,
-          status: dataVencimento < new Date() ? 'vencida' : 'pendente'
+          status: dataVencimento < new Date() ? "vencida" : "pendente",
         });
       }
 
       const { data, error } = await supabase
-        .from('dividas')
-        .insert(parcelasParaInserir)
-        .select(`
+        .from("dividas")
+        .insert(parcelasParaInserir).select(`
           *,
           categorias (nome, cor, icone)
         `);
 
       if (error) throw error;
-      
+
       // Atualizar estado local
-      setDividas(prev => [...(data as Divida[]), ...prev]);
-      
+      setDividas((prev) => [...(data as Divida[]), ...prev]);
+
       toast({
         title: "Parcelas criadas",
         description: `${novaDivida.parcelas} parcelas criadas com sucesso!`,
       });
-      
+
       return { data, error: null };
     } catch (error: any) {
       toast({
@@ -136,23 +141,27 @@ export const useDividas = () => {
   const updateDivida = async (id: string, updates: Partial<Divida>) => {
     try {
       const { data, error } = await supabase
-        .from('dividas')
+        .from("dividas")
         .update(updates)
-        .eq('id', id)
-        .select(`
+        .eq("id", id)
+        .select(
+          `
           *,
           categorias (nome, cor, icone)
-        `)
+        `
+        )
         .single();
 
       if (error) throw error;
-      setDividas(prev => prev.map(divida => divida.id === id ? data as Divida : divida));
-      
+      setDividas((prev) =>
+        prev.map((divida) => (divida.id === id ? (data as Divida) : divida))
+      );
+
       toast({
         title: "Parcela atualizada",
         description: "Parcela atualizada com sucesso!",
       });
-      
+
       return { data, error: null };
     } catch (error: any) {
       toast({
@@ -167,23 +176,27 @@ export const useDividas = () => {
   const marcarComoPago = async (id: string) => {
     try {
       const { data, error } = await supabase
-        .from('dividas')
+        .from("dividas")
         .update({ pago: true })
-        .eq('id', id)
-        .select(`
+        .eq("id", id)
+        .select(
+          `
           *,
           categorias (nome, cor, icone)
-        `)
+        `
+        )
         .single();
 
       if (error) throw error;
-      setDividas(prev => prev.map(divida => divida.id === id ? data as Divida : divida));
-      
+      setDividas((prev) =>
+        prev.map((divida) => (divida.id === id ? (data as Divida) : divida))
+      );
+
       toast({
         title: "Parcela paga",
         description: "Parcela marcada como paga!",
       });
-      
+
       return { data, error: null };
     } catch (error: any) {
       toast({
@@ -198,23 +211,27 @@ export const useDividas = () => {
   const desmarcarComoPago = async (id: string) => {
     try {
       const { data, error } = await supabase
-        .from('dividas')
+        .from("dividas")
         .update({ pago: false })
-        .eq('id', id)
-        .select(`
+        .eq("id", id)
+        .select(
+          `
           *,
           categorias (nome, cor, icone)
-        `)
+        `
+        )
         .single();
 
       if (error) throw error;
-      setDividas(prev => prev.map(divida => divida.id === id ? data as Divida : divida));
-      
+      setDividas((prev) =>
+        prev.map((divida) => (divida.id === id ? (data as Divida) : divida))
+      );
+
       toast({
         title: "Pagamento desmarcado",
         description: "Parcela desmarcada como paga!",
       });
-      
+
       return { data, error: null };
     } catch (error: any) {
       toast({
@@ -228,19 +245,16 @@ export const useDividas = () => {
 
   const deleteDivida = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('dividas')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from("dividas").delete().eq("id", id);
 
       if (error) throw error;
-      setDividas(prev => prev.filter(divida => divida.id !== id));
-      
+      setDividas((prev) => prev.filter((divida) => divida.id !== id));
+
       toast({
         title: "Parcela removida",
         description: "Parcela removida com sucesso!",
       });
-      
+
       return { error: null };
     } catch (error: any) {
       toast({
@@ -298,6 +312,6 @@ export const useDividas = () => {
     deleteMultipleDividas,
     marcarComoPago,
     desmarcarComoPago,
-    refetch: fetchDividas
+    refetch: fetchDividas,
   };
 };

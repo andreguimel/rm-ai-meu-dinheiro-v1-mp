@@ -41,12 +41,24 @@ import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useDividas, type Divida, type NovaDivida } from "@/hooks/useDividas";
 import { EditarDividaModal } from "@/components/EditarDividaModal";
-import { MultiSelectControls, SelectAllCheckbox, ItemCheckbox } from "@/components/MultiSelectControls";
+import {
+  MultiSelectControls,
+  SelectAllCheckbox,
+  ItemCheckbox,
+} from "@/components/MultiSelectControls";
 
 const Dividas = () => {
   const { toast } = useToast();
   const { categoriasDespesa } = useCategorias();
-  const { dividas, createDivida, updateDivida, deleteDivida, deleteMultipleDividas, marcarComoPago, desmarcarComoPago } = useDividas();
+  const {
+    dividas,
+    createDivida,
+    updateDivida,
+    deleteDivida,
+    deleteMultipleDividas,
+    marcarComoPago,
+    desmarcarComoPago,
+  } = useDividas();
   const [activeTab, setActiveTab] = useState("lista");
   const [dividaEditando, setDividaEditando] = useState<Divida | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
@@ -65,8 +77,12 @@ const Dividas = () => {
   const [novasParcelas, setNovasParcelas] = useState("");
   const [novaCategoria, setNovaCategoria] = useState("");
   const [novoDiaVencimento, setNovoDiaVencimento] = useState("1");
-  const [novoMesInicio, setNovoMesInicio] = useState((new Date().getMonth() + 1).toString());
-  const [novoAnoInicio, setNovoAnoInicio] = useState(new Date().getFullYear().toString());
+  const [novoMesInicio, setNovoMesInicio] = useState(
+    (new Date().getMonth() + 1).toString()
+  );
+  const [novoAnoInicio, setNovoAnoInicio] = useState(
+    new Date().getFullYear().toString()
+  );
   const [avisosPagamento, setAvisosPagamento] = useState(false);
 
   const dividasFiltradas = dividas
@@ -86,10 +102,14 @@ const Dividas = () => {
     );
 
   const totalDividas = dividas
-    .filter(d => !d.pago)
+    .filter((d) => !d.pago)
     .reduce((total, divida) => total + divida.valor_parcela, 0);
-  const dividasVencidas = dividas.filter((d) => d.status === "vencida" && !d.pago).length;
-  const dividasPendentes = dividas.filter((d) => d.status === "pendente" && !d.pago).length;
+  const dividasVencidas = dividas.filter(
+    (d) => d.status === "vencida" && !d.pago
+  ).length;
+  const dividasPendentes = dividas.filter(
+    (d) => d.status === "pendente" && !d.pago
+  ).length;
   const dividasQuitadas = dividas.filter((d) => d.pago).length;
 
   const categorias = [
@@ -280,7 +300,9 @@ const Dividas = () => {
                 <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Vencidas</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Vencidas
+                </p>
                 <p className="text-lg md:text-2xl font-bold text-red-600">
                   {dividasVencidas}
                 </p>
@@ -294,7 +316,9 @@ const Dividas = () => {
                 <Calendar className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Pendentes</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Pendentes
+                </p>
                 <p className="text-lg md:text-2xl font-bold text-yellow-600">
                   {dividasPendentes}
                 </p>
@@ -308,7 +332,9 @@ const Dividas = () => {
                 <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Quitadas</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Quitadas
+                </p>
                 <p className="text-lg md:text-2xl font-bold text-green-600">
                   {dividasQuitadas}
                 </p>
@@ -415,9 +441,7 @@ const Dividas = () => {
                       <TableHead>Parcela</TableHead>
                       <TableHead>Vencimento</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">
-                        Valor
-                      </TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -765,7 +789,9 @@ const Dividas = () => {
                     >
                       {Array.from({ length: 12 }, (_, i) => (
                         <option key={i + 1} value={i + 1}>
-                          {new Date(2024, i).toLocaleString('pt-BR', { month: 'long' })}
+                          {new Date(2024, i).toLocaleString("pt-BR", {
+                            month: "long",
+                          })}
                         </option>
                       ))}
                     </select>

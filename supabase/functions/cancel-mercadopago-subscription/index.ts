@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
+declare const Deno: any;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -13,151 +15,173 @@ serve(async (req) => {
   }
 
   try {
-    console.log("🔄 Iniciando cancelamento...");
-    
-    // Verificar se há token
+    console.log("🔄 Iniciando cancelamento de assinatura...");
+
+    // Verificar autenticação
     const authHeader = req.headers.get("Authorization");
+    console.log("🔑 AuthHeader present:", !!authHeader);
+
     if (!authHeader) {
-      console.error("❌ No auth header");
-      throw new Error("Token necessário");
+      console.error("❌ Token de autorização não fornecido");
+      throw new Error("Token de autorização necessário");
     }
 
-    console.log("✅ Auth header presente");
-
-    // Criar cliente Supabase
+    // Criar cliente Supabase com Service Role Key para operações privilegiadas
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("❌ Variáveis de ambiente não configuradas");
-      throw new Error("Configuração incorreta");
-    }
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    console.log("✅ Cliente Supabase criado");
 
-    // Extrair user_id do JWT
+    // Validar o JWT manualmente para obter o user_id
     const jwt = authHeader.replace("Bearer ", "");
+    console.log("🎫 JWT length:", jwt.length);
+
+    // Decodificar o JWT para extrair o user_id (validação básica)
     let userId: string;
-    
     try {
       const parts = jwt.split(".");
+      if (parts.length !== 3) {
+        throw new Error("JWT format inválido");
+      }
+
       const payload = JSON.parse(atob(parts[1]));
       userId = payload.sub;
-      console.log("✅ User ID:", userId);
-    } catch (e) {
-      console.error("❌ Erro JWT:", e);
-      throw new Error("JWT inválido");
+      console.log("👤 User ID extraído:", userId);
+
+      if (!userId) {
+        throw new Error("User ID não encontrado no JWT");
+      }
+    } catch (jwtError) {
+      console.error("❌ Erro ao decodificar JWT:", jwtError);
+      throw new Error("Token de autorização inválido");
     }
 
-    if (!userId) {
-      console.error("❌ User ID vazio");
-      throw new Error("User ID não encontrado");
-    }
+    console.log(`🔄 Cancelando assinatura para usuário: ${userId}`);
 
-    // Buscar assinatura do usuário na tabela subscribers
+    // Buscar subscription_id do usuário - primeiro verificar se a coluna existe
     console.log("🔍 Buscando assinatura...");
-    
-    // Primeiro, vamos tentar buscar todas as colunas disponíveis para ver a estrutura
-    const { data: allColumns, error: columnsError } = await supabase
+
+    // Tentar buscar com stripe_customer_id primeiro
+    let { data: subscriber, error: subscriberError } = await supabase
       .from("subscribers")
-      .select("*")
+      .select("stripe_customer_id")
       .eq("user_id", userId)
       .single();
 
-    if (columnsError) {
-      console.error("❌ Erro ao buscar subscriber:", columnsError);
+    // Se a coluna stripe_customer_id não existir, tentar só verificar se o usuário existe
+    if (subscriberError && subscriberError.code === "42703") {
+      console.log(
+        "⚠️ Coluna stripe_customer_id não existe, verificando usuário..."
+      );
+      const { data: userCheck, error: userError } = await supabase
+        .from("subscribers")
+        .select("user_id, email")
+        .eq("user_id", userId)
+        .single();
+
+      if (userError || !userCheck) {
+        console.error("❌ Usuário não encontrado na tabela subscribers");
+        throw new Error("Usuário não é assinante");
+      }
+
+      console.log(
+        "❌ Sistema em migração - cancelamento temporariamente indisponível"
+      );
+      throw new Error(
+        "Sistema em migração - tente novamente em alguns minutos"
+      );
+    }
+
+    if (subscriberError) {
+      console.error("❌ Erro ao buscar subscriber:", subscriberError);
       throw new Error("Erro ao buscar assinatura");
     }
 
-    if (!allColumns) {
-      console.error("❌ Usuário não encontrado na tabela subscribers");
-      throw new Error("Usuário não é assinante");
+    if (!subscriber?.stripe_customer_id) {
+      console.error("❌ Subscription ID não encontrado");
+      throw new Error(
+        "Assinatura não encontrada - ID do MercadoPago não disponível"
+      );
     }
 
-    console.log("📋 Dados do subscriber:", Object.keys(allColumns));
-
-    // Verificar se tem o ID do MercadoPago
-    const mpId = allColumns.stripe_customer_id || allColumns.mercadopago_id || allColumns.subscription_id;
-    
-    if (!mpId) {
-      console.error("❌ ID do MercadoPago não encontrado");
-      console.log("📊 Dados disponíveis:", allColumns);
-      throw new Error("ID da assinatura no MercadoPago não encontrado");
+    // Token do MercadoPago
+    const mercadoPagoToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    if (!mercadoPagoToken) {
+      throw new Error("Token do MercadoPago não configurado");
     }
 
-    console.log("✅ MercadoPago ID:", mpId);
+    console.log(`📋 Subscription ID: ${subscriber.stripe_customer_id}`);
 
-    // Token MercadoPago
-    const mpToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
-    if (!mpToken) {
-      console.error("❌ Token MP não configurado");
-      throw new Error("Token MercadoPago não configurado");
-    }
-
-    // Cancelar no MercadoPago
-    console.log("🚫 Cancelando no MercadoPago...");
-    const response = await fetch(
-      `https://api.mercadopago.com/preapproval/${mpId}`,
+    // Cancelar assinatura no MercadoPago
+    const cancelResponse = await fetch(
+      `https://api.mercadopago.com/preapproval/${subscriber.stripe_customer_id}`,
       {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${mpToken}`,
+          Authorization: `Bearer ${mercadoPagoToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: "cancelled" }),
+        body: JSON.stringify({
+          status: "cancelled",
+        }),
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Erro MercadoPago:", response.status, errorText);
-      throw new Error(`Erro MercadoPago: ${response.status} - ${errorText}`);
+    if (!cancelResponse.ok) {
+      const errorData = await cancelResponse.text();
+      console.error("❌ Erro no MercadoPago:", errorData);
+      throw new Error(
+        `Erro ao cancelar no MercadoPago: ${cancelResponse.status}`
+      );
     }
 
-    const result = await response.json();
-    console.log("✅ Cancelado no MercadoPago:", result.status);
+    const cancelResult = await cancelResponse.json();
+    console.log("✅ Cancelamento no MercadoPago:", cancelResult);
 
-    // Atualizar banco de dados
-    console.log("💾 Atualizando banco...");
-    const updateData: any = { updated_at: new Date().toISOString() };
-    
-    // Tentar adicionar campos de cancelamento se existirem
-    if ('cancel_at_period_end' in allColumns) {
-      updateData.cancel_at_period_end = true;
-    }
-    if ('cancelled_at' in allColumns) {
-      updateData.cancelled_at = new Date().toISOString();
-    }
+    // Atualizar subscriber no banco - usar campos que existem com certeza
+    const now = new Date().toISOString();
 
-    const { error: updateError } = await supabase
+    // Primeiro, tentar com os novos campos
+    let updateResult = await supabase
       .from("subscribers")
-      .update(updateData)
+      .update({
+        cancel_at_period_end: true,
+        cancelled_at: now,
+        updated_at: now,
+      })
       .eq("user_id", userId);
 
-    if (updateError) {
-      console.error("❌ Erro ao atualizar:", updateError);
-      // Não falhar aqui, pois o cancelamento no MP já foi feito
-      console.log("⚠️ Cancelamento no MP foi feito, mas falha ao atualizar DB");
-    } else {
-      console.log("✅ Banco atualizado");
+    // Se falhar (colunas não existem), tentar apenas com updated_at
+    if (updateResult.error) {
+      console.log("⚠️ Campos de cancelamento não existem, usando fallback...");
+      updateResult = await supabase
+        .from("subscribers")
+        .update({
+          updated_at: now,
+        })
+        .eq("user_id", userId);
     }
 
-    console.log("✅ Cancelamento concluído com sucesso");
+    if (updateResult.error) {
+      console.error("❌ Erro ao atualizar subscriber:", updateResult.error);
+      throw new Error("Erro ao atualizar dados no banco");
+    }
+
+    console.log("✅ Assinatura cancelada com sucesso");
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Assinatura cancelada com sucesso no MercadoPago. Você manterá acesso até o fim do período atual.",
-        mercadopago_status: result.status,
-        cancelled_at: new Date().toISOString()
+        message:
+          "Assinatura cancelada com sucesso. Você manterá acesso até o fim do período atual.",
+        cancelled_at: now,
+        status: "cancelled",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("❌ Erro geral:", error);
+    console.error("❌ Erro no cancelamento:", error);
     return new Response(
       JSON.stringify({
         error: error.message,

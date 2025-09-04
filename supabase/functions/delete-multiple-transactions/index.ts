@@ -38,11 +38,12 @@ serve(async (req) => {
     // Para dívidas, deletar apenas da tabela dividas
     if (tipo === "divida") {
       try {
-        const { data: deletedFromDividas, error: dividasError } = await supabaseClient
-          .from("dividas")
-          .delete()
-          .in("id", ids)
-          .select("id");
+        const { data: deletedFromDividas, error: dividasError } =
+          await supabaseClient
+            .from("dividas")
+            .delete()
+            .in("id", ids)
+            .select("id");
 
         if (dividasError) {
           console.error("Erro ao deletar da tabela dividas:", dividasError);
@@ -50,7 +51,9 @@ serve(async (req) => {
         } else {
           const dividasDeleted = deletedFromDividas?.length || 0;
           deletedCount += dividasDeleted;
-          console.log(`Deletados ${dividasDeleted} registros da tabela dividas`);
+          console.log(
+            `Deletados ${dividasDeleted} registros da tabela dividas`
+          );
         }
       } catch (error) {
         console.error("Erro ao deletar da tabela dividas:", error);
@@ -93,7 +96,10 @@ serve(async (req) => {
             .select("id");
 
         if (transacoesError) {
-          console.error("Erro ao deletar da tabela transacoes:", transacoesError);
+          console.error(
+            "Erro ao deletar da tabela transacoes:",
+            transacoesError
+          );
           errors.push(`Erro na tabela transacoes: ${transacoesError.message}`);
         } else {
           const transacoesDeleted = deletedFromTransacoes?.length || 0;

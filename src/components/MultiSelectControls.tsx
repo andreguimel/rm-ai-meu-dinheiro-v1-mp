@@ -50,7 +50,12 @@ export const MultiSelectControls = ({
     }
   };
 
-  const itemTypeLabel = itemType === "despesa" ? "despesas" : itemType === "receita" ? "receitas" : "dívidas";
+  const itemTypeLabel =
+    itemType === "despesa"
+      ? "despesas"
+      : itemType === "receita"
+      ? "receitas"
+      : "dívidas";
   const selectedCount = selectedIds.length;
 
   if (selectedCount === 0) {
