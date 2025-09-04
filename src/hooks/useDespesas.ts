@@ -233,6 +233,41 @@ export const useDespesas = () => {
     }
   };
 
+  const deleteMultipleDespesas = async (ids: string[]) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "delete-multiple-transactions",
+        {
+          body: {
+            ids,
+            tipo: "despesa",
+          },
+        }
+      );
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      setDespesas((prev) =>
+        prev.filter((despesa) => !ids.includes(despesa.id))
+      );
+
+      toast({
+        title: "Despesas removidas",
+        description: data.message,
+      });
+
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover despesas",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   useEffect(() => {
     if (user) {
       getMainAccountUserId();
@@ -315,6 +350,7 @@ export const useDespesas = () => {
     createDespesa,
     updateDespesa,
     deleteDespesa,
+    deleteMultipleDespesas,
     refetch: fetchDespesas,
   };
 };

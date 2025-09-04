@@ -41,14 +41,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useDividas, type Divida, type NovaDivida } from "@/hooks/useDividas";
 import { EditarDividaModal } from "@/components/EditarDividaModal";
+import { MultiSelectControls, SelectAllCheckbox, ItemCheckbox } from "@/components/MultiSelectControls";
 
 const Dividas = () => {
   const { toast } = useToast();
   const { categoriasDespesa } = useCategorias();
-  const { dividas, createDivida, updateDivida, deleteDivida, marcarComoPago, desmarcarComoPago } = useDividas();
+  const { dividas, createDivida, updateDivida, deleteDivida, deleteMultipleDividas, marcarComoPago, desmarcarComoPago } = useDividas();
   const [activeTab, setActiveTab] = useState("lista");
   const [dividaEditando, setDividaEditando] = useState<Divida | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
+
+  // Estados para seleção múltipla
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [filtro, setFiltro] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("");
@@ -159,6 +163,17 @@ const Dividas = () => {
 
   const handleExcluirDivida = async (id: string) => {
     await deleteDivida(id);
+  };
+
+  // Funções para seleção múltipla
+  const handleSelectionChange = (ids: string[]) => {
+    setSelectedIds(ids);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length > 0) {
+      await deleteMultipleDividas(selectedIds);
+    }
   };
 
   const handleEditarDivida = (id: string) => {
@@ -372,12 +387,28 @@ const Dividas = () => {
               </div>
             </Card>
 
+            {/* Controles de seleção múltipla */}
+            <MultiSelectControls
+              selectedIds={selectedIds}
+              onSelectionChange={handleSelectionChange}
+              onDeleteSelected={handleDeleteSelected}
+              totalItems={dividasFiltradas.length}
+              itemType="divida"
+            />
+
             {/* Tabela de Dívidas - Visível apenas em desktop */}
             <div className="hidden md:block">
               <Card>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <SelectAllCheckbox
+                          allIds={dividasFiltradas.map((d) => d.id)}
+                          selectedIds={selectedIds}
+                          onSelectionChange={handleSelectionChange}
+                        />
+                      </TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Credor</TableHead>
                       <TableHead>Categoria</TableHead>
@@ -393,6 +424,13 @@ const Dividas = () => {
                   <TableBody>
                     {dividasFiltradas.map((divida) => (
                       <TableRow key={divida.id}>
+                        <TableCell>
+                          <ItemCheckbox
+                            id={divida.id}
+                            selectedIds={selectedIds}
+                            onSelectionChange={handleSelectionChange}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {divida.descricao}
                         </TableCell>

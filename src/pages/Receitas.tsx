@@ -44,6 +44,11 @@ import { EditarReceitaModal } from "@/components/EditarReceitaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
+import {
+  MultiSelectControls,
+  SelectAllCheckbox,
+  ItemCheckbox,
+} from "@/components/MultiSelectControls";
 
 interface Receita {
   id: string;
@@ -60,8 +65,13 @@ const Receitas = () => {
   const { profile } = useProfile();
   const { sharedUsers } = useSharedUsers();
   const { categoriasReceita } = useCategorias();
-  const { receitas, createReceita, updateReceita, deleteReceita } =
-    useReceitas();
+  const {
+    receitas,
+    createReceita,
+    updateReceita,
+    deleteReceita,
+    deleteMultipleReceitas,
+  } = useReceitas();
   const [activeTab, setActiveTab] = useState("lista");
 
   const [novaReceita, setNovaReceita] = useState({
@@ -80,6 +90,9 @@ const Receitas = () => {
   // Estados para o modal de edição
   const [receitaEditando, setReceitaEditando] = useState<Receita | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
+
+  // Estados para seleção múltipla
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const adicionarReceita = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +173,17 @@ const Receitas = () => {
 
   const handleExcluirReceita = async (id: string) => {
     await deleteReceita(id);
+  };
+
+  // Funções para seleção múltipla
+  const handleSelectionChange = (ids: string[]) => {
+    setSelectedIds(ids);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length > 0) {
+      await deleteMultipleReceitas(selectedIds);
+    }
   };
 
   const receitasFiltradas = receitas
@@ -373,12 +397,28 @@ const Receitas = () => {
               </div>
             </Card>
 
+            {/* Controles de seleção múltipla */}
+            <MultiSelectControls
+              selectedIds={selectedIds}
+              onSelectionChange={handleSelectionChange}
+              onDeleteSelected={handleDeleteSelected}
+              totalItems={receitasFiltradas.length}
+              itemType="receita"
+            />
+
             {/* Tabela de Receitas - Visível apenas em desktop */}
             <div className="hidden md:block">
               <Card>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <SelectAllCheckbox
+                          allIds={receitasFiltradas.map((r) => r.id)}
+                          selectedIds={selectedIds}
+                          onSelectionChange={handleSelectionChange}
+                        />
+                      </TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Tipo</TableHead>
@@ -391,6 +431,13 @@ const Receitas = () => {
                   <TableBody>
                     {receitasFiltradas.map((receita) => (
                       <TableRow key={receita.id}>
+                        <TableCell>
+                          <ItemCheckbox
+                            id={receita.id}
+                            selectedIds={selectedIds}
+                            onSelectionChange={handleSelectionChange}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {receita.descricao}
                         </TableCell>

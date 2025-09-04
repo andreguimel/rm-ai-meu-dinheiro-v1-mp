@@ -196,6 +196,41 @@ export const useReceitas = () => {
     }
   };
 
+  const deleteMultipleReceitas = async (ids: string[]) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "delete-multiple-transactions",
+        {
+          body: {
+            ids,
+            tipo: "receita",
+          },
+        }
+      );
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      setReceitas((prev) =>
+        prev.filter((receita) => !ids.includes(receita.id))
+      );
+
+      toast({
+        title: "Receitas removidas",
+        description: data.message,
+      });
+
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover receitas",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   useEffect(() => {
     if (user) {
       getMainAccountUserId();
@@ -272,6 +307,7 @@ export const useReceitas = () => {
     createReceita,
     updateReceita,
     deleteReceita,
+    deleteMultipleReceitas,
     refetch: fetchReceitas,
   };
 };

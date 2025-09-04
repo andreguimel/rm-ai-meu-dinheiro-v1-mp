@@ -44,6 +44,11 @@ import { EditarDespesaModal } from "@/components/EditarDespesaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
+import {
+  MultiSelectControls,
+  SelectAllCheckbox,
+  ItemCheckbox,
+} from "@/components/MultiSelectControls";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Despesa {
@@ -61,8 +66,13 @@ const Despesas = () => {
   const { profile } = useProfile();
   const { sharedUsers } = useSharedUsers();
   const { categoriasDespesa } = useCategorias();
-  const { despesas, createDespesa, updateDespesa, deleteDespesa } =
-    useDespesas();
+  const {
+    despesas,
+    createDespesa,
+    updateDespesa,
+    deleteDespesa,
+    deleteMultipleDespesas,
+  } = useDespesas();
   const [activeTab, setActiveTab] = useState("lista");
 
   const [novaDespesa, setNovaDespesa] = useState({
@@ -81,6 +91,9 @@ const Despesas = () => {
   // Estados para o modal de edição
   const [despesaEditando, setDespesaEditando] = useState<Despesa | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
+
+  // Estados para seleção múltipla
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const adicionarDespesa = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +174,17 @@ const Despesas = () => {
 
   const handleExcluirDespesa = async (id: string) => {
     await deleteDespesa(id);
+  };
+
+  // Funções para seleção múltipla
+  const handleSelectionChange = (ids: string[]) => {
+    setSelectedIds(ids);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length > 0) {
+      await deleteMultipleDespesas(selectedIds);
+    }
   };
 
   // Obter lista de usuários únicos que criaram despesas
@@ -372,12 +396,28 @@ const Despesas = () => {
               </div>
             </Card>
 
+            {/* Controles de seleção múltipla */}
+            <MultiSelectControls
+              selectedIds={selectedIds}
+              onSelectionChange={handleSelectionChange}
+              onDeleteSelected={handleDeleteSelected}
+              totalItems={despesasFiltradas.length}
+              itemType="despesa"
+            />
+
             {/* Tabela de Despesas - Visível apenas em desktop */}
             <div className="hidden md:block">
               <Card>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <SelectAllCheckbox
+                          allIds={despesasFiltradas.map((d) => d.id)}
+                          selectedIds={selectedIds}
+                          onSelectionChange={handleSelectionChange}
+                        />
+                      </TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Tipo</TableHead>
@@ -390,6 +430,13 @@ const Despesas = () => {
                   <TableBody>
                     {despesasFiltradas.map((despesa) => (
                       <TableRow key={despesa.id}>
+                        <TableCell>
+                          <ItemCheckbox
+                            id={despesa.id}
+                            selectedIds={selectedIds}
+                            onSelectionChange={handleSelectionChange}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {despesa.descricao}
                         </TableCell>

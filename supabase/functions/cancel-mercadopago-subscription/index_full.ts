@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     console.log("🔄 Iniciando cancelamento...");
-    
+
     // Verificar se há token
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -27,7 +27,7 @@ serve(async (req) => {
     // Criar cliente Supabase
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("❌ Variáveis de ambiente não configuradas");
       throw new Error("Configuração incorreta");
@@ -39,7 +39,7 @@ serve(async (req) => {
     // Extrair user_id do JWT
     const jwt = authHeader.replace("Bearer ", "");
     let userId: string;
-    
+
     try {
       const parts = jwt.split(".");
       const payload = JSON.parse(atob(parts[1]));
@@ -57,7 +57,7 @@ serve(async (req) => {
 
     // Buscar assinatura do usuário na tabela subscribers
     console.log("🔍 Buscando assinatura...");
-    
+
     // Primeiro, vamos tentar buscar todas as colunas disponíveis para ver a estrutura
     const { data: allColumns, error: columnsError } = await supabase
       .from("subscribers")
@@ -78,8 +78,11 @@ serve(async (req) => {
     console.log("📋 Dados do subscriber:", Object.keys(allColumns));
 
     // Verificar se tem o ID do MercadoPago
-    const mpId = allColumns.stripe_customer_id || allColumns.mercadopago_id || allColumns.subscription_id;
-    
+    const mpId =
+      allColumns.stripe_customer_id ||
+      allColumns.mercadopago_id ||
+      allColumns.subscription_id;
+
     if (!mpId) {
       console.error("❌ ID do MercadoPago não encontrado");
       console.log("📊 Dados disponíveis:", allColumns);
@@ -121,12 +124,12 @@ serve(async (req) => {
     // Atualizar banco de dados
     console.log("💾 Atualizando banco...");
     const updateData: any = { updated_at: new Date().toISOString() };
-    
+
     // Tentar adicionar campos de cancelamento se existirem
-    if ('cancel_at_period_end' in allColumns) {
+    if ("cancel_at_period_end" in allColumns) {
       updateData.cancel_at_period_end = true;
     }
-    if ('cancelled_at' in allColumns) {
+    if ("cancelled_at" in allColumns) {
       updateData.cancelled_at = new Date().toISOString();
     }
 
@@ -148,9 +151,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Assinatura cancelada com sucesso no MercadoPago. Você manterá acesso até o fim do período atual.",
+        message:
+          "Assinatura cancelada com sucesso no MercadoPago. Você manterá acesso até o fim do período atual.",
         mercadopago_status: result.status,
-        cancelled_at: new Date().toISOString()
+        cancelled_at: new Date().toISOString(),
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

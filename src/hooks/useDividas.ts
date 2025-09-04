@@ -252,6 +252,39 @@ export const useDividas = () => {
     }
   };
 
+  const deleteMultipleDividas = async (ids: string[]) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "delete-multiple-transactions",
+        {
+          body: {
+            ids,
+            tipo: "divida",
+          },
+        }
+      );
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      setDividas((prev) => prev.filter((divida) => !ids.includes(divida.id)));
+
+      toast({
+        title: "Dívidas removidas",
+        description: data.message,
+      });
+
+      return { error: null };
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover dívidas",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   useEffect(() => {
     fetchDividas();
   }, []);
@@ -262,6 +295,7 @@ export const useDividas = () => {
     createDivida,
     updateDivida,
     deleteDivida,
+    deleteMultipleDividas,
     marcarComoPago,
     desmarcarComoPago,
     refetch: fetchDividas

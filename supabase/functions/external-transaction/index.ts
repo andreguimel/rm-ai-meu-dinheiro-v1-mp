@@ -69,8 +69,10 @@ serve(async (req) => {
       valor,
       data,
       categoria_nome,
+      categoria_id, // Aceitar categoria_id diretamente também
       shared_user_name, // Nome do usuário compartilhado
       account_owner_id, // ID da conta principal
+      created_by_shared_user_id, // Aceitar diretamente se vier
     } = body;
 
     console.log("=== VARIÁVEIS EXTRAÍDAS ===");
@@ -81,7 +83,12 @@ serve(async (req) => {
     console.log("valor (parseFloat):", parseFloat(valor));
     console.log("data:", data);
     console.log("categoria_nome:", categoria_nome);
+    console.log("categoria_id (direto):", categoria_id);
     console.log("shared_user_name:", shared_user_name);
+    console.log(
+      "created_by_shared_user_id (direto):",
+      created_by_shared_user_id
+    );
     console.log("account_owner_id:", account_owner_id);
     console.log("============================");
 
@@ -118,9 +125,11 @@ serve(async (req) => {
       );
     }
 
-    // Buscar categoria por nome (se fornecida)
-    let categoria_id = null;
-    if (categoria_nome) {
+    // Buscar categoria por nome (se fornecida) ou usar categoria_id diretamente
+    let final_categoria_id = categoria_id; // Usar categoria_id se vier diretamente
+
+    if (!final_categoria_id && categoria_nome) {
+      console.log("Buscando categoria por nome:", categoria_nome);
       const { data: categoria, error: categoriaError } = await supabase
         .from("categorias")
         .select("id")
@@ -130,13 +139,19 @@ serve(async (req) => {
         .single();
 
       if (!categoriaError && categoria) {
-        categoria_id = categoria.id;
+        final_categoria_id = categoria.id;
+        console.log("Categoria encontrada por nome:", categoria.id);
+      } else {
+        console.log("Categoria não encontrada por nome:", categoria_nome);
       }
     }
 
-    // Buscar shared_user por nome (se fornecido)
-    let created_by_shared_user_id = null;
-    if (shared_user_name) {
+    console.log("final_categoria_id determinado:", final_categoria_id);
+
+    // Buscar shared_user por nome (se fornecido) ou usar created_by_shared_user_id diretamente
+    let final_created_by_shared_user_id = created_by_shared_user_id; // Usar se vier diretamente
+
+    if (!final_created_by_shared_user_id && shared_user_name) {
       console.log("Buscando shared user por nome:", shared_user_name);
 
       const { data: sharedUser, error: sharedUserError } = await supabase
@@ -158,7 +173,7 @@ serve(async (req) => {
             u.name.toLowerCase().trim() ===
             shared_user_name.toLowerCase().trim()
         );
-        created_by_shared_user_id = exactMatch
+        final_created_by_shared_user_id = exactMatch
           ? exactMatch.id
           : sharedUser[0].id;
         console.log("Shared user encontrado:", exactMatch || sharedUser[0]);
@@ -170,6 +185,11 @@ serve(async (req) => {
       }
     }
 
+    console.log(
+      "final_created_by_shared_user_id determinado:",
+      final_created_by_shared_user_id
+    );
+
     // Determinar a tabela correta
     const tabela = tipo === "receita" ? "receitas" : "despesas";
 
@@ -178,20 +198,28 @@ serve(async (req) => {
     console.log("Tabela:", tabela);
     console.log("Dados para inserir:", {
       user_id: account_owner_id,
-      categoria_id,
-      created_by_shared_user_id,
+      categoria_id: final_categoria_id,
+      created_by_shared_user_id: final_created_by_shared_user_id,
       descricao,
       valor: parseFloat(valor),
       data,
     });
+
+    // Validação crítica: se categoria_id não foi encontrado, logar erro
+    if (!final_categoria_id) {
+      console.error("❌ CATEGORIA_ID NÃO ENCONTRADO!");
+      console.error("categoria_nome recebido:", categoria_nome);
+      console.error("categoria_id recebido:", categoria_id);
+      console.error("Isso pode causar categoria_id null no banco");
+    }
 
     const { data: novoRegistro, error: insertError } = await supabase
       .from(tabela)
       .insert([
         {
           user_id: account_owner_id,
-          categoria_id,
-          created_by_shared_user_id,
+          categoria_id: final_categoria_id,
+          created_by_shared_user_id: final_created_by_shared_user_id,
           descricao,
           valor: parseFloat(valor),
           data,
