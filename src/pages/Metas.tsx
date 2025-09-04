@@ -166,11 +166,31 @@ const Metas = () => {
   const handleImportarCategoriasPadrao = async () => {
     type CategoriaMetaPadrao = { nome: string; cor: string; descricao: string };
     const categoriasPadrao: CategoriaMetaPadrao[] = [
-      { nome: 'Emergência', cor: '#EF4444', descricao: 'Reserva para emergências e imprevistos' },
-      { nome: 'Viagem', cor: '#3B82F6', descricao: 'Economias para viagens e férias' },
-      { nome: 'Investimentos', cor: '#10B981', descricao: 'Aportes em investimentos' },
-      { nome: 'Casa Própria', cor: '#F59E0B', descricao: 'Economia para compra da casa própria' },
-      { nome: 'Educação', cor: '#8B5CF6', descricao: 'Investimento em cursos e formação' },
+      {
+        nome: "Emergência",
+        cor: "#EF4444",
+        descricao: "Reserva para emergências e imprevistos",
+      },
+      {
+        nome: "Viagem",
+        cor: "#3B82F6",
+        descricao: "Economias para viagens e férias",
+      },
+      {
+        nome: "Investimentos",
+        cor: "#10B981",
+        descricao: "Aportes em investimentos",
+      },
+      {
+        nome: "Casa Própria",
+        cor: "#F59E0B",
+        descricao: "Economia para compra da casa própria",
+      },
+      {
+        nome: "Educação",
+        cor: "#8B5CF6",
+        descricao: "Investimento em cursos e formação",
+      },
     ];
 
     try {
@@ -185,7 +205,8 @@ const Metas = () => {
       console.error("Erro ao importar categorias de metas padrão:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível importar as categorias de metas padrão. Tente novamente.",
+        description:
+          "Não foi possível importar as categorias de metas padrão. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -570,7 +591,10 @@ const Metas = () => {
                           <div className="flex items-center space-x-3">
                             <div
                               className="w-4 h-4 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: categoria.cor }}
+                              style={{
+                                backgroundColor:
+                                  meta.categorias_metas?.cor || "#6B7280",
+                              }}
                             />
                             <span className="font-medium text-gray-900 dark:text-gray-200">
                               {meta.titulo}
