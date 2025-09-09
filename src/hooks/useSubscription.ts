@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useTrialAnalytics } from "@/hooks/useTrialAnalytics";
+
+interface TrialData {
+  trial_active: boolean;
+  trial_start: string | null;
+  trial_end: string | null;
+  trial_days_remaining: number | null;
+}
 
 interface SubscriptionData {
   subscribed: boolean;
@@ -17,6 +25,12 @@ interface SubscriptionData {
   trial_end?: string | null;
   trial_start?: string | null;
   trial_days_remaining?: number | null;
+  // Enhanced trial fields - core trial functionality
+  trial_active: boolean;
+  access_level: "none" | "trial" | "premium";
+  effective_subscription: boolean; // trial ativo OU assinatura paga
+  has_paid_subscription: boolean;
+  trial_data: TrialData;
   payment_method?: {
     type: string;
     last4?: string;
@@ -60,6 +74,17 @@ export const useSubscription = () => {
       trial_end: null,
       trial_start: null,
       trial_days_remaining: null,
+      // Enhanced trial fields - required fields with proper defaults
+      trial_active: false,
+      access_level: "none",
+      effective_subscription: false,
+      has_paid_subscription: false,
+      trial_data: {
+        trial_active: false,
+        trial_start: null,
+        trial_end: null,
+        trial_days_remaining: null,
+      },
       payment_method: null,
       discount: null,
     },
@@ -69,6 +94,8 @@ export const useSubscription = () => {
 
   const { toast } = useToast();
   const { user, session } = useAuth();
+  const { logTrialAccessed, logTrialExpired, logTrialError } =
+    useTrialAnalytics();
 
   // Helper para obter headers de autenticação
   const getAuthHeaders = useCallback(async () => {
@@ -131,25 +158,96 @@ export const useSubscription = () => {
           trial_end: null,
           trial_start: null,
           trial_days_remaining: null,
+          // Enhanced trial fields for admin - admins have premium access without trials
+          trial_active: false,
+          access_level: "premium",
+          effective_subscription: true,
+          has_paid_subscription: true,
+          trial_data: {
+            trial_active: false,
+            trial_start: null,
+            trial_end: null,
+            trial_days_remaining: null,
+          },
           payment_method: null,
           discount: null,
         });
         return;
       }
 
-      // 2. Verificar assinatura via Edge Function
+      // 2. Verificar trial diretamente do banco PRIMEIRO
+      console.log("🔍 Verificando trial diretamente do banco...");
+      const { data: directTrialStatus, error: directTrialError } =
+        await supabase.rpc("get_user_access_status", {
+          check_user_id: user.id,
+        });
+
+      console.log("🔍 Status direto do banco:", {
+        directTrialStatus,
+        directTrialError,
+      });
+
+      // 3. Verificar assinatura via Edge Function (nova função que inclui trial)
       const headers = await getAuthHeaders();
       const { data, error } = await supabase.functions.invoke(
-        "check-mercadopago-subscription",
+        "check-subscription-with-trial",
         { headers }
       );
 
       console.log("🔍 Resposta da verificação:", { data, error });
 
+      // 4. SEMPRE usar dados diretos do banco quando disponíveis (prioridade total)
+      let finalData = data;
+      if (directTrialStatus && directTrialStatus[0]) {
+        const trialData = directTrialStatus[0];
+        console.log("🎯 PRIORIZANDO dados do trial do banco:", trialData);
+
+        finalData = {
+          ...data,
+          trial_active: trialData.trial_active,
+          trial_start: trialData.trial_start,
+          trial_end: trialData.trial_end,
+          trial_days_remaining: trialData.trial_days_remaining,
+          access_level: trialData.access_level,
+          effective_subscription: trialData.effective_subscription,
+          has_paid_subscription: trialData.has_paid_subscription,
+          subscription_tier: trialData.subscription_tier,
+        };
+      } else {
+        console.log(
+          "⚠️ Nenhum dado de trial encontrado no banco - usando dados da Edge Function"
+        );
+      }
+
+      console.log("🔍 Dados finais após correção:", finalData);
+
       if (error) {
         console.warn("Erro ao verificar assinatura:", error.message);
-        // Se há erro, assumir sem assinatura
-        setSubscriptionData({
+
+        // Enhanced error handling for trial-related failures
+        const isTrialError =
+          error.message?.toLowerCase().includes("trial") ||
+          error.message?.toLowerCase().includes("teste") ||
+          error.message?.toLowerCase().includes("período") ||
+          error.message?.toLowerCase().includes("periodo");
+
+        if (isTrialError) {
+          console.warn("⚠️ Erro relacionado a trial detectado");
+          setError(`Erro ao verificar período de teste: ${error.message}`);
+
+          // Show user-friendly toast for trial verification errors
+          toast({
+            title: "Erro no período de teste",
+            description:
+              "Não foi possível verificar seu período de teste. Algumas funcionalidades podem estar limitadas.",
+            variant: "destructive",
+          });
+        } else {
+          setError(`Erro ao verificar assinatura: ${error.message}`);
+        }
+
+        // Se há erro, assumir sem assinatura mas manter estrutura de trial
+        const fallbackData: SubscriptionData = {
           subscribed: false,
           subscription_tier: null,
           subscription_end: null,
@@ -163,57 +261,217 @@ export const useSubscription = () => {
           trial_end: null,
           trial_start: null,
           trial_days_remaining: null,
+          // Enhanced trial fields with safe defaults
+          trial_active: false,
+          access_level: "none",
+          effective_subscription: false,
+          has_paid_subscription: false,
+          trial_data: {
+            trial_active: false,
+            trial_start: null,
+            trial_end: null,
+            trial_days_remaining: null,
+          },
           payment_method: null,
           discount: null,
-        });
+        };
+
+        setSubscriptionData(fallbackData);
         return;
       }
 
-      // 3. Normalizar dados da resposta
+      // 5. Normalizar dados da resposta com NOVA LÓGICA: Trial ativo = acesso liberado
+      const trialActive = finalData?.trial_active ?? false;
+      const hasPaidSubscription =
+        finalData?.has_paid_subscription ?? finalData?.subscribed ?? false;
+
+      // NOVA LÓGICA: Se trial está ativo, liberar acesso independente do MercadoPago
+      // Se trial expirou, só liberar se houver pagamento confirmado
+      const shouldGrantAccess = trialActive || hasPaidSubscription;
+
+      // Calculate access level with NEW hierarchy: trial active = access granted
+      const accessLevel: "none" | "trial" | "premium" = shouldGrantAccess
+        ? trialActive
+          ? "trial" // Trial ativo sempre tem prioridade
+          : "premium" // Só premium se não há trial ativo mas há pagamento
+        : "none"; // Sem acesso se trial expirou e sem pagamento
+
+      // Calculate effective subscription: PRIORIZA TRIAL ATIVO
+      const effectiveSubscription = shouldGrantAccess;
+
+      console.log("🎯 NOVA LÓGICA DE ACESSO:", {
+        trialActive,
+        hasPaidSubscription,
+        shouldGrantAccess,
+        accessLevel,
+        effectiveSubscription,
+        logic: trialActive
+          ? "✅ TRIAL ATIVO - Acesso liberado independente do MercadoPago"
+          : hasPaidSubscription
+          ? "✅ PAGAMENTO CONFIRMADO - Acesso liberado"
+          : "❌ ACESSO BLOQUEADO - Trial expirado e sem pagamento",
+        rawTrialData: {
+          trial_active: finalData?.trial_active,
+          trial_start: finalData?.trial_start,
+          trial_end: finalData?.trial_end,
+          trial_days_remaining: finalData?.trial_days_remaining,
+        },
+      });
+
+      // Create validated trial data structure
+      const trialData: TrialData = {
+        trial_active: trialActive,
+        trial_start: finalData?.trial_start ?? finalData?.trialStart ?? null,
+        trial_end: finalData?.trial_end ?? finalData?.trialEnd ?? null,
+        trial_days_remaining: finalData?.trial_days_remaining ?? null,
+      };
+
+      // Validate trial data consistency
+      if (trialData.trial_active && !trialData.trial_end) {
+        console.warn(
+          "⚠️ Inconsistent trial data: active trial without end date"
+        );
+      }
+
+      if (
+        trialData.trial_days_remaining !== null &&
+        trialData.trial_days_remaining < 0
+      ) {
+        console.warn(
+          "⚠️ Negative trial days remaining detected:",
+          trialData.trial_days_remaining
+        );
+        trialData.trial_days_remaining = 0;
+      }
+
       const normalized: SubscriptionData = {
-        subscribed: data?.subscribed ?? false,
+        subscribed: hasPaidSubscription,
         subscription_tier:
-          data?.subscription_tier ?? data?.subscriptionTier ?? null,
+          finalData?.subscription_tier ?? finalData?.subscriptionTier ?? null,
         subscription_end:
-          data?.subscription_end ?? data?.subscriptionEnd ?? null,
+          finalData?.subscription_end ?? finalData?.subscriptionEnd ?? null,
         subscription_start:
-          data?.subscription_start ?? data?.subscriptionStart ?? null,
+          finalData?.subscription_start ?? finalData?.subscriptionStart ?? null,
         current_period_start:
-          data?.current_period_start ?? data?.currentPeriodStart ?? null,
+          finalData?.current_period_start ??
+          finalData?.currentPeriodStart ??
+          null,
         current_period_end:
-          data?.current_period_end ?? data?.currentPeriodEnd ?? null,
-        amount: data?.amount ?? data?.last_payment_amount ?? null,
-        currency: data?.currency ?? data?.last_payment_currency ?? null,
-        status: data?.status ?? data?.last_payment_status ?? null,
+          finalData?.current_period_end ?? finalData?.currentPeriodEnd ?? null,
+        amount: finalData?.amount ?? finalData?.last_payment_amount ?? null,
+        currency:
+          finalData?.currency ?? finalData?.last_payment_currency ?? null,
+        status: finalData?.status ?? finalData?.last_payment_status ?? null,
         cancel_at_period_end:
-          data?.cancel_at_period_end ?? data?.cancelAtPeriodEnd ?? null,
-        trial_end: data?.trial_end ?? data?.trialEnd ?? null,
-        trial_start: data?.trial_start ?? data?.trialStart ?? null,
-        trial_days_remaining: data?.trial_days_remaining ?? null,
-        payment_method: data?.payment_method ?? null,
-        discount: data?.discount ?? null,
+          finalData?.cancel_at_period_end ??
+          finalData?.cancelAtPeriodEnd ??
+          null,
+        trial_end: trialData.trial_end,
+        trial_start: trialData.trial_start,
+        trial_days_remaining: trialData.trial_days_remaining,
+        // Enhanced trial fields
+        trial_active: trialActive,
+        access_level: accessLevel as "none" | "trial" | "premium",
+        effective_subscription: effectiveSubscription,
+        has_paid_subscription: hasPaidSubscription,
+        trial_data: trialData,
+        payment_method: finalData?.payment_method ?? null,
+        discount: finalData?.discount ?? null,
         last_payment_amount:
-          data?.last_payment_amount ?? data?.lastPaymentAmount ?? null,
+          finalData?.last_payment_amount ??
+          finalData?.lastPaymentAmount ??
+          null,
         last_payment_currency:
-          data?.last_payment_currency ?? data?.lastPaymentCurrency ?? null,
+          finalData?.last_payment_currency ??
+          finalData?.lastPaymentCurrency ??
+          null,
         last_payment_status:
-          data?.last_payment_status ?? data?.lastPaymentStatus ?? null,
+          finalData?.last_payment_status ??
+          finalData?.lastPaymentStatus ??
+          null,
       };
 
       console.log("✅ Dados normalizados:", normalized);
       console.log(
         "🔍 Status final - subscribed:",
         normalized.subscribed,
-        "tier:",
-        normalized.subscription_tier
+        "effective_subscription:",
+        normalized.effective_subscription,
+        "access_level:",
+        normalized.access_level,
+        "trial_active:",
+        normalized.trial_active
       );
+
+      // Note: Automatic trial creation is now handled by ProtectedRoute component
+      // This ensures trials are created at the right time in the user flow
+
+      // Log trial analytics if trial is active
+      if (normalized.trial_active && normalized.trial_days_remaining !== null) {
+        logTrialAccessed({
+          trial_days_remaining: normalized.trial_days_remaining,
+          access_level: normalized.access_level,
+          subscription_tier: normalized.subscription_tier,
+          request_source: "useSubscription_hook",
+        }).catch((error) => {
+          console.warn("Failed to log trial access analytics:", error);
+        });
+      }
+
+      // Log trial expiration if trial just expired
+      if (normalized.trial_data.trial_end && !normalized.trial_active) {
+        const trialEndDate = new Date(normalized.trial_data.trial_end);
+        const now = new Date();
+        const timeDiff = now.getTime() - trialEndDate.getTime();
+        const daysDiff = timeDiff / (1000 * 3600 * 24);
+
+        // Log if trial expired within the last day (to avoid duplicate logs)
+        if (daysDiff <= 1 && daysDiff >= 0) {
+          logTrialExpired({
+            trial_end: normalized.trial_data.trial_end,
+            has_paid_subscription: normalized.has_paid_subscription,
+            access_level: normalized.access_level,
+            request_source: "useSubscription_hook",
+          }).catch((error) => {
+            console.warn("Failed to log trial expiration analytics:", error);
+          });
+        }
+      }
 
       setSubscriptionData(normalized);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Erro inesperado";
       console.error("Erro na verificação de assinatura:", error);
-      setError(errorMessage);
+
+      // Enhanced error handling for trial-related failures
+      const isTrialError =
+        errorMessage?.toLowerCase().includes("trial") ||
+        errorMessage?.toLowerCase().includes("teste");
+
+      if (isTrialError) {
+        console.error("❌ Erro crítico relacionado a trial:", error);
+        setError(`Erro no sistema de período de teste: ${errorMessage}`);
+
+        // Log trial error for analytics
+        logTrialError({
+          error_type: "subscription_check_error",
+          error_message: errorMessage,
+          request_source: "useSubscription_hook",
+        }).catch((analyticsError) => {
+          console.warn("Failed to log trial error analytics:", analyticsError);
+        });
+
+        // Show user-friendly toast for trial errors
+        toast({
+          title: "Erro no período de teste",
+          description:
+            "Houve um problema ao verificar seu período de teste. Tente novamente em alguns instantes.",
+          variant: "destructive",
+        });
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -410,6 +668,79 @@ export const useSubscription = () => {
     }
   }, [session, checkSubscription]);
 
+  // Função para iniciar trial manualmente
+  const startTrial = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description:
+          "Você precisa estar logado para iniciar o período de teste.",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+
+    try {
+      setLoading(true);
+      console.log("🚀 Iniciando trial manualmente para:", user.email);
+
+      const headers = await getAuthHeaders();
+      if (!headers.Authorization) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+
+      const { data, error } = await supabase.functions.invoke("start-trial", {
+        headers,
+      });
+
+      if (error) {
+        console.error("❌ Erro ao iniciar trial:", error);
+        throw new Error(error.message || "Erro ao iniciar período de teste");
+      }
+
+      console.log("✅ Resposta do start-trial:", data);
+
+      if (data?.trial_created) {
+        toast({
+          title: "Período de teste iniciado!",
+          description:
+            "Você ganhou 7 dias grátis para experimentar todas as funcionalidades.",
+        });
+
+        // Atualizar dados da assinatura
+        await checkSubscription();
+        return { success: true, data };
+      } else if (data?.trial_already_exists) {
+        toast({
+          title: "Período de teste já existe",
+          description: data.message || "Você já possui um período de teste.",
+          variant: "destructive",
+        });
+        return { success: false, error: "Trial já existe" };
+      } else {
+        throw new Error(
+          data?.message || "Não foi possível iniciar o período de teste"
+        );
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao iniciar período de teste";
+      console.error("❌ Erro ao iniciar trial:", error);
+
+      toast({
+        title: "Erro ao iniciar período de teste",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [user, getAuthHeaders, setLoading, toast, checkSubscription]);
+
   return {
     subscriptionData: state.data,
     loading: state.loading,
@@ -418,5 +749,22 @@ export const useSubscription = () => {
     createCheckout,
     forceRefreshSubscription,
     cancelSubscription,
+    startTrial,
+    // Helper functions for trial data - enhanced with better defaults and validation
+    hasActiveSubscription: state.data.effective_subscription,
+    hasActiveTrial: state.data.trial_active,
+    hasPaidSubscription: state.data.has_paid_subscription,
+    accessLevel: state.data.access_level,
+    trialDaysRemaining: state.data.trial_days_remaining,
+    // Additional trial helpers
+    isTrialExpiring:
+      (state.data.trial_days_remaining ?? 0) <= 3 &&
+      (state.data.trial_days_remaining ?? 0) > 0,
+    isTrialExpired:
+      state.data.trial_active === false &&
+      state.data.trial_data.trial_end !== null,
+    canStartTrial:
+      !state.data.has_paid_subscription &&
+      state.data.trial_data.trial_start === null,
   };
 };

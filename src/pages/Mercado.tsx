@@ -48,6 +48,7 @@ import { NovaCategoriaModal } from "@/components/NovaCategoriaModal";
 import { EditarCategoriaModal } from "@/components/EditarCategoriaModal";
 import { EditarOrcamentoModal } from "@/components/EditarOrcamentoModal";
 import { useToast } from "@/hooks/use-toast";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useCategoriasMercado } from "@/hooks/useCategoriasMercado";
 import { useItensMercado } from "@/hooks/useItensMercado";
@@ -98,15 +99,43 @@ const despesasSupermercado = [
 
 const Mercado = () => {
   const handleImportarCategoriasPadrao = async () => {
-    type CategoriaMercadoPadrao = { nome: string; descricao: string; cor: string };
+    type CategoriaMercadoPadrao = {
+      nome: string;
+      descricao: string;
+      cor: string;
+    };
     const categoriasPadrao: CategoriaMercadoPadrao[] = [
-      { nome: 'Alimentação Básica', descricao: 'Itens essenciais de alimentação', cor: '#10B981' },
-      { nome: 'Limpeza', descricao: 'Produtos de limpeza e higiene', cor: '#3B82F6' },
-      { nome: 'Higiene Pessoal', descricao: 'Produtos de cuidado pessoal', cor: '#8B5CF6' },
-      { nome: 'Bebidas', descricao: 'Bebidas em geral', cor: '#F59E0B' },
-      { nome: 'Carnes e Proteínas', descricao: 'Carnes, peixes e proteínas', cor: '#EF4444' },
-      { nome: 'Laticínios', descricao: 'Leite, queijos e derivados', cor: '#06B6D4' },
-      { nome: 'Frutas e Verduras', descricao: 'Hortifruti em geral', cor: '#84CC16' },
+      {
+        nome: "Alimentação Básica",
+        descricao: "Itens essenciais de alimentação",
+        cor: "#10B981",
+      },
+      {
+        nome: "Limpeza",
+        descricao: "Produtos de limpeza e higiene",
+        cor: "#3B82F6",
+      },
+      {
+        nome: "Higiene Pessoal",
+        descricao: "Produtos de cuidado pessoal",
+        cor: "#8B5CF6",
+      },
+      { nome: "Bebidas", descricao: "Bebidas em geral", cor: "#F59E0B" },
+      {
+        nome: "Carnes e Proteínas",
+        descricao: "Carnes, peixes e proteínas",
+        cor: "#EF4444",
+      },
+      {
+        nome: "Laticínios",
+        descricao: "Leite, queijos e derivados",
+        cor: "#06B6D4",
+      },
+      {
+        nome: "Frutas e Verduras",
+        descricao: "Hortifruti em geral",
+        cor: "#84CC16",
+      },
     ];
 
     try {
@@ -123,7 +152,8 @@ const Mercado = () => {
       console.error("Erro ao importar categorias de mercado padrão:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível importar as categorias de mercado padrão. Tente novamente.",
+        description:
+          "Não foi possível importar as categorias de mercado padrão. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -335,6 +365,9 @@ const Mercado = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6 space-y-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
         {/* Header */}
         <div className="flex flex-col space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-200">
@@ -517,7 +550,9 @@ const Mercado = () => {
 
             {/* Filtros */}
             <Card className="p-4 md:p-6">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4">Filtros</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4">
+                Filtros
+              </h2>
               <div className="flex flex-col space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -760,7 +795,9 @@ const Mercado = () => {
           <TabsContent value="categorias" className="space-y-6">
             <Card className="p-4 md:p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Categorias</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">
+                  Categorias
+                </h2>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={handleImportarCategoriasPadrao}

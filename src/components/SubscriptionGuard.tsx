@@ -1,20 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { TrialExpirationModal } from "@/components/TrialExpirationModal";
+import { BasicAccessProvider } from "@/components/BasicAccessProvider";
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
 }
 
 export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
-  const { subscriptionData, loading } = useSubscription();
+  const { subscriptionData, loading } = useSubscriptionDirect();
+  const { createCheckout } = useSubscription(); // Apenas para função de checkout
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminLoading, setAdminLoading] = useState(true);
+  const [showTrialExpirationModal, setShowTrialExpirationModal] =
+    useState(false);
+  const [modalDismissedThisSession, setModalDismissedThisSession] =
+    useState(false);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -34,67 +42,219 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     checkAdminStatus();
   }, [user]);
 
-  // Check if user has valid subscription
-  const isEffectivelySubscribed = (() => {
-    try {
-      console.log("🛡️ SubscriptionGuard - Verificando acesso");
-      console.log("🛡️ isAdmin:", isAdmin);
-      console.log("🛡️ subscriptionData:", subscriptionData);
+  // Define basic access pages (read-only access for expired trial users)
+  const basicAccessPages = [
+    "/dashboard",
+    "/receitas",
+    "/despesas",
+    "/transacoes",
+  ];
+  const isBasicAccessPage = basicAccessPages.includes(location.pathname);
 
-      // Admin users have full access
+  // Hierarchical access checking: admin > paid > trial > basic > none
+  const accessResult = (() => {
+    try {
+      console.log(
+        "🛡️ SubscriptionGuard - Verificando acesso hierárquico (HOOK DIRETO)"
+      );
+      console.log("🛡️ isAdmin:", isAdmin);
+      console.log("🛡️ subscriptionData (DIRETO DO BANCO):", {
+        access_level: subscriptionData.access_level,
+        effective_subscription: subscriptionData.effective_subscription,
+        trial_active: subscriptionData.trial_active,
+        has_paid_subscription: subscriptionData.has_paid_subscription,
+        subscription_tier: subscriptionData.subscription_tier,
+        trial_days_remaining: subscriptionData.trial_days_remaining,
+      });
+
+      // Level 1: Admin users have full access (highest priority)
       if (isAdmin) {
-        console.log("✅ Acesso liberado - Usuário é admin");
-        return true;
+        console.log("✅ Acesso liberado - Usuário é admin (nível 1)");
+        return { hasAccess: true, accessType: "full" };
       }
 
-      // Check if user has active subscription (qualquer tier que não seja trial)
-      if (subscriptionData.subscribed) {
-        console.log("✅ Usuário tem assinatura ativa");
+      // Level 2: Users with paid subscription (second priority)
+      if (subscriptionData.has_paid_subscription) {
+        console.log("✅ Acesso liberado - Assinatura paga ativa (nível 2)");
         console.log("🔍 Tier:", subscriptionData.subscription_tier);
         console.log("🔍 Status:", subscriptionData.status);
-
-        // Se não é trial, liberar acesso
-        if (subscriptionData.subscription_tier !== "Trial") {
-          console.log("✅ Acesso liberado - Assinatura válida");
-          return true;
-        }
+        return { hasAccess: true, accessType: "full" };
       }
 
-      console.log("❌ Acesso negado - Sem assinatura válida");
-      return false;
+      // Level 3: Users with active trial (third priority)
+      if (subscriptionData.trial_active) {
+        console.log("✅ Acesso liberado - Trial ativo (nível 3)");
+        console.log(
+          "🔍 Trial days remaining:",
+          subscriptionData.trial_days_remaining
+        );
+        console.log("🔍 Trial end:", subscriptionData.trial_end);
+        return { hasAccess: true, accessType: "full" };
+      }
+
+      // Level 4: Basic access for expired trial users on specific pages (fourth priority)
+      const hasTrialHistory = subscriptionData.trial_data?.trial_end !== null;
+      if (hasTrialHistory && isBasicAccessPage) {
+        console.log(
+          "✅ Acesso básico liberado - Trial expirado em página básica (nível 4)"
+        );
+        console.log("🔍 Página:", location.pathname);
+        return { hasAccess: true, accessType: "basic" };
+      }
+
+      // Level 5: No access (lowest priority)
+      console.log(
+        "❌ Acesso negado - Sem assinatura ou trial válido (nível 5)"
+      );
+      console.log("🔍 Access level:", subscriptionData.access_level);
+      console.log(
+        "🔍 Effective subscription:",
+        subscriptionData.effective_subscription
+      );
+      return { hasAccess: false, accessType: "none" };
     } catch (err) {
-      console.error("SubscriptionGuard - Error checking subscription:", err);
-      return false;
+      console.error("SubscriptionGuard - Error checking access:", err);
+      // On error, deny access for security
+      return { hasAccess: false, accessType: "none" };
     }
   })();
 
+  const hasValidAccess = accessResult.hasAccess;
+  const accessType = accessResult.accessType;
+
+  // Check for expired trial and show modal
   useEffect(() => {
-    if (!loading && !adminLoading && !isEffectivelySubscribed) {
-      // If no valid subscription and not on profile page, redirect to profile
-      if (location.pathname !== "/perfil") {
-        navigate("/perfil");
+    if (
+      !loading &&
+      !adminLoading &&
+      !isAdmin &&
+      !showTrialExpirationModal &&
+      !modalDismissedThisSession
+    ) {
+      const hasTrialHistory = subscriptionData.trial_data?.trial_end !== null;
+      const isTrialExpired =
+        hasTrialHistory &&
+        !subscriptionData.trial_active &&
+        !subscriptionData.has_paid_subscription;
+
+      const isTrialExpiring =
+        subscriptionData.trial_active &&
+        (subscriptionData.trial_days_remaining ?? 0) <= 1 &&
+        (subscriptionData.trial_days_remaining ?? 0) >= 0;
+
+      // Show modal for expired trial or trial expiring in 1 day or less
+      // Only show if user has trial history, no paid subscription, and modal wasn't dismissed
+      if ((isTrialExpired || isTrialExpiring) && hasTrialHistory) {
+        console.log("🚨 Trial expiration detected - showing modal", {
+          isTrialExpired,
+          isTrialExpiring,
+          hasTrialHistory,
+          trial_days_remaining: subscriptionData.trial_days_remaining,
+          trial_active: subscriptionData.trial_active,
+          has_paid_subscription: subscriptionData.has_paid_subscription,
+          trial_end: subscriptionData.trial_data?.trial_end,
+          modalDismissedThisSession,
+        });
+        setShowTrialExpirationModal(true);
       }
     }
   }, [
-    isEffectivelySubscribed,
     loading,
     adminLoading,
-    location.pathname,
-    navigate,
+    isAdmin,
+    subscriptionData.trial_active,
+    subscriptionData.trial_days_remaining,
+    subscriptionData.has_paid_subscription,
+    subscriptionData.trial_data?.trial_end,
+    showTrialExpirationModal,
+    modalDismissedThisSession,
   ]);
 
+  useEffect(() => {
+    if (!loading && !adminLoading && !hasValidAccess) {
+      // If no valid access and not on profile page, redirect to profile
+      if (location.pathname !== "/perfil") {
+        console.log("🔄 Redirecionando para perfil - sem acesso válido");
+        navigate("/perfil");
+      }
+    }
+  }, [hasValidAccess, loading, adminLoading, location.pathname, navigate]);
+
+  // Enhanced loading states during trial verification
   if (loading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+          <div className="text-center">
+            <p className="text-lg font-medium text-gray-700">
+              Verificando acesso...
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              {loading && adminLoading
+                ? "Verificando assinatura e permissões"
+                : loading
+                ? "Verificando assinatura e período de teste"
+                : "Verificando permissões de administrador"}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Block access if no valid subscription and not on profile page
-  if (!isEffectivelySubscribed && location.pathname !== "/perfil") {
+  // Handle upgrade flow from trial expiration modal
+  const handleUpgradeFromModal = () => {
+    console.log("🚀 Iniciando upgrade a partir do modal de expiração");
+    createCheckout();
+    setShowTrialExpirationModal(false);
+
+    // Reset session dismissal flag in case user returns after successful payment
+    setModalDismissedThisSession(false);
+  };
+
+  // Handle modal dismissal
+  const handleModalDismiss = (open: boolean) => {
+    setShowTrialExpirationModal(open);
+    if (!open) {
+      // Mark modal as dismissed for this session to prevent repeated showing
+      setModalDismissedThisSession(true);
+      console.log("📝 Modal de expiração de trial foi dispensado nesta sessão");
+    }
+  };
+
+  // Determine if trial is expired (not active but has trial_end date)
+  const isTrialExpired =
+    subscriptionData.trial_data?.trial_end &&
+    !subscriptionData.trial_active &&
+    !subscriptionData.has_paid_subscription;
+
+  // Block access if no valid access and not on profile page
+  if (!hasValidAccess && location.pathname !== "/perfil") {
+    console.log("🚫 Bloqueando acesso - redirecionamento necessário");
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <BasicAccessProvider
+        isBasicAccess={accessType === "basic"}
+        onShowUpgradePrompt={() => {
+          setModalDismissedThisSession(false);
+          setShowTrialExpirationModal(true);
+        }}
+      >
+        {children}
+      </BasicAccessProvider>
+
+      {/* Trial Expiration Modal */}
+      <TrialExpirationModal
+        open={showTrialExpirationModal}
+        onOpenChange={handleModalDismiss}
+        onUpgrade={handleUpgradeFromModal}
+        isExpired={!!isTrialExpired}
+        daysRemaining={subscriptionData.trial_days_remaining}
+      />
+    </>
+  );
 };

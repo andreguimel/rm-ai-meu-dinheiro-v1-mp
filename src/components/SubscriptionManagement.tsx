@@ -71,10 +71,10 @@ export const SubscriptionManagement = () => {
   const [loadingCancel, setLoadingCancel] = useState(false);
 
   useEffect(() => {
-    if (subscriptionData.subscribed) {
+    if (subscriptionData.effective_subscription) {
       // loadPaymentHistory();
     }
-  }, [subscriptionData.subscribed]);
+  }, [subscriptionData.effective_subscription]);
 
   const loadPaymentHistory = async () => {
     setLoadingHistory(true);

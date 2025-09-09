@@ -23,7 +23,8 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "./ThemeToggle";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
+import { AccessStatusIndicator } from "@/components/AccessStatusIndicator";
 import { useAuth } from "@/hooks/useAuth";
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,7 +35,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { toast } = useToast();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { subscriptionData } = useSubscription();
+  const { subscriptionData } = useSubscriptionDirect();
   const { signOut, user, ensureUserProfile } = useAuth();
 
   // Garantir que o perfil existe quando o usuário acessa o dashboard
@@ -63,19 +64,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
     createProfileIfNeeded();
   }, [user, ensureUserProfile]);
-  // Compute effective subscription: subscribed OR active trial
-  const isEffectivelySubscribed = (() => {
-    try {
-      if (subscriptionData.subscribed) return true;
-      if (subscriptionData.trial_end) {
-        const t = new Date(subscriptionData.trial_end);
-        return t.getTime() > Date.now();
-      }
-      return false;
-    } catch (err) {
-      return false;
-    }
-  })();
+  // Use effective subscription from subscription data
+  const isEffectivelySubscribed = subscriptionData.effective_subscription;
   const menuItems = [
     {
       icon: Home,
@@ -180,6 +170,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
   return (
     <div className="min-h-screen bg-background flex relative">
+      {/* Indicador de Status de Acesso */}
+      <AccessStatusIndicator />
       {/* Mobile Menu Button - Only show when menu is closed */}
       {!isMobileMenuOpen && (
         <div className="lg:hidden fixed top-4 left-4 z-50">

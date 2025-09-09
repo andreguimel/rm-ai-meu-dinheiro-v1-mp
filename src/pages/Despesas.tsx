@@ -44,6 +44,9 @@ import { EditarDespesaModal } from "@/components/EditarDespesaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
+import { BasicAccessBanner } from "@/components/BasicAccessBanner";
+import { useBasicAccessControl } from "@/hooks/useBasicAccessControl";
 import {
   MultiSelectControls,
   SelectAllCheckbox,
@@ -73,6 +76,7 @@ const Despesas = () => {
     deleteDespesa,
     deleteMultipleDespesas,
   } = useDespesas();
+  const { wrapAction } = useBasicAccessControl();
   const [activeTab, setActiveTab] = useState("lista");
 
   const [novaDespesa, setNovaDespesa] = useState({
@@ -95,7 +99,7 @@ const Despesas = () => {
   // Estados para seleção múltipla
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const adicionarDespesa = async (e: React.FormEvent) => {
+  const adicionarDespesa = wrapAction(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (
@@ -144,9 +148,9 @@ const Despesas = () => {
     });
 
     setActiveTab("lista");
-  };
+  }, "adicionar despesa");
 
-  const handleEditarDespesa = (despesa: any) => {
+  const handleEditarDespesa = wrapAction((despesa: any) => {
     const despesaFormatada = {
       id: despesa.id,
       descricao: despesa.descricao,
@@ -157,7 +161,7 @@ const Despesas = () => {
     };
     setDespesaEditando(despesaFormatada);
     setModalEditarAberto(true);
-  };
+  }, "editar despesa");
 
   const handleSalvarEdicao = async (despesaAtualizada: Despesa) => {
     const categoria = categoriasDespesa.find(
@@ -172,9 +176,9 @@ const Despesas = () => {
     });
   };
 
-  const handleExcluirDespesa = async (id: string) => {
+  const handleExcluirDespesa = wrapAction(async (id: string) => {
     await deleteDespesa(id);
-  };
+  }, "excluir despesa");
 
   // Funções para seleção múltipla
   const handleSelectionChange = (ids: string[]) => {
@@ -251,6 +255,12 @@ const Despesas = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
+        {/* Basic Access Banner */}
+        <BasicAccessBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>

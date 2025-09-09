@@ -1,4 +1,4 @@
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { Badge } from "@/components/ui/badge";
 import {
   calculateDaysRemaining,
@@ -8,13 +8,13 @@ import {
 } from "@/lib/utils";
 
 export function SubscriptionStatus() {
-  const { subscriptionData, loading } = useSubscription();
+  const { subscriptionData, loading } = useSubscriptionDirect();
 
   if (loading) {
     return <Badge variant="outline">Carregando...</Badge>;
   }
 
-  if (!subscriptionData?.subscribed) {
+  if (!subscriptionData?.effective_subscription) {
     return <Badge variant="destructive">Inativo</Badge>;
   }
 
@@ -31,7 +31,7 @@ export function SubscriptionStatus() {
   );
 
   const status = getSubscriptionStatus(
-    subscriptionData.subscribed,
+    subscriptionData.effective_subscription,
     isTrialPeriod,
     daysRemaining
   );

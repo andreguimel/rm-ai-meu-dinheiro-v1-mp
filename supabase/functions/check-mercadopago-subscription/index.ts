@@ -83,6 +83,67 @@ serve(async (req) => {
       });
     }
 
+    // Get comprehensive user access status including trial data
+    const { data: accessStatusData, error: accessStatusError } =
+      await supabaseClient.rpc("get_user_access_status", {
+        check_user_id: user.id,
+      });
+
+    // Enhanced logging for debugging
+    logger.info(
+      "Access status raw data",
+      {
+        accessStatusData,
+        accessStatusError,
+        dataType: typeof accessStatusData,
+        isArray: Array.isArray(accessStatusData),
+        length: accessStatusData?.length,
+      },
+      user.id,
+      requestId
+    );
+
+    if (accessStatusError) {
+      logger.warn(
+        "Error getting user access status",
+        { error: accessStatusError.message },
+        user.id,
+        requestId
+      );
+    }
+
+    // Handle both array and single object responses
+    let accessStatus;
+    if (Array.isArray(accessStatusData) && accessStatusData.length > 0) {
+      accessStatus = accessStatusData[0];
+    } else if (accessStatusData && !Array.isArray(accessStatusData)) {
+      accessStatus = accessStatusData;
+    } else {
+      accessStatus = {
+        has_paid_subscription: false,
+        trial_active: false,
+        trial_days_remaining: 0,
+        access_level: "none",
+        effective_subscription: false,
+        subscription_tier: null,
+        trial_start: null,
+        trial_end: null,
+      };
+    }
+
+    logger.info("Final access status", { accessStatus }, user.id, requestId);
+
+    logger.debug(
+      "User access status retrieved",
+      {
+        accessLevel: accessStatus.access_level,
+        trialActive: accessStatus.trial_active,
+        hasPaidSubscription: accessStatus.has_paid_subscription,
+      },
+      user.id,
+      requestId
+    );
+
     // Search for active preapprovals for this user with retry
     const searchResponse = await mercadoPagoAPICall(
       `https://api.mercadopago.com/preapproval/search?external_reference=${user.id}&status=authorized`,
@@ -128,28 +189,34 @@ serve(async (req) => {
         );
       }
 
-      // Return no subscription data
-      const noSubscriptionData = {
-        message: "Nenhuma assinatura ativa encontrada",
-        subscribed: false,
-        subscription_tier: null,
+      // Return subscription data including trial information
+      const subscriptionData = {
+        message: accessStatus.trial_active
+          ? "Período de teste ativo"
+          : "Nenhuma assinatura ativa encontrada",
+        subscribed: accessStatus.has_paid_subscription,
+        subscription_tier: accessStatus.subscription_tier,
         subscription_start: null,
         subscription_end: null,
-        trial_start: null,
-        trial_end: null,
-        trial_days_remaining: null,
+        trial_start: accessStatus.trial_start,
+        trial_end: accessStatus.trial_end,
+        trial_active: accessStatus.trial_active,
+        trial_days_remaining: accessStatus.trial_days_remaining,
+        access_level: accessStatus.access_level,
+        effective_subscription: accessStatus.effective_subscription,
+        has_paid_subscription: accessStatus.has_paid_subscription,
         status: null,
       };
 
-      // Cache no subscription data
+      // Cache subscription data including trial information
       subscriptionCache.set(
         cacheKey,
-        noSubscriptionData,
+        subscriptionData,
         CACHE_TTL.SUBSCRIPTION_STATUS
       );
 
       endTimer();
-      return new Response(JSON.stringify(noSubscriptionData), {
+      return new Response(JSON.stringify(subscriptionData), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -194,28 +261,34 @@ serve(async (req) => {
         );
       }
 
-      // Return no subscription data
-      const noSubscriptionData = {
-        message: "Nenhuma assinatura ativa encontrada",
-        subscribed: false,
-        subscription_tier: null,
+      // Return subscription data including trial information
+      const subscriptionData = {
+        message: accessStatus.trial_active
+          ? "Período de teste ativo"
+          : "Nenhuma assinatura ativa encontrada",
+        subscribed: accessStatus.has_paid_subscription,
+        subscription_tier: accessStatus.subscription_tier,
         subscription_start: null,
         subscription_end: null,
-        trial_start: null,
-        trial_end: null,
-        trial_days_remaining: null,
+        trial_start: accessStatus.trial_start,
+        trial_end: accessStatus.trial_end,
+        trial_active: accessStatus.trial_active,
+        trial_days_remaining: accessStatus.trial_days_remaining,
+        access_level: accessStatus.access_level,
+        effective_subscription: accessStatus.effective_subscription,
+        has_paid_subscription: accessStatus.has_paid_subscription,
         status: null,
       };
 
-      // Cache no subscription data
+      // Cache subscription data including trial information
       subscriptionCache.set(
         cacheKey,
-        noSubscriptionData,
+        subscriptionData,
         CACHE_TTL.SUBSCRIPTION_STATUS
       );
 
       endTimer();
-      return new Response(JSON.stringify(noSubscriptionData), {
+      return new Response(JSON.stringify(subscriptionData), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -350,13 +423,31 @@ serve(async (req) => {
     const payment_method_exp_month = paymentMethod?.exp_month ?? null;
     const payment_method_exp_year = paymentMethod?.exp_year ?? null;
 
+    // Determine final access level considering both paid subscription and trial
+    const finalAccessLevel = hasValidPayment
+      ? "premium"
+      : accessStatus.access_level;
+    const finalEffectiveSubscription =
+      hasValidPayment || accessStatus.effective_subscription;
+
     const subscriptionData = {
       message: hasValidPayment
         ? "Assinatura ativa encontrada."
+        : accessStatus.trial_active
+        ? "Período de teste ativo"
         : "Preapproval encontrado mas sem pagamentos válidos.",
       subscribed: hasValidPayment, // Só true se tiver pagamento aprovado
-      subscription_tier: hasValidPayment ? subscriptionTier : null,
+      subscription_tier: hasValidPayment
+        ? subscriptionTier
+        : accessStatus.subscription_tier,
       subscription_end: hasValidPayment ? subscriptionEnd : null,
+      trial_start: accessStatus.trial_start,
+      trial_end: accessStatus.trial_end,
+      trial_active: accessStatus.trial_active,
+      trial_days_remaining: accessStatus.trial_days_remaining,
+      access_level: finalAccessLevel,
+      effective_subscription: finalEffectiveSubscription,
+      has_paid_subscription: hasValidPayment,
       payment_method: paymentMethod,
       payment_method_type,
       payment_method_brand,

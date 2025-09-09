@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 
 interface Categoria {
   id: string;
@@ -125,24 +126,54 @@ const Categorias = () => {
   };
 
   const handleImportarCategoriasPadrao = async () => {
-    type CategoriaPadrao = { nome: string; tipo: "receita" | "despesa"; cor: string; icone: string; };
+    type CategoriaPadrao = {
+      nome: string;
+      tipo: "receita" | "despesa";
+      cor: string;
+      icone: string;
+    };
     const categoriasPadrao: CategoriaPadrao[] = [
       // Receitas
-      { nome: 'Salário', tipo: 'receita', cor: '#10B981', icone: 'DollarSign' },
-      { nome: 'Freelance', tipo: 'receita', cor: '#3B82F6', icone: 'Briefcase' },
-      { nome: 'Investimentos', tipo: 'receita', cor: '#8B5CF6', icone: 'TrendingUp' },
-      { nome: 'Vendas', tipo: 'receita', cor: '#F59E0B', icone: 'ShoppingBag' },
-      { nome: 'Aluguel Recebido', tipo: 'receita', cor: '#059669', icone: 'Home' },
+      { nome: "Salário", tipo: "receita", cor: "#10B981", icone: "DollarSign" },
+      {
+        nome: "Freelance",
+        tipo: "receita",
+        cor: "#3B82F6",
+        icone: "Briefcase",
+      },
+      {
+        nome: "Investimentos",
+        tipo: "receita",
+        cor: "#8B5CF6",
+        icone: "TrendingUp",
+      },
+      { nome: "Vendas", tipo: "receita", cor: "#F59E0B", icone: "ShoppingBag" },
+      {
+        nome: "Aluguel Recebido",
+        tipo: "receita",
+        cor: "#059669",
+        icone: "Home",
+      },
       // Despesas
-      { nome: 'Alimentação', tipo: 'despesa', cor: '#EF4444', icone: 'Utensils' },
-      { nome: 'Transporte', tipo: 'despesa', cor: '#F97316', icone: 'Car' },
-      { nome: 'Moradia', tipo: 'despesa', cor: '#6366F1', icone: 'Home' },
-      { nome: 'Saúde', tipo: 'despesa', cor: '#EC4899', icone: 'Heart' },
-      { nome: 'Educação', tipo: 'despesa', cor: '#14B8A6', icone: 'BookOpen' },
-      { nome: 'Lazer', tipo: 'despesa', cor: '#8B5CF6', icone: 'Gamepad2' },
-      { nome: 'Roupas', tipo: 'despesa', cor: '#F59E0B', icone: 'Shirt' },
-      { nome: 'Tecnologia', tipo: 'despesa', cor: '#6B7280', icone: 'Smartphone' },
-      { nome: 'Serviços', tipo: 'despesa', cor: '#84CC16', icone: 'Settings' },
+      {
+        nome: "Alimentação",
+        tipo: "despesa",
+        cor: "#EF4444",
+        icone: "Utensils",
+      },
+      { nome: "Transporte", tipo: "despesa", cor: "#F97316", icone: "Car" },
+      { nome: "Moradia", tipo: "despesa", cor: "#6366F1", icone: "Home" },
+      { nome: "Saúde", tipo: "despesa", cor: "#EC4899", icone: "Heart" },
+      { nome: "Educação", tipo: "despesa", cor: "#14B8A6", icone: "BookOpen" },
+      { nome: "Lazer", tipo: "despesa", cor: "#8B5CF6", icone: "Gamepad2" },
+      { nome: "Roupas", tipo: "despesa", cor: "#F59E0B", icone: "Shirt" },
+      {
+        nome: "Tecnologia",
+        tipo: "despesa",
+        cor: "#6B7280",
+        icone: "Smartphone",
+      },
+      { nome: "Serviços", tipo: "despesa", cor: "#84CC16", icone: "Settings" },
     ];
 
     try {
@@ -158,7 +189,8 @@ const Categorias = () => {
       console.error("Erro ao importar categorias padrão:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível importar as categorias padrão. Tente novamente.",
+        description:
+          "Não foi possível importar as categorias padrão. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -180,6 +212,9 @@ const Categorias = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
@@ -233,7 +268,9 @@ const Categorias = () => {
                 <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Receitas</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Receitas
+                </p>
                 <p className="text-lg md:text-2xl font-bold text-green-600">
                   {categoriasReceita.length}
                 </p>
@@ -247,7 +284,9 @@ const Categorias = () => {
                 <TrendingDown className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Despesas</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  Despesas
+                </p>
                 <p className="text-lg md:text-2xl font-bold text-red-600">
                   {categoriasDespesa.length}
                 </p>

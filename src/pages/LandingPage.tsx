@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+
 import {
   DollarSign,
   TrendingUp,
@@ -45,12 +46,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="rounded-lg p-0">
-                <img
-                  src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
-                  alt="Meu Dinheiro"
-                  className="h-16 object-contain"
-                />
+              <div className="rounded-lg p-2">
+                <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                  Meu Dinheiro
+                </div>
               </div>
             </div>
             <div className="hidden md:flex space-x-8">
@@ -104,10 +103,16 @@ const LandingPage = () => {
               }`}
             >
               <div className="space-y-4">
-                <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 border-orange-200 px-4 py-2">
-                  <Zap className="h-4 w-4 mr-2" />
-                  IA Revolucionária para Finanças
-                </Badge>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 border-orange-200 px-4 py-2">
+                    <Zap className="h-4 w-4 mr-2" />
+                    IA Revolucionária para Finanças
+                  </Badge>
+                  <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 px-4 py-2">
+                    <CheckCircle className="h-4 w-4 mr-2" />7 Dias Grátis - Sem
+                    Cartão
+                  </Badge>
+                </div>
                 <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
                   Transforme sua{" "}
                   <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
@@ -120,6 +125,15 @@ const LandingPage = () => {
                   para maximizar seus resultados. Controle total, insights
                   inteligentes e crescimento garantido.
                 </p>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-green-800 font-semibold text-lg">
+                    🎉 Experimente GRÁTIS por 7 dias - Sem compromisso, sem
+                    cartão de crédito!
+                  </p>
+                  <p className="text-green-600 text-sm mt-1">
+                    Acesso completo a todas as funcionalidades premium
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -128,7 +142,7 @@ const LandingPage = () => {
                     size="lg"
                     className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-xl text-lg px-8 py-4 w-full sm:w-auto group"
                   >
-                    Começar Agora
+                    Começar Teste Grátis
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
@@ -136,6 +150,9 @@ const LandingPage = () => {
                   variant="outline"
                   size="lg"
                   className="border-2 border-orange-300 text-orange-600 hover:bg-orange-50 text-lg px-8 py-4 w-full sm:w-auto"
+                  onClick={() =>
+                    window.open("https://youtu.be/KTcGR6-sbkw", "_blank")
+                  }
                 >
                   <PlayCircle className="mr-2 h-5 w-5" />
                   Ver Demo
@@ -608,12 +625,10 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <div className="rounded-lg p-0">
-                  <img
-                    src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
-                    alt="Meu Dinheiro"
-                    className="h-14 object-contain"
-                  />
+                <div className="rounded-lg p-2">
+                  <div className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                    Meu Dinheiro
+                  </div>
                 </div>
               </div>
               <p className="text-gray-400 text-sm">

@@ -12,6 +12,7 @@ import { useVeiculos, Veiculo } from "@/hooks/useVeiculos";
 import { useTiposManutencao } from "@/hooks/useTiposManutencao";
 import { useManutencoesPendentes } from "@/hooks/useManutencoesPendentes";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 
 export default function Veiculos() {
   const {
@@ -80,6 +81,9 @@ export default function Veiculos() {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6 space-y-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>

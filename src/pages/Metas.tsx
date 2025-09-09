@@ -53,6 +53,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMetas } from "@/hooks/useMetas";
 import { useCategoriasMetas } from "@/hooks/useCategoriasMetas";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 
 // Interface para compatibilidade com componentes existentes
 interface MetaForm {
@@ -304,6 +305,9 @@ const Metas = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

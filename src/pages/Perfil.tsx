@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,18 +34,22 @@ import {
   cleanPhoneForStorage,
   formatPhoneBrazil,
 } from "@/lib/utils";
+import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 import { DeleteAccountModal } from "@/components/auth/DeleteAccountModal";
 import { SharedUsersModal } from "@/components/SharedUsersModal";
 import { SubscriptionManagement } from "@/components/SubscriptionManagement";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
+import { TrialInfo } from "@/components/TrialInfo";
 
 const Perfil = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile, loading, updateProfile, uploadAvatar } = useProfile();
-  const { subscriptionData, createCheckout } = useSubscription();
+  const { subscriptionData } = useSubscriptionDirect();
+  const { createCheckout } = useSubscription(); // Apenas para função de checkout
 
   // Verificar se chegou de um pagamento mock
   useEffect(() => {
@@ -170,6 +175,8 @@ const Perfil = () => {
   return (
     <DashboardLayout>
       <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-3">
@@ -335,7 +342,7 @@ const Perfil = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {subscriptionData?.subscribed ? (
+              {subscriptionData?.effective_subscription ? (
                 subscriptionData?.subscription_tier === "admin" ? (
                   /* Admin - Visual Especial */
                   <div className="relative bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 text-white p-6">
@@ -525,8 +532,13 @@ const Perfil = () => {
             </CardContent>
           </Card>
 
-          {/* Seção de Gerenciamento de Assinatura - só aparece para assinantes */}
-          {subscriptionData.subscribed && <SubscriptionManagement />}
+          {/* Seção de Gerenciamento de Assinatura - só aparece para assinantes ou usuários em trial */}
+          {subscriptionData.effective_subscription && (
+            <SubscriptionManagement />
+          )}
+
+          {/* Informações do Trial */}
+          <TrialInfo />
         </div>
       </div>
 

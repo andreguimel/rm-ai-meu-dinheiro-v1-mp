@@ -22,8 +22,10 @@ import { useDividas } from "@/hooks/useDividas";
 import { useVeiculos } from "@/hooks/useVeiculos";
 import { useManutencoesPendentes } from "@/hooks/useManutencoesPendentes";
 import { useProfile } from "@/hooks/useProfile";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
+import { BasicAccessBanner } from "@/components/BasicAccessBanner";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -104,7 +106,7 @@ const Dashboard = () => {
   const { dividas, loading: loadingDividas } = useDividas();
   const { veiculos, loading: loadingVeiculos } = useVeiculos();
   const { profile } = useProfile();
-  const { subscriptionData, checkSubscription } = useSubscription();
+  const { subscriptionData, checkSubscription } = useSubscriptionDirect();
 
   // Handle checkout success/cancel (generic)
   useEffect(() => {
@@ -353,8 +355,14 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
+        {/* Basic Access Banner */}
+        <BasicAccessBanner />
+
         {/* Subscription Status */}
-        {!subscriptionData.subscribed && (
+        {!subscriptionData.effective_subscription && (
           <div className="mb-6 md:mb-8">
             <SubscriptionStatus />
           </div>

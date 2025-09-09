@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,9 @@ import { EditarReceitaModal } from "@/components/EditarReceitaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
+import { BasicAccessBanner } from "@/components/BasicAccessBanner";
+import { useBasicAccessControl } from "@/hooks/useBasicAccessControl";
 import {
   MultiSelectControls,
   SelectAllCheckbox,
@@ -72,6 +76,7 @@ const Receitas = () => {
     deleteReceita,
     deleteMultipleReceitas,
   } = useReceitas();
+  const { wrapAction } = useBasicAccessControl();
   const [activeTab, setActiveTab] = useState("lista");
 
   const [novaReceita, setNovaReceita] = useState({
@@ -94,7 +99,7 @@ const Receitas = () => {
   // Estados para seleção múltipla
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const adicionarReceita = async (e: React.FormEvent) => {
+  const adicionarReceita = wrapAction(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (
@@ -143,9 +148,9 @@ const Receitas = () => {
     });
 
     setActiveTab("lista");
-  };
+  }, "adicionar receita");
 
-  const handleEditarReceita = (receita: any) => {
+  const handleEditarReceita = wrapAction((receita: any) => {
     const receitaFormatada = {
       id: receita.id,
       descricao: receita.descricao,
@@ -156,7 +161,7 @@ const Receitas = () => {
     };
     setReceitaEditando(receitaFormatada);
     setModalEditarAberto(true);
-  };
+  }, "editar receita");
 
   const handleSalvarEdicao = async (receitaAtualizada: Receita) => {
     const categoria = categoriasReceita.find(
@@ -171,9 +176,9 @@ const Receitas = () => {
     });
   };
 
-  const handleExcluirReceita = async (id: string) => {
+  const handleExcluirReceita = wrapAction(async (id: string) => {
     await deleteReceita(id);
-  };
+  }, "excluir receita");
 
   // Funções para seleção múltipla
   const handleSelectionChange = (ids: string[]) => {
@@ -252,6 +257,12 @@ const Receitas = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
+        {/* Basic Access Banner */}
+        <BasicAccessBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>

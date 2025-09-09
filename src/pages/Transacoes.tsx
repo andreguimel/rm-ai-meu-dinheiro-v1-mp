@@ -26,6 +26,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { useProfile } from "@/hooks/useProfile";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
+import { BasicAccessBanner } from "@/components/BasicAccessBanner";
 
 interface Transacao {
   id: string;
@@ -126,6 +128,12 @@ const Transacoes = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
+        {/* Basic Access Banner */}
+        <BasicAccessBanner />
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-200">

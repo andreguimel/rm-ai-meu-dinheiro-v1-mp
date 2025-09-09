@@ -30,7 +30,7 @@ function App() {
               Subscription Status:{" "}
               {subLoading
                 ? "Carregando..."
-                : subscriptionData.subscribed
+                : subscriptionData.effective_subscription
                 ? "Ativo"
                 : "Inativo"}
             </p>

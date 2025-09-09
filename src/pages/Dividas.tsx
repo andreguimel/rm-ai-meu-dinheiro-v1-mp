@@ -46,6 +46,7 @@ import {
   SelectAllCheckbox,
   ItemCheckbox,
 } from "@/components/MultiSelectControls";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 
 const Dividas = () => {
   const { toast } = useToast();
@@ -254,6 +255,9 @@ const Dividas = () => {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>

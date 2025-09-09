@@ -48,6 +48,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTransacoes } from "@/hooks/useTransacoes";
 import { useCategorias } from "@/hooks/useCategorias";
+import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 
 interface ChartData {
   periodo: string;
@@ -441,6 +442,9 @@ const Relatorios = () => {
   return (
     <DashboardLayout>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        {/* Trial Status Banner */}
+        <TrialStatusBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
