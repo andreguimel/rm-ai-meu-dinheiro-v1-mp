@@ -174,6 +174,12 @@ const Categorias = () => {
         icone: "Smartphone",
       },
       { nome: "Serviços", tipo: "despesa", cor: "#84CC16", icone: "Settings" },
+      {
+        nome: "Serviços de Streaming",
+        tipo: "despesa",
+        cor: "#9333EA",
+        icone: "Film",
+      },
     ];
 
     try {

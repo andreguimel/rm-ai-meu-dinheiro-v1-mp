@@ -9,6 +9,7 @@ import {
   Calendar,
   DollarSign,
   Target,
+  Film,
 } from "lucide-react";
 
 interface Transaction {
@@ -144,6 +145,18 @@ export const InsightsDashboard: React.FC<InsightsDashboardProps> = ({
         description:
           "Seus gastos com alimentação estão altos. Considere cozinhar mais em casa.",
         potential: "R$ 200-400/mês",
+      });
+    }
+
+    // Análise de gastos com serviços de streaming
+    const streamingSpending = categoryTotals["Serviços de Streaming"] || 0;
+    if (streamingSpending > totalExpenses * 0.1) {
+      suggestions.push({
+        icon: Film,
+        title: "Serviços de Streaming",
+        description:
+          "Seus gastos com streaming estão elevados. Considere revisar suas assinaturas e manter apenas as que mais utiliza.",
+        potential: "R$ 50-150/mês",
       });
     }
 
