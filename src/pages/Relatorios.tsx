@@ -49,6 +49,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useTransacoes } from "@/hooks/useTransacoes";
 import { useCategorias } from "@/hooks/useCategorias";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
+import { FinancialMetrics } from "@/components/reports/FinancialMetrics";
+import { InsightsDashboard } from "@/components/reports/InsightsDashboard";
+import { SpendingHeatmap } from "@/components/reports/SpendingHeatmap";
+import { InteractiveCharts } from "@/components/reports/InteractiveCharts";
+import { ExportOptions } from "@/components/reports/ExportOptions";
 
 interface ChartData {
   periodo: string;
@@ -143,6 +148,8 @@ const Relatorios = () => {
         chartData: [] as ChartData[],
         categoryData: [] as CategoryData[],
         filteredTransactions: [] as FilteredTransaction[],
+        previousPeriodData: { receitas: 0, despesas: 0, saldo: 0 },
+        currentPeriodData: { receitas: 0, despesas: 0, saldo: 0 },
       };
     }
 
@@ -340,14 +347,89 @@ const Relatorios = () => {
       .sort((a, b) => b.data.localeCompare(a.data))
       .slice(0, 50);
 
+    // Calcular dados do período atual e anterior para métricas
+    const currentPeriodData = {
+      receitas: chartData.reduce((sum, item) => sum + item.receitas, 0),
+      despesas: chartData.reduce((sum, item) => sum + item.despesas, 0),
+      saldo: chartData.reduce((sum, item) => sum + item.saldo, 0),
+    };
+
+    // Calcular dados do período anterior (mesmo período, mas anterior)
+    const getPreviousPeriodTransactions = () => {
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date;
+
+      switch (selectedPeriod) {
+        case "semana":
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 14);
+          endDate = new Date(now);
+          endDate.setDate(now.getDate() - 7);
+          break;
+        case "mes":
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          break;
+        case "trimestre":
+          const currentQuarter = Math.floor(now.getMonth() / 3);
+          const prevQuarterStart = new Date(
+            now.getFullYear(),
+            (currentQuarter - 1) * 3,
+            1
+          );
+          const prevQuarterEnd = new Date(
+            now.getFullYear(),
+            currentQuarter * 3,
+            0
+          );
+          startDate = prevQuarterStart;
+          endDate = prevQuarterEnd;
+          break;
+        case "ano":
+          startDate = new Date(now.getFullYear() - 1, 0, 1);
+          endDate = new Date(now.getFullYear() - 1, 11, 31);
+          break;
+        default:
+          startDate = new Date(now);
+          endDate = new Date(now);
+      }
+
+      return transacoes.filter((t) => {
+        const transactionDate = new Date(t.data);
+        return transactionDate >= startDate && transactionDate <= endDate;
+      });
+    };
+
+    const previousPeriodTransactions = getPreviousPeriodTransactions();
+    const previousPeriodData = {
+      receitas: previousPeriodTransactions
+        .filter((t) => t.tipo === "receita")
+        .reduce((sum, t) => sum + Number(t.valor), 0),
+      despesas: previousPeriodTransactions
+        .filter((t) => t.tipo === "despesa")
+        .reduce((sum, t) => sum + Number(t.valor), 0),
+      saldo: 0,
+    };
+    previousPeriodData.saldo =
+      previousPeriodData.receitas - previousPeriodData.despesas;
+
     return {
       chartData,
       categoryData,
       filteredTransactions,
+      currentPeriodData,
+      previousPeriodData,
     };
   }, [transacoes, selectedPeriod, selectedCategory, loadingTransacoes]);
 
-  const { chartData, categoryData, filteredTransactions } = processedData;
+  const {
+    chartData,
+    categoryData,
+    filteredTransactions,
+    currentPeriodData,
+    previousPeriodData,
+  } = processedData;
 
   const chartConfig = {
     receitas: {
@@ -467,18 +549,20 @@ const Relatorios = () => {
                 <SelectItem value="ano">Ano</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              onClick={handleExportReport}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar
-            </Button>
+            <ExportOptions
+              data={{
+                chartData,
+                categoryData,
+                filteredTransactions,
+                currentPeriodData,
+                previousPeriodData,
+              }}
+              period={selectedPeriod}
+            />
           </div>
         </div>
 
-        {/* Cards de resumo */}
+        {/* Cards de resumo básico */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -532,11 +616,27 @@ const Relatorios = () => {
           </Card>
         </div>
 
+        {/* Métricas Financeiras Avançadas */}
+        <FinancialMetrics
+          currentPeriodData={currentPeriodData}
+          previousPeriodData={previousPeriodData}
+          period={selectedPeriod}
+        />
+
+        {/* Dashboard de Insights */}
+        <InsightsDashboard
+          transactions={filteredTransactions}
+          period={selectedPeriod}
+        />
+
         {/* Tabs para diferentes tipos de relatórios */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-3 sm:w-auto sm:inline-flex">
+          <TabsList className="w-full grid grid-cols-4 sm:w-auto sm:inline-flex">
             <TabsTrigger value="overview" className="text-sm">
               Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="interactive" className="text-sm">
+              Análise Avançada
             </TabsTrigger>
             <TabsTrigger value="categories" className="text-sm">
               Categorias
@@ -606,6 +706,14 @@ const Relatorios = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Heatmap de Gastos */}
+            <SpendingHeatmap transactions={filteredTransactions} />
+          </TabsContent>
+
+          <TabsContent value="interactive" className="space-y-4">
+            {/* Gráficos Interativos */}
+            <InteractiveCharts data={chartData} period={selectedPeriod} />
           </TabsContent>
 
           <TabsContent value="categories" className="space-y-4">
