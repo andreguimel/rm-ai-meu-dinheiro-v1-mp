@@ -407,38 +407,36 @@ export const useSubscription = () => {
       // This ensures trials are created at the right time in the user flow
 
       // Log trial analytics if trial is active
-      // TEMPORARILY COMMENTED OUT TO TEST MOBILE WHITE SCREEN ISSUE
-      // if (normalized.trial_active && normalized.trial_days_remaining !== null) {
-      //   logTrialAccessed({
-      //     trial_days_remaining: normalized.trial_days_remaining,
-      //     access_level: normalized.access_level,
-      //     subscription_tier: normalized.subscription_tier,
-      //     request_source: "useSubscription_hook",
-      //   }).catch((error) => {
-      //     console.warn("Failed to log trial access analytics:", error);
-      //   });
-      // }
+      if (normalized.trial_active && normalized.trial_days_remaining !== null) {
+        logTrialAccessed({
+          trial_days_remaining: normalized.trial_days_remaining,
+          access_level: normalized.access_level,
+          subscription_tier: normalized.subscription_tier,
+          request_source: "useSubscription_hook",
+        }).catch((error) => {
+          console.warn("Failed to log trial access analytics:", error);
+        });
+      }
 
       // Log trial expiration if trial just expired
-      // TEMPORARILY COMMENTED OUT TO TEST MOBILE WHITE SCREEN ISSUE
-      // if (normalized.trial_data.trial_end && !normalized.trial_active) {
-      //   const trialEndDate = new Date(normalized.trial_data.trial_end);
-      //   const now = new Date();
-      //   const timeDiff = now.getTime() - trialEndDate.getTime();
-      //   const daysDiff = timeDiff / (1000 * 3600 * 24);
+      if (normalized.trial_data.trial_end && !normalized.trial_active) {
+        const trialEndDate = new Date(normalized.trial_data.trial_end);
+        const now = new Date();
+        const timeDiff = now.getTime() - trialEndDate.getTime();
+        const daysDiff = timeDiff / (1000 * 3600 * 24);
 
-      //   // Log if trial expired within the last day (to avoid duplicate logs)
-      //   if (daysDiff <= 1 && daysDiff >= 0) {
-      //     logTrialExpired({
-      //       trial_end: normalized.trial_data.trial_end,
-      //       has_paid_subscription: normalized.has_paid_subscription,
-      //       access_level: normalized.access_level,
-      //       request_source: "useSubscription_hook",
-      //     }).catch((error) => {
-      //       console.warn("Failed to log trial expiration analytics:", error);
-      //     });
-      //   }
-      // }
+        // Log if trial expired within the last day (to avoid duplicate logs)
+        if (daysDiff <= 1 && daysDiff >= 0) {
+          logTrialExpired({
+            trial_end: normalized.trial_data.trial_end,
+            has_paid_subscription: normalized.has_paid_subscription,
+            access_level: normalized.access_level,
+            request_source: "useSubscription_hook",
+          }).catch((error) => {
+            console.warn("Failed to log trial expiration analytics:", error);
+          });
+        }
+      }
 
       setSubscriptionData(normalized);
     } catch (error) {
@@ -456,14 +454,13 @@ export const useSubscription = () => {
         setError(`Erro no sistema de período de teste: ${errorMessage}`);
 
         // Log trial error for analytics
-        // TEMPORARILY COMMENTED OUT TO TEST MOBILE WHITE SCREEN ISSUE
-        // logTrialError({
-        //   error_type: "subscription_check_error",
-        //   error_message: errorMessage,
-        //   request_source: "useSubscription_hook",
-        // }).catch((analyticsError) => {
-        //   console.warn("Failed to log trial error analytics:", analyticsError);
-        // });
+        logTrialError({
+          error_type: "subscription_check_error",
+          error_message: errorMessage,
+          request_source: "useSubscription_hook",
+        }).catch((analyticsError) => {
+          console.warn("Failed to log trial error analytics:", analyticsError);
+        });
 
         // Show user-friendly toast for trial errors
         toast({
