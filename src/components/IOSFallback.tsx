@@ -120,10 +120,10 @@ const IOSErrorFallback: React.FC<{
             <ul className="mt-1 space-y-1 text-left">
               {isWebSocketError ? (
                 <>
-                  <li>• Aceite o certificado HTTPS quando solicitado</li>
-                  <li>• Acesse https://localhost:8081 diretamente no Safari</li>
-                  <li>• Toque em "Avançado" → "Prosseguir para localhost"</li>
+                  <li>• Acesse http://localhost:8081 diretamente no Safari</li>
+                  <li>• Use o endereço de rede: http://192.168.0.5:8081</li>
                   <li>• Certifique-se de estar na mesma rede Wi-Fi</li>
+                  <li>• Tente recarregar a página algumas vezes</li>
                 </>
               ) : (
                 <>
