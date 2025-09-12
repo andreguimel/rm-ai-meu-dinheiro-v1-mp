@@ -188,7 +188,7 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
   fallbackMessage = "Carregando..." 
 }) => {
   const [isIOSDevice, setIsIOSDevice] = useState(false);
-  const [isPrivateMode, setIsPrivateMode] = useState(false);
+  const [isPrivateModeDetected, setIsPrivateModeDetected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -197,7 +197,7 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
       const privateMode = await isPrivateMode();
       
       setIsIOSDevice(iosDetected);
-      setIsPrivateMode(privateMode);
+      setIsPrivateModeDetected(privateMode);
       setIsLoading(false);
       
       if (iosDetected) {

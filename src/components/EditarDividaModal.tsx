@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
 import { type Divida } from "@/hooks/useDividas";
@@ -144,12 +145,10 @@ export const EditarDividaModal = ({ isOpen, onClose, divida, onSave }: EditarDiv
 
           <div className="md:col-span-2 space-y-2">
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="avisosPagamento"
                 checked={avisosPagamento}
-                onChange={(e) => setAvisosPagamento(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                onCheckedChange={setAvisosPagamento}
               />
               <Label htmlFor="avisosPagamento">
                 Receber aviso de pagamento um dia antes do vencimento

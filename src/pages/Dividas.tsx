@@ -37,6 +37,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useDividas, type Divida, type NovaDivida } from "@/hooks/useDividas";
@@ -822,12 +823,10 @@ const Dividas = () => {
 
                   <div className="md:col-span-2 space-y-2">
                     <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id="avisos"
                         checked={avisosPagamento}
-                        onChange={(e) => setAvisosPagamento(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        onCheckedChange={setAvisosPagamento}
                       />
                       <Label htmlFor="avisos">
                         Receber aviso de pagamento um dia antes do vencimento
