@@ -11,12 +11,12 @@ export const Header = () => {
     <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="rounded-lg p-1">
+          <Link to="/" className="flex items-center justify-center space-x-2">
+            <div className="rounded-lg p-2 w-full max-w-sm">
               <img
                    src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
                    alt="Meu Dinheiro"
-                   className="h-full w-full max-h-16 sm:max-h-20 object-contain"
+                   className="h-auto w-full max-h-24 sm:max-h-28 mx-auto object-contain"
                  />
             </div>
           </Link>

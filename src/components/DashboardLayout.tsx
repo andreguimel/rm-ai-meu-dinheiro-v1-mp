@@ -213,12 +213,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="p-6 border-b border-border flex-shrink-0">
           <div className="flex flex-col items-center space-y-4">
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center space-x-3">
-                <div className="rounded-lg p-1">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="rounded-lg p-2 w-full max-w-sm">
                   <img
                     src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
                     alt="Meu Dinheiro"
-                    className="h-full w-full max-h-20 sm:max-h-24 object-contain"
+                    className="h-auto w-full max-h-32 sm:max-h-36 mx-auto object-contain"
                   />
                 </div>
                 {!isCollapsed}
