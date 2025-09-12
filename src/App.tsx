@@ -22,7 +22,7 @@ import "./App.css";
 
 function App() {
   return (
-    <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
+    // <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
       <Router>
         <div className="min-h-screen bg-background">
         <Routes>
@@ -151,7 +151,7 @@ function App() {
         <Toaster />
         </div>
       </Router>
-    </IOSFallback>
+    // </IOSFallback>
   );
 }
 
