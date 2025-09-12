@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+// import App from "./App.tsx";
+import App from "./AppSimple.tsx"; // Versão simplificada para debug iPhone
 import "./index.css";
 import { ThemeProvider } from "./components/ThemeProvider";
 
@@ -156,10 +157,9 @@ window.addEventListener("unhandledrejection", (event) => {
   }
 });
 
+// Versão ultra-simplificada para debug iPhone
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider defaultTheme="system" storageKey="theme">
-      <App />
-    </ThemeProvider>
+    <App />
   </StrictMode>
 );
