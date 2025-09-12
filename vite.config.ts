@@ -7,8 +7,13 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 3000,
     cors: true,
+    hmr: {
+      // Força polling em vez de WebSocket para iPhone
+      port: 24678,
+      overlay: false
+    }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean
