@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCircle, RefreshCw, Smartphone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from "react";
+import { AlertCircle, RefreshCw, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface IOSFallbackProps {
   children: React.ReactNode;
@@ -10,24 +16,24 @@ interface IOSFallbackProps {
 
 // Detectar se é iOS/Safari
 const isIOS = () => {
-  if (typeof window === 'undefined') return false;
-  
+  if (typeof window === "undefined") return false;
+
   const userAgent = window.navigator.userAgent;
   const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent);
   const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
   const isWebKit = /WebKit/.test(userAgent);
-  
+
   return isIOSDevice || (isSafari && isWebKit);
 };
 
 // Detectar se é iPhone físico (não simulador)
 const isPhysicalIPhone = () => {
-  if (typeof window === 'undefined') return false;
-  
+  if (typeof window === "undefined") return false;
+
   const userAgent = window.navigator.userAgent;
   const isIPhone = /iPhone/.test(userAgent);
-  const hasTouch = 'ontouchstart' in window;
-  
+  const hasTouch = "ontouchstart" in window;
+
   return isIPhone && hasTouch;
 };
 
@@ -39,13 +45,13 @@ const forceHTTPFallback = () => {
       (window as any).WebSocketBackup = window.WebSocket;
       (window as any).WebSocket = undefined;
     }
-    
+
     // Força reload para usar polling
     setTimeout(() => {
       window.location.reload();
     }, 1000);
   } catch (e) {
-    console.warn('Erro ao aplicar fallback HTTP:', e);
+    console.warn("Erro ao aplicar fallback HTTP:", e);
   }
 };
 
@@ -53,8 +59,8 @@ const forceHTTPFallback = () => {
 const isPrivateMode = async (): Promise<boolean> => {
   try {
     // Tentar usar localStorage
-    const testKey = '__private_mode_test__';
-    localStorage.setItem(testKey, 'test');
+    const testKey = "__private_mode_test__";
+    localStorage.setItem(testKey, "test");
     localStorage.removeItem(testKey);
     return false;
   } catch {
@@ -63,14 +69,15 @@ const isPrivateMode = async (): Promise<boolean> => {
 };
 
 // Componente de erro específico para iOS
-const IOSErrorFallback: React.FC<{ 
-  error: Error; 
-  resetError: () => void; 
+const IOSErrorFallback: React.FC<{
+  error: Error;
+  resetError: () => void;
   isPrivate: boolean;
 }> = ({ error, resetError, isPrivate }) => {
-  const isWebSocketError = error.message.includes('WebSocket') || error.message.includes('insecure');
+  const isWebSocketError =
+    error.message.includes("WebSocket") || error.message.includes("insecure");
   const isPhysicalDevice = isPhysicalIPhone();
-  
+
   const handleReload = () => {
     window.location.reload();
   };
@@ -81,7 +88,7 @@ const IOSErrorFallback: React.FC<{
       sessionStorage.clear();
       window.location.reload();
     } catch (e) {
-      console.warn('Não foi possível limpar o storage:', e);
+      console.warn("Não foi possível limpar o storage:", e);
       window.location.reload();
     }
   };
@@ -102,57 +109,51 @@ const IOSErrorFallback: React.FC<{
           </CardTitle>
           <CardDescription>
             {isWebSocketError && isPhysicalDevice
-              ? 'Detectamos um problema de WebSocket em iPhone físico. Isso é comum devido às restrições de segurança do Safari mobile.'
-              : isWebSocketError 
-              ? 'Detectamos um problema de conexão WebSocket. Isso é comum no iOS quando a conexão não é segura.'
-              : isPrivate 
-              ? 'Detectamos que você está usando o modo privado do Safari. Isso pode causar problemas de compatibilidade.'
-              : 'Ocorreu um erro específico do iOS/Safari. Vamos tentar algumas soluções.'
-            }
+              ? "Detectamos um problema de WebSocket em iPhone físico. Isso é comum devido às restrições de segurança do Safari mobile."
+              : isWebSocketError
+              ? "Detectamos um problema de conexão WebSocket. Isso é comum no iOS quando a conexão não é segura."
+              : isPrivate
+              ? "Detectamos que você está usando o modo privado do Safari. Isso pode causar problemas de compatibilidade."
+              : "Ocorreu um erro específico do iOS/Safari. Vamos tentar algumas soluções."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p><strong>Erro:</strong> {error.message}</p>
+            <p>
+              <strong>Erro:</strong> {error.message}
+            </p>
             {isPrivate && (
               <p className="mt-2 text-amber-600">
-                <strong>Dica:</strong> Tente sair do modo privado ou usar o Safari normal.
+                <strong>Dica:</strong> Tente sair do modo privado ou usar o
+                Safari normal.
               </p>
             )}
           </div>
-          
+
           <div className="space-y-2">
-            <Button 
-              onClick={resetError} 
-              className="w-full"
-              variant="default"
-            >
+            <Button onClick={resetError} className="w-full" variant="default">
               <RefreshCw className="mr-2 h-4 w-4" />
               Tentar Novamente
             </Button>
-            
-            <Button 
-              onClick={handleReload} 
-              className="w-full"
-              variant="outline"
-            >
+
+            <Button onClick={handleReload} className="w-full" variant="outline">
               <Smartphone className="mr-2 h-4 w-4" />
               Recarregar Página
             </Button>
-            
+
             {!isPrivate && (
-              <Button 
-                onClick={handleClearStorage} 
+              <Button
+                onClick={handleClearStorage}
                 className="w-full"
                 variant="secondary"
               >
                 Limpar Cache e Recarregar
               </Button>
             )}
-            
+
             {isWebSocketError && isPhysicalDevice && (
-              <Button 
-                onClick={handleHTTPFallback} 
+              <Button
+                onClick={handleHTTPFallback}
                 className="w-full bg-orange-600 hover:bg-orange-700"
                 variant="default"
               >
@@ -161,7 +162,7 @@ const IOSErrorFallback: React.FC<{
               </Button>
             )}
           </div>
-          
+
           <div className="text-xs text-muted-foreground text-center">
             <p>Se o problema persistir:</p>
             <ul className="mt-1 space-y-1 text-left">
@@ -172,11 +173,15 @@ const IOSErrorFallback: React.FC<{
                       <li>• Use o endereço de rede: http://192.168.0.5:8081</li>
                       <li>• Certifique-se de estar na mesma rede Wi-Fi</li>
                       <li>• Tente o botão "Modo Compatibilidade" acima</li>
-                      <li>• Desative o modo "Bloquear Rastreamento" no Safari</li>
+                      <li>
+                        • Desative o modo "Bloquear Rastreamento" no Safari
+                      </li>
                     </>
                   ) : (
                     <>
-                      <li>• Acesse http://localhost:8081 diretamente no Safari</li>
+                      <li>
+                        • Acesse http://localhost:8081 diretamente no Safari
+                      </li>
                       <li>• Use o endereço de rede: http://192.168.0.5:8081</li>
                     </>
                   )}
@@ -214,15 +219,15 @@ class IOSErrorBoundary extends React.Component<
   }
 
   async componentDidCatch(error: Error, errorInfo: any) {
-    console.error('iOS Error Boundary capturou um erro:', error, errorInfo);
-    
+    console.error("iOS Error Boundary capturou um erro:", error, errorInfo);
+
     // Verificar se está em modo privado
     const privateMode = await isPrivateMode();
     this.setState({ isPrivate: privateMode });
-    
+
     // Log específico para iOS
     if (isIOS()) {
-      console.error('🍎 Erro específico do iOS:', {
+      console.error("🍎 Erro específico do iOS:", {
         error: error.message,
         stack: error.stack,
         userAgent: navigator.userAgent,
@@ -230,8 +235,8 @@ class IOSErrorBoundary extends React.Component<
         viewport: {
           width: window.innerWidth,
           height: window.innerHeight,
-          devicePixelRatio: window.devicePixelRatio
-        }
+          devicePixelRatio: window.devicePixelRatio,
+        },
       });
     }
   }
@@ -243,8 +248,8 @@ class IOSErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError && this.state.error) {
       return (
-        <IOSErrorFallback 
-          error={this.state.error} 
+        <IOSErrorFallback
+          error={this.state.error}
           resetError={this.resetError}
           isPrivate={this.state.isPrivate}
         />
@@ -256,9 +261,9 @@ class IOSErrorBoundary extends React.Component<
 }
 
 // Componente principal IOSFallback
-export const IOSFallback: React.FC<IOSFallbackProps> = ({ 
-  children, 
-  fallbackMessage = "Carregando..." 
+export const IOSFallback: React.FC<IOSFallbackProps> = ({
+  children,
+  fallbackMessage = "Carregando...",
 }) => {
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   const [isPrivateModeDetected, setIsPrivateModeDetected] = useState(false);
@@ -268,19 +273,19 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
     const checkIOSAndPrivateMode = async () => {
       const iosDetected = isIOS();
       const privateMode = await isPrivateMode();
-      
+
       setIsIOSDevice(iosDetected);
       setIsPrivateModeDetected(privateMode);
       setIsLoading(false);
-      
+
       if (iosDetected) {
-        console.log('🍎 iOS detectado:', {
+        console.log("🍎 iOS detectado:", {
           userAgent: navigator.userAgent,
           isPrivateMode: privateMode,
           viewport: {
             width: window.innerWidth,
-            height: window.innerHeight
-          }
+            height: window.innerHeight,
+          },
         });
       }
     };
@@ -293,7 +298,9 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="mt-2 text-sm text-muted-foreground">{fallbackMessage}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {fallbackMessage}
+          </p>
         </div>
       </div>
     );

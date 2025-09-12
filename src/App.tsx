@@ -23,8 +23,8 @@ import "./App.css";
 function App() {
   return (
     // <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
-      <Router>
-        <div className="min-h-screen bg-background">
+    <Router>
+      <div className="min-h-screen bg-background">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
@@ -149,8 +149,8 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
-        </div>
-      </Router>
+      </div>
+    </Router>
     // </IOSFallback>
   );
 }
