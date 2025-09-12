@@ -218,7 +218,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   <img
                     src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
                     alt="Meu Dinheiro"
-                    className="h-50 w-50 object-contain"
+                    className="h-full w-full max-h-20 sm:max-h-24 object-contain"
                   />
                 </div>
                 {!isCollapsed}

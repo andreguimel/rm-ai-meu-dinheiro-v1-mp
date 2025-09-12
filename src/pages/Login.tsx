@@ -40,7 +40,7 @@ const Login = () => {
                 <img
                   src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
                   alt="Meu Dinheiro"
-                  className="h-32 shadow-amber-15 object-contain"
+                  className="h-full w-full max-h-32 sm:max-h-40 shadow-amber-15 object-contain"
                 />
               </div>
             </div>

@@ -100,6 +100,40 @@
 
   body {
     @apply bg-background text-foreground;
+    /* iOS Safari specific fixes */
+    -webkit-overflow-scrolling: touch;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* iOS Safari input fixes */
+  input, textarea, select {
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 0;
+  }
+
+  /* iOS Safari button fixes */
+  button {
+    -webkit-appearance: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* iOS Safari viewport fixes */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* iOS Safari touch action */
+  * {
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Custom 3D Scrollbar Styles */

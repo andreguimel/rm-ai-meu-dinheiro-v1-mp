@@ -46,10 +46,12 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="rounded-lg p-2">
-                <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                  Meu Dinheiro
-                </div>
+              <div className="rounded-lg p-1">
+                <img
+                  src="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
+                  alt="Meu Dinheiro"
+                  className="h-full w-full max-h-16 sm:max-h-20 object-contain"
+                />
               </div>
             </div>
             <div className="hidden md:flex space-x-8">
