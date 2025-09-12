@@ -16,13 +16,15 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SubscriptionGuard } from "./components/SubscriptionGuard";
+import { IOSFallback } from "./components/IOSFallback";
 import { Toaster } from "@/components/ui/toaster";
 import "./App.css";
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-background">
+    <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
+      <Router>
+        <div className="min-h-screen bg-background">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
@@ -147,8 +149,9 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
-      </div>
-    </Router>
+        </div>
+      </Router>
+    </IOSFallback>
   );
 }
 
