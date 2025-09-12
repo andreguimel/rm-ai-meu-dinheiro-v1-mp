@@ -39,6 +39,8 @@ const IOSErrorFallback: React.FC<{
   resetError: () => void; 
   isPrivate: boolean;
 }> = ({ error, resetError, isPrivate }) => {
+  const isWebSocketError = error.message.includes('WebSocket') || error.message.includes('insecure');
+  
   const handleReload = () => {
     window.location.reload();
   };
@@ -65,7 +67,9 @@ const IOSErrorFallback: React.FC<{
             Problema no iOS/Safari
           </CardTitle>
           <CardDescription>
-            {isPrivate 
+            {isWebSocketError 
+              ? 'Detectamos um problema de conexão WebSocket. Isso é comum no iOS quando a conexão não é segura.'
+              : isPrivate 
               ? 'Detectamos que você está usando o modo privado do Safari. Isso pode causar problemas de compatibilidade.'
               : 'Ocorreu um erro específico do iOS/Safari. Vamos tentar algumas soluções.'
             }
@@ -114,10 +118,21 @@ const IOSErrorFallback: React.FC<{
           <div className="text-xs text-muted-foreground text-center">
             <p>Se o problema persistir:</p>
             <ul className="mt-1 space-y-1 text-left">
-              <li>• Atualize o Safari para a versão mais recente</li>
-              <li>• Tente usar o Chrome no iOS</li>
-              <li>• Desative o modo privado se estiver ativo</li>
-              <li>• Reinicie o dispositivo</li>
+              {isWebSocketError ? (
+                <>
+                  <li>• Aceite o certificado HTTPS quando solicitado</li>
+                  <li>• Acesse https://localhost:8081 diretamente no Safari</li>
+                  <li>• Toque em "Avançado" → "Prosseguir para localhost"</li>
+                  <li>• Certifique-se de estar na mesma rede Wi-Fi</li>
+                </>
+              ) : (
+                <>
+                  <li>• Atualize o Safari para a versão mais recente</li>
+                  <li>• Tente usar o Chrome no iOS</li>
+                  <li>• Desative o modo privado se estiver ativo</li>
+                  <li>• Reinicie o dispositivo</li>
+                </>
+              )}
             </ul>
           </div>
         </CardContent>

@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      // Configuração específica para WebSocket no iOS
+      clientPort: 8081,
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean
