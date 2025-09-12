@@ -20,6 +20,35 @@ const isIOS = () => {
   return isIOSDevice || (isSafari && isWebKit);
 };
 
+// Detectar se é iPhone físico (não simulador)
+const isPhysicalIPhone = () => {
+  if (typeof window === 'undefined') return false;
+  
+  const userAgent = window.navigator.userAgent;
+  const isIPhone = /iPhone/.test(userAgent);
+  const hasTouch = 'ontouchstart' in window;
+  
+  return isIPhone && hasTouch;
+};
+
+// Função para forçar fallback HTTP quando WebSocket falha
+const forceHTTPFallback = () => {
+  try {
+    // Desabilita WebSocket temporariamente
+    if (window.WebSocket) {
+      (window as any).WebSocketBackup = window.WebSocket;
+      (window as any).WebSocket = undefined;
+    }
+    
+    // Força reload para usar polling
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (e) {
+    console.warn('Erro ao aplicar fallback HTTP:', e);
+  }
+};
+
 // Detectar se está em modo privado do Safari
 const isPrivateMode = async (): Promise<boolean> => {
   try {
@@ -40,6 +69,7 @@ const IOSErrorFallback: React.FC<{
   isPrivate: boolean;
 }> = ({ error, resetError, isPrivate }) => {
   const isWebSocketError = error.message.includes('WebSocket') || error.message.includes('insecure');
+  const isPhysicalDevice = isPhysicalIPhone();
   
   const handleReload = () => {
     window.location.reload();
@@ -56,6 +86,10 @@ const IOSErrorFallback: React.FC<{
     }
   };
 
+  const handleHTTPFallback = () => {
+    forceHTTPFallback();
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -67,7 +101,9 @@ const IOSErrorFallback: React.FC<{
             Problema no iOS/Safari
           </CardTitle>
           <CardDescription>
-            {isWebSocketError 
+            {isWebSocketError && isPhysicalDevice
+              ? 'Detectamos um problema de WebSocket em iPhone físico. Isso é comum devido às restrições de segurança do Safari mobile.'
+              : isWebSocketError 
               ? 'Detectamos um problema de conexão WebSocket. Isso é comum no iOS quando a conexão não é segura.'
               : isPrivate 
               ? 'Detectamos que você está usando o modo privado do Safari. Isso pode causar problemas de compatibilidade.'
@@ -113,6 +149,17 @@ const IOSErrorFallback: React.FC<{
                 Limpar Cache e Recarregar
               </Button>
             )}
+            
+            {isWebSocketError && isPhysicalDevice && (
+              <Button 
+                onClick={handleHTTPFallback} 
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                variant="default"
+              >
+                <AlertCircle className="mr-2 h-4 w-4" />
+                Usar Modo Compatibilidade (iPhone)
+              </Button>
+            )}
           </div>
           
           <div className="text-xs text-muted-foreground text-center">
@@ -120,8 +167,19 @@ const IOSErrorFallback: React.FC<{
             <ul className="mt-1 space-y-1 text-left">
               {isWebSocketError ? (
                 <>
-                  <li>• Acesse http://localhost:8081 diretamente no Safari</li>
-                  <li>• Use o endereço de rede: http://192.168.0.5:8081</li>
+                  {isPhysicalDevice ? (
+                    <>
+                      <li>• Use o endereço de rede: http://192.168.0.5:8081</li>
+                      <li>• Certifique-se de estar na mesma rede Wi-Fi</li>
+                      <li>• Tente o botão "Modo Compatibilidade" acima</li>
+                      <li>• Desative o modo "Bloquear Rastreamento" no Safari</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>• Acesse http://localhost:8081 diretamente no Safari</li>
+                      <li>• Use o endereço de rede: http://192.168.0.5:8081</li>
+                    </>
+                  )}
                   <li>• Certifique-se de estar na mesma rede Wi-Fi</li>
                   <li>• Tente recarregar a página algumas vezes</li>
                 </>
