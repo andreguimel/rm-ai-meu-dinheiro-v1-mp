@@ -15,12 +15,14 @@ const SUPABASE_PUBLISHABLE_KEY =
 function createSafeStorage() {
   try {
     // Test if localStorage is available and working
-    const testKey = '__supabase_test__';
-    localStorage.setItem(testKey, 'test');
+    const testKey = "__supabase_test__";
+    localStorage.setItem(testKey, "test");
     localStorage.removeItem(testKey);
     return localStorage;
   } catch (error) {
-    console.warn('localStorage not available, using memory storage for iOS Safari compatibility');
+    console.warn(
+      "localStorage not available, using memory storage for iOS Safari compatibility"
+    );
     // Fallback to memory storage for iOS Safari private mode
     const memoryStorage: Storage = {
       length: 0,
@@ -41,7 +43,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: "pkce",
   },
 });
 

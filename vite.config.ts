@@ -18,19 +18,19 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: ['es2015', 'safari11'],
+    target: ["es2015", "safari11"],
     polyfillModulePreload: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          supabase: ['@supabase/supabase-js']
-        }
-      }
-    }
+          vendor: ["react", "react-dom"],
+          supabase: ["@supabase/supabase-js"],
+        },
+      },
+    },
   },
   optimizeDeps: {
-    include: ['@supabase/supabase-js']
+    include: ["@supabase/supabase-js"],
   },
   test: {
     globals: true,
