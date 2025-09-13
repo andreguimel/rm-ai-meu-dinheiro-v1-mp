@@ -26,8 +26,6 @@ import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
-import { IPhoneChartFallback } from "@/components/IPhoneChartFallback";
-import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { useToast } from "@/hooks/use-toast";
 
