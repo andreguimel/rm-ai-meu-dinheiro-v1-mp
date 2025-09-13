@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect } from "react"
 
-type Theme = "dark" | "light" | "system"
+// Removido suporte ao modo dark - apenas modo claro
+type Theme = "light"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -14,7 +15,7 @@ type ThemeProviderState = {
 }
 
 const initialState: ThemeProviderState = {
-  theme: "system",
+  theme: "light",
   setTheme: () => null,
 }
 
@@ -22,37 +23,39 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light",
   storageKey = "theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = React.useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () => "light" // Sempre força modo claro
   )
 
   useEffect(() => {
     const root = window.document.documentElement
 
+    // Remove qualquer classe de tema e força apenas light
     root.classList.remove("light", "dark")
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
+    root.classList.add("light")
+    
+    // Limpa qualquer tema armazenado que possa causar conflito
+    try {
+      localStorage.removeItem(storageKey)
+      localStorage.setItem(storageKey, "light")
+    } catch (error) {
+      console.warn('Erro ao limpar tema do localStorage:', error)
     }
-
-    root.classList.add(theme)
-  }, [theme])
+    
+    console.log('🌞 Tema forçado para modo claro apenas')
+  }, [theme, storageKey])
 
   const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    theme: "light" as Theme,
+    setTheme: (newTheme: Theme) => {
+      // Ignora qualquer tentativa de mudar tema - sempre mantém light
+      console.log('🚫 Tentativa de mudança de tema ignorada - modo claro forçado')
+      localStorage.setItem(storageKey, "light")
+      setTheme("light")
     },
   }
 

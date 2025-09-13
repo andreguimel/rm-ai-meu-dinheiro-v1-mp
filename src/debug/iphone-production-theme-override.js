@@ -12,90 +12,66 @@
     
     console.log('[iPhone Theme Override] Iniciando override de tema para produção');
     
-    // Função para forçar tema correto
+    // Função principal para forçar APENAS o modo claro
     function forceCorrectTheme() {
         try {
-            // Detecta tema real do sistema iOS
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const systemTheme = prefersDark ? 'dark' : 'light';
-            
-            console.log('[iPhone Theme Override] Tema do sistema iOS:', systemTheme);
+            console.log('[iPhone Theme Override] Forçando APENAS modo claro');
             
             // Remove qualquer tema armazenado que possa estar causando conflito
             localStorage.removeItem('theme');
             localStorage.removeItem('vite-ui-theme');
+            localStorage.removeItem('theme-dark');
             sessionStorage.removeItem('theme');
+            sessionStorage.removeItem('theme-dark');
             
-            // Define o tema correto no localStorage
-            localStorage.setItem('theme', systemTheme);
+            // Define APENAS o tema claro no localStorage
+            localStorage.setItem('theme', 'light');
             
-            // Aplica classes CSS imediatamente
+            // Aplica classes CSS imediatamente - APENAS modo claro
             const html = document.documentElement;
             html.classList.remove('dark', 'light');
-            html.classList.add(systemTheme);
+            html.classList.add('light');
             
             // Define atributo data-theme para compatibilidade
-            html.setAttribute('data-theme', systemTheme);
+            html.setAttribute('data-theme', 'light');
             
-            // Aplica variáveis CSS específicas do tema
+            // Aplica variáveis CSS APENAS para modo claro
             const root = document.documentElement;
-            if (systemTheme === 'dark') {
-                root.style.setProperty('--background', '222.2 84% 4.9%');
-                root.style.setProperty('--foreground', '210 40% 98%');
-                root.style.setProperty('--card', '222.2 84% 4.9%');
-                root.style.setProperty('--card-foreground', '210 40% 98%');
-                root.style.setProperty('--popover', '222.2 84% 4.9%');
-                root.style.setProperty('--popover-foreground', '210 40% 98%');
-                root.style.setProperty('--primary', '210 40% 98%');
-                root.style.setProperty('--primary-foreground', '222.2 84% 4.9%');
-                root.style.setProperty('--secondary', '217.2 32.6% 17.5%');
-                root.style.setProperty('--secondary-foreground', '210 40% 98%');
-                root.style.setProperty('--muted', '217.2 32.6% 17.5%');
-                root.style.setProperty('--muted-foreground', '215 20.2% 65.1%');
-                root.style.setProperty('--accent', '217.2 32.6% 17.5%');
-                root.style.setProperty('--accent-foreground', '210 40% 98%');
-                root.style.setProperty('--destructive', '0 62.8% 30.6%');
-                root.style.setProperty('--destructive-foreground', '210 40% 98%');
-                root.style.setProperty('--border', '217.2 32.6% 17.5%');
-                root.style.setProperty('--input', '217.2 32.6% 17.5%');
-                root.style.setProperty('--ring', '212.7 26.8% 83.9%');
-            } else {
-                root.style.setProperty('--background', '0 0% 100%');
-                root.style.setProperty('--foreground', '222.2 84% 4.9%');
-                root.style.setProperty('--card', '0 0% 100%');
-                root.style.setProperty('--card-foreground', '222.2 84% 4.9%');
-                root.style.setProperty('--popover', '0 0% 100%');
-                root.style.setProperty('--popover-foreground', '222.2 84% 4.9%');
-                root.style.setProperty('--primary', '222.2 47.4% 11.2%');
-                root.style.setProperty('--primary-foreground', '210 40% 98%');
-                root.style.setProperty('--secondary', '210 40% 96%');
-                root.style.setProperty('--secondary-foreground', '222.2 84% 4.9%');
-                root.style.setProperty('--muted', '210 40% 96%');
-                root.style.setProperty('--muted-foreground', '215.4 16.3% 46.9%');
-                root.style.setProperty('--accent', '210 40% 96%');
-                root.style.setProperty('--accent-foreground', '222.2 84% 4.9%');
-                root.style.setProperty('--destructive', '0 84.2% 60.2%');
-                root.style.setProperty('--destructive-foreground', '210 40% 98%');
-                root.style.setProperty('--border', '214.3 31.8% 91.4%');
-                root.style.setProperty('--input', '214.3 31.8% 91.4%');
-                root.style.setProperty('--ring', '222.2 84% 4.9%');
-            }
+            root.style.setProperty('--background', '0 0% 100%');
+            root.style.setProperty('--foreground', '222.2 84% 4.9%');
+            root.style.setProperty('--card', '0 0% 100%');
+            root.style.setProperty('--card-foreground', '222.2 84% 4.9%');
+            root.style.setProperty('--popover', '0 0% 100%');
+            root.style.setProperty('--popover-foreground', '222.2 84% 4.9%');
+            root.style.setProperty('--primary', '222.2 47.4% 11.2%');
+            root.style.setProperty('--primary-foreground', '210 40% 98%');
+            root.style.setProperty('--secondary', '210 40% 96%');
+            root.style.setProperty('--secondary-foreground', '222.2 84% 4.9%');
+            root.style.setProperty('--muted', '210 40% 96%');
+            root.style.setProperty('--muted-foreground', '215.4 16.3% 46.9%');
+            root.style.setProperty('--accent', '210 40% 96%');
+            root.style.setProperty('--accent-foreground', '222.2 84% 4.9%');
+            root.style.setProperty('--destructive', '0 84.2% 60.2%');
+            root.style.setProperty('--destructive-foreground', '210 40% 98%');
+            root.style.setProperty('--border', '214.3 31.8% 91.4%');
+            root.style.setProperty('--input', '214.3 31.8% 91.4%');
+            root.style.setProperty('--ring', '222.2 84% 4.9%');
             
-            // Força background do body
-            document.body.style.backgroundColor = systemTheme === 'dark' ? 'hsl(222.2 84% 4.9%)' : 'hsl(0 0% 100%)';
-            document.body.style.color = systemTheme === 'dark' ? 'hsl(210 40% 98%)' : 'hsl(222.2 84% 4.9%)';
+            // Força background do body para modo claro
+            document.body.style.backgroundColor = 'hsl(0 0% 100%)';
+            document.body.style.color = 'hsl(222.2 84% 4.9%)';
             
-            // Adiciona meta tag de theme-color
+            // Adiciona meta tag de theme-color para branco
             let themeColorMeta = document.querySelector('meta[name="theme-color"]');
             if (themeColorMeta) {
-                themeColorMeta.content = systemTheme === 'dark' ? '#0a0a0a' : '#ffffff';
+                themeColorMeta.content = '#ffffff';
             }
             
-            console.log('[iPhone Theme Override] Tema aplicado com sucesso:', systemTheme);
+            console.log('[iPhone Theme Override] Modo claro aplicado com sucesso - modo dark desabilitado');
             
             // Dispara evento customizado para notificar outros scripts
             window.dispatchEvent(new CustomEvent('iphone-theme-override', {
-                detail: { theme: systemTheme }
+                detail: { theme: 'light' }
             }));
             
         } catch (error) {
