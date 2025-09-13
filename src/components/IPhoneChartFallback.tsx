@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Smartphone, BarChart3, TrendingUp, PieChart } from 'lucide-react';
+import { NativeBarChart } from '@/components/charts/NativeBarChart';
+import { NativeLineChart } from '@/components/charts/NativeLineChart';
+import { NativePieChart } from '@/components/charts/NativePieChart';
 
 interface ChartData {
   [key: string]: any;
@@ -214,7 +217,45 @@ export const IPhoneChartFallback: React.FC<IPhoneChartFallbackProps> = ({
             xAxisKey={xAxisKey} 
           />
         ) : (
-          children
+          children || (
+            // Usar componentes nativos quando não há children
+            type === 'bar' ? (
+              <NativeBarChart
+                data={data.map((item: any) => ({
+                  name: item[xAxisKey || 'name'],
+                  value: item[dataKey || 'value'],
+                  color: '#3b82f6'
+                }))}
+                title={title}
+                height={300}
+                formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              />
+            ) : type === 'line' ? (
+              <NativeLineChart
+                data={data.map((item: any) => ({
+                  name: item[xAxisKey || 'name'],
+                  value: item[dataKey || 'value']
+                }))}
+                title={title}
+                height={300}
+                color="#3b82f6"
+                formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              />
+            ) : type === 'pie' ? (
+              <NativePieChart
+                data={data.map((item: any, index: number) => ({
+                  name: item[xAxisKey || 'name'],
+                  value: item[dataKey || 'value'],
+                  color: `hsl(${index * 45}, 70%, 50%)`
+                }))}
+                title={title}
+                size={300}
+                showLegend={true}
+                showLabels={true}
+                formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              />
+            ) : null
+          )
         )}
       </div>
     );

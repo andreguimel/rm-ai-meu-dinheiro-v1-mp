@@ -8,11 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  applySecureWebSocketConfig,
-  testWebSocketConnection,
+import { 
+  applySecureWebSocketConfig, 
+  testWebSocketConnection, 
   detectIOSWebSocketIssues,
-  createSecureWebSocket,
+  createSecureWebSocket 
 } from "@/utils/websocket-config";
 
 interface IOSFallbackProps {
@@ -46,28 +46,28 @@ const isPhysicalIPhone = () => {
 // Função para forçar fallback HTTP quando WebSocket falha
 const forceHTTPFallback = async () => {
   try {
-    console.log("🔄 Aplicando fallback HTTP para WebSocket...");
-
+    console.log('🔄 Aplicando fallback HTTP para WebSocket...');
+    
     // Testar conectividade WebSocket primeiro
     const wsWorking = await testWebSocketConnection();
-
+    
     if (!wsWorking) {
-      console.log("❌ WebSocket não funciona, aplicando fallback");
-
+      console.log('❌ WebSocket não funciona, aplicando fallback');
+      
       // Desabilita WebSocket temporariamente
       if (window.WebSocket) {
         (window as any).WebSocketBackup = window.WebSocket;
         (window as any).WebSocket = undefined;
       }
-
+      
       // Configurar para usar polling
       const config = applySecureWebSocketConfig();
       config.ios.forcePolling = true;
       config.ios.disableWebSocket = true;
-
+      
       // Salvar configuração no localStorage
-      localStorage.setItem("__websocket_fallback", "true");
-      localStorage.setItem("__force_polling", "true");
+      localStorage.setItem('__websocket_fallback', 'true');
+      localStorage.setItem('__force_polling', 'true');
     }
 
     // Força reload para usar polling
@@ -88,14 +88,14 @@ const restoreWebSocket = () => {
       (window as any).WebSocket = (window as any).WebSocketBackup;
       delete (window as any).WebSocketBackup;
     }
-
+    
     // Limpar configurações de fallback
-    localStorage.removeItem("__websocket_fallback");
-    localStorage.removeItem("__force_polling");
-
-    console.log("✅ WebSocket restaurado");
+    localStorage.removeItem('__websocket_fallback');
+    localStorage.removeItem('__force_polling');
+    
+    console.log('✅ WebSocket restaurado');
   } catch (e) {
-    console.warn("Erro ao restaurar WebSocket:", e);
+    console.warn('Erro ao restaurar WebSocket:', e);
   }
 };
 
@@ -104,31 +104,28 @@ const autoConfigureWebSocket = async () => {
   try {
     const config = applySecureWebSocketConfig();
     const iosIssues = detectIOSWebSocketIssues();
-
+    
     // Se há problemas no iOS, aplicar configurações automáticas
     if (iosIssues.hasIssues) {
-      console.log(
-        "🍎 Problemas iOS detectados, aplicando configurações automáticas"
-      );
-
+      console.log('🍎 Problemas iOS detectados, aplicando configurações automáticas');
+      
       // Verificar se fallback já foi aplicado
-      const fallbackApplied =
-        localStorage.getItem("__websocket_fallback") === "true";
-
+      const fallbackApplied = localStorage.getItem('__websocket_fallback') === 'true';
+      
       if (!fallbackApplied) {
         // Testar WebSocket primeiro
         const wsWorking = await testWebSocketConnection();
-
+        
         if (!wsWorking) {
-          console.log("🔄 Aplicando fallback automático");
+          console.log('🔄 Aplicando fallback automático');
           await forceHTTPFallback();
         }
       }
     }
-
+    
     return config;
   } catch (e) {
-    console.warn("Erro na configuração automática:", e);
+    console.warn('Erro na configuração automática:', e);
     return null;
   }
 };
@@ -239,7 +236,7 @@ const IOSErrorFallback: React.FC<{
                   <AlertCircle className="mr-2 h-4 w-4" />
                   Usar Modo Compatibilidade (iPhone)
                 </Button>
-
+                
                 <Button
                   onClick={() => {
                     restoreWebSocket();
@@ -378,14 +375,14 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
             height: window.innerHeight,
           },
         });
-
+        
         // Aplicar configuração automática de WebSocket para iOS
         await autoConfigureWebSocket();
       } else {
         // Para outros dispositivos, apenas aplicar configuração básica
         applySecureWebSocketConfig();
       }
-
+      
       setIsLoading(false);
     };
 

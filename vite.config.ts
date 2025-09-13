@@ -10,16 +10,15 @@ export default defineConfig(({ mode }) => ({
     host: mode === "production" ? "0.0.0.0" : "::",
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
     // Configuração HTTPS para produção
-    https:
-      mode === "production"
-        ? {
-            // Certificados SSL serão configurados pelo proxy reverso (nginx/traefik)
-            // Esta configuração força HTTPS no desenvolvimento se necessário
-          }
-        : false,
+    https: mode === "production" ? {
+      // Certificados SSL serão configurados pelo proxy reverso (nginx/traefik)
+      // Esta configuração força HTTPS no desenvolvimento se necessário
+    } : false,
     cors: {
-      origin: mode === "production" ? [process.env.VITE_APP_URL || "*"] : true,
-      credentials: true,
+      origin: mode === "production" 
+        ? [process.env.VITE_APP_URL || "*"] 
+        : true,
+      credentials: true
     },
     hmr: {
       // Configuração segura para WebSocket
@@ -30,8 +29,8 @@ export default defineConfig(({ mode }) => ({
       // Força WSS (WebSocket Seguro) em produção
       protocol: mode === "production" ? "wss" : "ws",
       // Configurações adicionais para iPhone/Safari
-      clientPort: mode === "production" ? 443 : 24678,
-    },
+      clientPort: mode === "production" ? 443 : 24678
+    }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean

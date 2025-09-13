@@ -1,19 +1,15 @@
 # Instruções para VPS Linux
 
 ## Problema Identificado
-
 Você está tentando executar um script PowerShell (`build-and-serve.ps1`) em um ambiente Linux, mas o PowerShell não está disponível no seu VPS.
 
 ## Solução
-
 Criei um script bash equivalente (`build-and-serve.sh`) que funciona no ambiente Linux.
 
 ## Como usar no VPS Linux
 
 ### 1. Fazer upload dos arquivos para o VPS
-
 Transfira os seguintes arquivos para o seu VPS:
-
 - `build-and-serve.sh`
 - `Dockerfile`
 - `docker-compose.yml`
@@ -21,13 +17,11 @@ Transfira os seguintes arquivos para o seu VPS:
 - Todo o código fonte da aplicação
 
 ### 2. Dar permissão de execução ao script
-
 ```bash
 chmod +x build-and-serve.sh
 ```
 
 ### 3. Executar o script
-
 ```bash
 ./build-and-serve.sh
 ```

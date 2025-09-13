@@ -1,17 +1,8 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { NativeBarChart } from "@/components/charts/NativeBarChart";
+import { NativeLineChart } from "@/components/charts/NativeLineChart";
+import { NativePieChart } from "@/components/charts/NativePieChart";
 import { TrendingUp } from "lucide-react";
 
 interface ChartData {
@@ -105,46 +96,23 @@ export const InteractiveCharts: React.FC<InteractiveChartsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={finalData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis
-                  dataKey="periodo"
-                  tick={{ fontSize: 12 }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    `R$ ${value.toLocaleString("pt-BR")}`
-                  }
-                />
-                <Tooltip
-                  formatter={(value) => [
-                    `R$ ${value.toLocaleString("pt-BR")}`,
-                    undefined,
-                  ]}
-                />
-                <Legend />
-                <Bar
-                  dataKey="receitas"
-                  name="Receitas"
-                  fill="#10b981"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="despesas"
-                  name="Despesas"
-                  fill="#ef4444"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <NativeBarChart
+              data={[
+                ...finalData.map(item => ({
+                  name: item.periodo,
+                  value: item.receitas,
+                  color: '#10b981'
+                })),
+                ...finalData.map(item => ({
+                  name: item.periodo,
+                  value: item.despesas,
+                  color: '#ef4444'
+                }))
+              ]}
+              title="Receitas vs Despesas"
+              height={300}
+              formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            />
           </div>
         </CardContent>
       </Card>
@@ -155,42 +123,16 @@ export const InteractiveCharts: React.FC<InteractiveChartsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={finalData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis
-                  dataKey="periodo"
-                  tick={{ fontSize: 12 }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    `R$ ${value.toLocaleString("pt-BR")}`
-                  }
-                />
-                <Tooltip
-                  formatter={(value) => [
-                    `R$ ${value.toLocaleString("pt-BR")}`,
-                    undefined,
-                  ]}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="saldoAcumulado"
-                  name="Saldo Acumulado"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <NativeLineChart
+              data={finalData.map(item => ({
+                name: item.periodo,
+                value: item.saldo
+              }))}
+              title="Evolução do Saldo"
+              height={300}
+              color="#3b82f6"
+              formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            />
           </div>
         </CardContent>
       </Card>

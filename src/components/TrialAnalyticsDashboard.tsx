@@ -11,20 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTrialAnalyticsData } from "@/hooks/useTrialAnalytics";
 import { useToast } from "@/hooks/use-toast";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-} from "recharts";
+import { NativeBarChart } from "@/components/charts/NativeBarChart";
+import { NativeLineChart } from "@/components/charts/NativeLineChart";
+import { NativePieChart } from "@/components/charts/NativePieChart";
 import {
   Calendar,
   TrendingUp,
@@ -268,44 +257,21 @@ export const TrialAnalyticsDashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={analyticsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString("pt-BR")
-                    }
-                  />
-                  <YAxis />
-                  <Tooltip
-                    labelFormatter={(value) =>
-                      new Date(value).toLocaleDateString("pt-BR")
-                    }
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="trials_created"
-                    stroke="#0088FE"
-                    name="Criados"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="trials_accessed"
-                    stroke="#00C49F"
-                    name="Acessados"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="trials_converted"
-                    stroke="#FFBB28"
-                    name="Convertidos"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <NativeLineChart
+                data={analyticsData.map(item => ({
+                  name: new Date(item.date).toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                  }),
+                  trials_created: item.trials_created,
+                  trials_accessed: item.trials_accessed,
+                  trials_converted: item.trials_converted
+                }))}
+                title="Atividade de Trials ao Longo do Tempo"
+                height={400}
+                color="#0088FE"
+                formatValue={(value) => `${value} trials`}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -367,27 +333,14 @@ export const TrialAnalyticsDashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <NativePieChart
+                data={pieData}
+                title="Status dos Trials"
+                size={300}
+                showLegend={true}
+                showLabels={true}
+                formatValue={(value) => `${value} trials`}
+              />
             </CardContent>
           </Card>
         </TabsContent>

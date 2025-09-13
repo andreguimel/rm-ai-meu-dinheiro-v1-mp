@@ -18,24 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-} from "recharts";
+
+import { NativeBarChart } from "@/components/charts/NativeBarChart";
+import { NativeLineChart } from "@/components/charts/NativeLineChart";
+import { NativePieChart } from "@/components/charts/NativePieChart";
 import {
   TrendingUp,
   TrendingDown,
@@ -659,30 +645,23 @@ const Relatorios = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <IPhoneChartFallback
-                    data={chartData}
-                    type="bar"
+                  <NativeBarChart
+                    data={[
+                      ...chartData.map(item => ({
+                        name: item.periodo,
+                        value: item.receitas,
+                        color: '#22c55e'
+                      })),
+                      ...chartData.map(item => ({
+                        name: item.periodo,
+                        value: item.despesas,
+                        color: '#ef4444'
+                      }))
+                    ]}
                     title={`Receitas vs Despesas - ${selectedPeriod}`}
-                    dataKey="receitas"
-                    xAxisKey={getXAxisKey()}
-                    className="h-[300px] w-full"
-                  >
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey={getXAxisKey()}
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis tick={{ fontSize: 12 }} width={80} />
-                          <ChartTooltip />
-                          <Bar dataKey="receitas" fill="#22c55e" />
-                          <Bar dataKey="despesas" fill="#ef4444" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </IPhoneChartFallback>
+                    height={300}
+                    formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                  />
                 </CardContent>
               </Card>
 
@@ -695,34 +674,16 @@ const Relatorios = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <IPhoneChartFallback
-                    data={chartData}
-                    type="line"
+                  <NativeLineChart
+                    data={chartData.map(item => ({
+                      name: item.periodo,
+                      value: item.saldo
+                    }))}
                     title={`Evolução do Saldo - ${selectedPeriod}`}
-                    dataKey="saldo"
-                    xAxisKey={getXAxisKey()}
-                    className="h-[300px] w-full"
-                  >
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey={getXAxisKey()}
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis tick={{ fontSize: 12 }} width={80} />
-                          <ChartTooltip />
-                          <Line
-                            type="monotone"
-                            dataKey="saldo"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </IPhoneChartFallback>
+                    height={300}
+                    color="#3b82f6"
+                    formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -747,34 +708,18 @@ const Relatorios = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <IPhoneChartFallback
-                    data={categoryData}
-                    type="pie"
+                  <NativePieChart
+                    data={categoryData.map((item, index) => ({
+                      name: item.categoria,
+                      value: item.valor,
+                      color: item.cor
+                    }))}
                     title={`Despesas por Categoria - ${selectedPeriod}`}
-                    dataKey="valor"
-                    className="h-[300px] w-full"
-                  >
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={categoryData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="valor"
-                            label={{ fontSize: 12 }}
-                          >
-                            {categoryData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.cor} />
-                            ))}
-                          </Pie>
-                          <ChartTooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </IPhoneChartFallback>
+                    size={300}
+                    showLegend={true}
+                    showLabels={true}
+                    formatValue={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                  />
                 </CardContent>
               </Card>
 
