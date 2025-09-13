@@ -1,8 +1,5 @@
 # Script PowerShell para Build e Serve - Resolver Tela Branca iPhone
-# Versão sem Docker para ambiente Windows
-
-# Configurar cores
-$Host.UI.RawUI.ForegroundColor = "White"
+# Versao sem Docker para ambiente Windows
 
 function Write-Log {
     param([string]$Message, [string]$Color = "Cyan")
@@ -12,72 +9,59 @@ function Write-Log {
 
 function Write-Success {
     param([string]$Message)
-    Write-Log "✅ $Message" "Green"
-}
-
-function Write-Warning {
-    param([string]$Message)
-    Write-Log "⚠️  $Message" "Yellow"
+    Write-Log "OK $Message" "Green"
 }
 
 function Write-Error {
     param([string]$Message)
-    Write-Log "❌ $Message" "Red"
+    Write-Log "ERRO $Message" "Red"
     exit 1
 }
 
 # Banner
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Blue
-Write-Host "🚀 BUILD E SERVE OTIMIZADO - RESOLVER TELA BRANCA IPHONE" -ForegroundColor Blue
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Blue
+Write-Host "===============================================" -ForegroundColor Blue
+Write-Host "BUILD E SERVE - RESOLVER TELA BRANCA IPHONE" -ForegroundColor Blue
+Write-Host "===============================================" -ForegroundColor Blue
 Write-Host ""
 
-# 1. Verificar dependências
-Write-Log "🔍 Verificando dependências..."
+# 1. Verificar dependencias
+Write-Log "Verificando dependencias..."
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    Write-Error "Node.js não encontrado! Instale o Node.js primeiro."
+    Write-Error "Node.js nao encontrado! Instale o Node.js primeiro."
 }
 
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    Write-Error "npm não encontrado! Instale o npm primeiro."
+    Write-Error "npm nao encontrado! Instale o npm primeiro."
 }
 
-Write-Success "Dependências verificadas"
+Write-Success "Dependencias verificadas"
 
 # 2. Limpar builds anteriores
-Write-Log "🧹 Limpando builds anteriores..."
+Write-Log "Limpando builds anteriores..."
 if (Test-Path "dist") {
     Remove-Item -Recurse -Force "dist"
 }
 if (Test-Path "node_modules\.vite") {
     Remove-Item -Recurse -Force "node_modules\.vite"
 }
-Write-Success "Limpeza concluída"
+Write-Success "Limpeza concluida"
 
-# 3. Instalar dependências
-Write-Log "📦 Instalando dependências..."
-npm install
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Falha ao instalar dependências"
-}
-Write-Success "Dependências instaladas"
-
-# 4. Build da aplicação
-Write-Log "🔨 Executando build da aplicação..."
+# 3. Build da aplicacao
+Write-Log "Executando build da aplicacao..."
 npm run build
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Falha no build da aplicação"
+    Write-Error "Falha no build da aplicacao"
 }
 
 if (-not (Test-Path "dist")) {
-    Write-Error "Pasta dist não foi criada! Verifique o build."
+    Write-Error "Pasta dist nao foi criada! Verifique o build."
 }
 
-Write-Success "Build concluído com sucesso"
+Write-Success "Build concluido com sucesso"
 
-# 5. Verificar assets gerados
-Write-Log "📋 Verificando assets gerados..."
+# 4. Verificar assets gerados
+Write-Log "Verificando assets gerados..."
 $jsFiles = @(Get-ChildItem -Path "dist\assets" -Filter "*.js" -ErrorAction SilentlyContinue)
 $cssFiles = @(Get-ChildItem -Path "dist\assets" -Filter "*.css" -ErrorAction SilentlyContinue)
 
@@ -91,50 +75,42 @@ if ($cssFiles.Count -eq 0) {
 
 Write-Success "Assets verificados: $($jsFiles.Count) JS, $($cssFiles.Count) CSS"
 
-# 6. Verificar meta viewport no index.html
-Write-Log "📱 Verificando otimizações para iPhone..."
+# 5. Verificar meta viewport no index.html
+Write-Log "Verificando otimizacoes para iPhone..."
 $indexContent = Get-Content "dist\index.html" -Raw
 
-if ($indexContent -notmatch "viewport-fit=cover") {
-    Write-Warning "Meta viewport pode não estar otimizado para iPhone"
-} else {
+if ($indexContent -match "viewport-fit=cover") {
     Write-Success "Meta viewport otimizado para iPhone encontrado"
-}
-
-if ($indexContent -notmatch "apple-mobile-web-app-capable") {
-    Write-Warning "Meta tags para iOS podem estar faltando"
 } else {
+    Write-Log "Meta viewport pode nao estar otimizado para iPhone" "Yellow"
+}
+
+if ($indexContent -match "apple-mobile-web-app-capable") {
     Write-Success "Meta tags para iOS encontradas"
+} else {
+    Write-Log "Meta tags para iOS podem estar faltando" "Yellow"
 }
 
-# 7. Listar arquivos gerados
-Write-Log "📁 Arquivos gerados na pasta dist:"
-Get-ChildItem -Path "dist" -Recurse | ForEach-Object {
-    $relativePath = $_.FullName.Replace((Get-Location).Path + "\dist\", "")
-    Write-Host "   📄 $relativePath" -ForegroundColor Gray
-}
-
-# 8. Iniciar servidor de preview
-Write-Log "🚀 Iniciando servidor de preview..."
+# 6. Resumo final
 Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Green
-Write-Host "✅ BUILD CONCLUÍDO COM SUCESSO!" -ForegroundColor Green
-Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Green
+Write-Host "===============================================" -ForegroundColor Green
+Write-Host "BUILD CONCLUIDO COM SUCESSO!" -ForegroundColor Green
+Write-Host "===============================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "📊 RESUMO:" -ForegroundColor Yellow
+Write-Host "RESUMO:" -ForegroundColor Yellow
 Write-Host "   • Build executado com sucesso" -ForegroundColor White
 Write-Host "   • Assets JS/CSS gerados corretamente" -ForegroundColor White
 Write-Host "   • Meta viewport otimizado para iPhone" -ForegroundColor White
 Write-Host "   • Arquivos prontos para deploy" -ForegroundColor White
 Write-Host ""
-Write-Host "🔗 PRÓXIMOS PASSOS:" -ForegroundColor Yellow
-Write-Host "   1. O servidor de preview será iniciado automaticamente" -ForegroundColor White
+Write-Host "PROXIMOS PASSOS:" -ForegroundColor Yellow
+Write-Host "   1. O servidor de preview sera iniciado automaticamente" -ForegroundColor White
 Write-Host "   2. Teste no navegador desktop primeiro" -ForegroundColor White
 Write-Host "   3. Teste no iPhone Safari" -ForegroundColor White
-Write-Host "   4. Verifique se não há mais tela branca após login" -ForegroundColor White
+Write-Host "   4. Verifique se nao ha mais tela branca apos login" -ForegroundColor White
 Write-Host ""
-Write-Host "🚀 Iniciando servidor de preview..." -ForegroundColor Cyan
-Write-Host "   Pressione Ctrl+C para parar o servidor" -ForegroundColor Gray
+Write-Host "Iniciando servidor de preview..." -ForegroundColor Cyan
+Write-Host "Pressione Ctrl+C para parar o servidor" -ForegroundColor Gray
 Write-Host ""
 
 # Iniciar servidor de preview
