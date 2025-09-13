@@ -46,6 +46,7 @@ import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
+import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
 import { useBasicAccessControl } from "@/hooks/useBasicAccessControl";
 import {
   MultiSelectControls,
@@ -415,8 +416,105 @@ const Despesas = () => {
               itemType="despesa"
             />
 
-            {/* Tabela de Despesas - Visível apenas em desktop */}
-            <div className="hidden md:block">
+            {/* Tabela de Despesas com IPhoneTableOptimizer */}
+            <IPhoneTableOptimizer
+              data={despesasFiltradas}
+              title="Lista de Despesas"
+              itemsPerPage={8}
+              mobileCardRenderer={(despesa, index) => (
+                <Card key={despesa.id} className="p-4 border border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <ItemCheckbox
+                        id={despesa.id}
+                        selectedIds={selectedIds}
+                        onSelectionChange={handleSelectionChange}
+                      />
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                          {despesa.descricao}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {despesa.categorias?.nome || "Sem categoria"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-red-600">
+                        R$ {despesa.valor.toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Despesa
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <span>
+                      {new Date(
+                        despesa.data + "T00:00:00"
+                      ).toLocaleDateString("pt-BR")}
+                    </span>
+                    <CreatedByBadge
+                      userId={despesa.user_id}
+                      createdBySharedUserId={
+                        despesa.created_by_shared_user_id
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditarDespesa(despesa)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Excluir
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="sm:max-w-[425px]">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Confirmar exclusão
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja excluir a despesa "
+                            {despesa.descricao}"? Esta ação não pode ser
+                            desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>
+                            Cancelar
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() =>
+                              handleExcluirDespesa(despesa.id)
+                            }
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </Card>
+              )}
+            >
               <Card>
                 <Table>
                   <TableHeader>
@@ -529,7 +627,7 @@ const Despesas = () => {
                   </TableBody>
                 </Table>
               </Card>
-            </div>
+            </IPhoneTableOptimizer>
 
             {/* Visualização Mobile - Cards */}
             <div className="md:hidden space-y-4">

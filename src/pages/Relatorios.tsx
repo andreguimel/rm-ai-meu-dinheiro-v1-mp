@@ -48,6 +48,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTransacoes } from "@/hooks/useTransacoes";
 import { useCategorias } from "@/hooks/useCategorias";
+import { IPhoneChartFallback } from "@/components/IPhoneChartFallback";
+import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { FinancialMetrics } from "@/components/reports/FinancialMetrics";
 import { InsightsDashboard } from "@/components/reports/InsightsDashboard";
@@ -657,21 +659,30 @@ const Relatorios = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey={getXAxisKey()}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis tick={{ fontSize: 12 }} width={80} />
-                        <ChartTooltip />
-                        <Bar dataKey="receitas" fill="#22c55e" />
-                        <Bar dataKey="despesas" fill="#ef4444" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <IPhoneChartFallback
+                    data={chartData}
+                    type="bar"
+                    title={`Receitas vs Despesas - ${selectedPeriod}`}
+                    dataKey="receitas"
+                    xAxisKey={getXAxisKey()}
+                    className="h-[300px] w-full"
+                  >
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey={getXAxisKey()}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis tick={{ fontSize: 12 }} width={80} />
+                          <ChartTooltip />
+                          <Bar dataKey="receitas" fill="#22c55e" />
+                          <Bar dataKey="despesas" fill="#ef4444" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </IPhoneChartFallback>
                 </CardContent>
               </Card>
 
@@ -684,25 +695,34 @@ const Relatorios = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey={getXAxisKey()}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis tick={{ fontSize: 12 }} width={80} />
-                        <ChartTooltip />
-                        <Line
-                          type="monotone"
-                          dataKey="saldo"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <IPhoneChartFallback
+                    data={chartData}
+                    type="line"
+                    title={`Evolução do Saldo - ${selectedPeriod}`}
+                    dataKey="saldo"
+                    xAxisKey={getXAxisKey()}
+                    className="h-[300px] w-full"
+                  >
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey={getXAxisKey()}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis tick={{ fontSize: 12 }} width={80} />
+                          <ChartTooltip />
+                          <Line
+                            type="monotone"
+                            dataKey="saldo"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </IPhoneChartFallback>
                 </CardContent>
               </Card>
             </div>
@@ -727,26 +747,34 @@ const Relatorios = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="valor"
-                          label={{ fontSize: 12 }}
-                        >
-                          {categoryData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.cor} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <IPhoneChartFallback
+                    data={categoryData}
+                    type="pie"
+                    title={`Despesas por Categoria - ${selectedPeriod}`}
+                    dataKey="valor"
+                    className="h-[300px] w-full"
+                  >
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="valor"
+                            label={{ fontSize: 12 }}
+                          >
+                            {categoryData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.cor} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </IPhoneChartFallback>
                 </CardContent>
               </Card>
 
@@ -805,50 +833,86 @@ const Relatorios = () => {
                 </Select>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[120px]">Data</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-right w-[150px]">
-                          Valor
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTransactions.map((transaction) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell className="whitespace-nowrap">
-                            {formatarData(transaction.data)}
-                          </TableCell>
-                          <TableCell className="font-medium">
+                <IPhoneTableOptimizer
+                  data={filteredTransactions}
+                  title="Transações"
+                  itemsPerPage={10}
+                  mobileCardRenderer={(transaction, index) => (
+                    <Card key={transaction.id} className="p-3 border border-gray-200 mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100">
                             {transaction.descricao}
-                          </TableCell>
-                          <TableCell>{transaction.categoria}</TableCell>
-                          <TableCell
-                            className={`text-right font-medium whitespace-nowrap ${
-                              transaction.tipo === "receita"
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {transaction.tipo === "receita" ? "+" : "-"}R${" "}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {transaction.categoria}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${
+                            transaction.tipo === "receita"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}>
+                            {transaction.tipo === "receita" ? "+" : "-"}R$
                             {Math.abs(transaction.valor).toLocaleString(
                               "pt-BR"
                             )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {filteredTransactions.length === 0 && (
-                    <div className="text-center py-4 text-sm md:text-base text-muted-foreground">
-                      Nenhuma transação encontrada para o filtro selecionado.
-                    </div>
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatarData(transaction.data)}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
                   )}
-                </div>
+                >
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[120px]">Data</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Categoria</TableHead>
+                          <TableHead className="text-right w-[150px]">
+                            Valor
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTransactions.map((transaction) => (
+                          <TableRow key={transaction.id}>
+                            <TableCell className="whitespace-nowrap">
+                              {formatarData(transaction.data)}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {transaction.descricao}
+                            </TableCell>
+                            <TableCell>{transaction.categoria}</TableCell>
+                            <TableCell
+                              className={`text-right font-medium whitespace-nowrap ${
+                                transaction.tipo === "receita"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {transaction.tipo === "receita" ? "+" : "-"}R${
+                              " "}
+                              {Math.abs(transaction.valor).toLocaleString(
+                                "pt-BR"
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {filteredTransactions.length === 0 && (
+                      <div className="text-center py-4 text-sm md:text-base text-muted-foreground">
+                        Nenhuma transação encontrada para o filtro selecionado.
+                      </div>
+                    )}
+                  </div>
+                </IPhoneTableOptimizer>
               </CardContent>
             </Card>
           </TabsContent>

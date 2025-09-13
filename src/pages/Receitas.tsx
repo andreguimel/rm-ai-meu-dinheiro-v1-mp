@@ -47,6 +47,7 @@ import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
+import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
 import { useBasicAccessControl } from "@/hooks/useBasicAccessControl";
 import {
   MultiSelectControls,
@@ -417,8 +418,103 @@ const Receitas = () => {
               itemType="receita"
             />
 
-            {/* Tabela de Receitas - Visível apenas em desktop */}
-            <div className="hidden md:block">
+            {/* Tabela de Receitas com IPhoneTableOptimizer */}
+            <IPhoneTableOptimizer
+              data={receitasFiltradas}
+              title="Lista de Receitas"
+              itemsPerPage={8}
+              mobileCardRenderer={(receita, index) => (
+                <Card key={receita.id} className="p-4 border border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                         checked={selectedReceitas.includes(receita.id)}
+                         onCheckedChange={() => handleSelectReceita(receita.id)}
+                         aria-label={`Selecionar receita ${receita.descricao}`}
+                       />
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                          {receita.descricao}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                           {receita.categoria?.nome || "Sem categoria"}
+                         </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">
+                        R$ {receita.valor.toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Receita
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <span>
+                       {receita.data
+                         ? format(new Date(receita.data), "dd/MM/yyyy")
+                         : "N/A"}
+                     </span>
+                     <CreatedByBadge
+                       createdBy={receita.created_by}
+                       currentUserId={user?.id}
+                       sharedUsers={sharedUsers}
+                     />
+                  </div>
+                  
+                  <div className="flex items-center justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditarReceita(receita)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Excluir
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="sm:max-w-[425px]">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Confirmar exclusão
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja excluir a receita "
+                            {receita.descricao}"? Esta ação não pode ser
+                            desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                             setReceitaParaExcluir(receita);
+                             setDialogExcluirAberto(true);
+                           }}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </Card>
+              )}
+            >
               <Card>
                 <Table>
                   <TableHeader>
@@ -484,7 +580,10 @@ const Receitas = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEditarReceita(receita)}
+                              onClick={() => {
+                         setReceitaEditando(receita);
+                         setModalEditarAberto(true);
+                       }}
                               className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                             >
                               <Edit className="w-4 h-4" />
@@ -531,115 +630,7 @@ const Receitas = () => {
                   </TableBody>
                 </Table>
               </Card>
-            </div>
-
-            {/* Visualização Mobile - Cards */}
-            <div className="md:hidden space-y-4">
-              {receitasFiltradas.length === 0 ? (
-                <Card className="p-4">
-                  <p className="text-center text-gray-500 dark:text-gray-400">
-                    Nenhuma receita encontrada.
-                  </p>
-                </Card>
-              ) : (
-                receitasFiltradas.map((receita) => (
-                  <Card key={receita.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-gray-900 dark:text-gray-200">
-                          {receita.descricao}
-                        </h3>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Receita
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <p className="text-gray-500">Categoria</p>
-                          <p className="font-medium">
-                            {receita.categorias?.nome || "Sem categoria"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Data</p>
-                          <p className="font-medium">
-                            {new Date(
-                              receita.data + "T00:00:00"
-                            ).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-500 text-xs">Criado por</p>
-                          <CreatedByBadge
-                            userId={receita.user_id}
-                            createdBySharedUserId={
-                              receita.created_by_shared_user_id
-                            }
-                            className="mt-1"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                        <span className="font-bold text-green-600">
-                          R${" "}
-                          {receita.valor.toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditarReceita(receita)}
-                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="sm:max-w-[425px]">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Confirmar exclusão
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir a receita "
-                                  {receita.descricao}"? Esta ação não pode ser
-                                  desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    handleExcluirReceita(receita.id)
-                                  }
-                                >
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
+            </IPhoneTableOptimizer>
           </TabsContent>
 
           <TabsContent value="adicionar">
