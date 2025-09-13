@@ -22,8 +22,8 @@ import "./App.css";
 
 function App() {
   return (
-    // <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
-    <Router>
+    <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
+      <Router>
       <div className="min-h-screen bg-background">
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -150,8 +150,8 @@ function App() {
         </Routes>
         <Toaster />
       </div>
-    </Router>
-    // </IOSFallback>
+      </Router>
+    </IOSFallback>
   );
 }
 
