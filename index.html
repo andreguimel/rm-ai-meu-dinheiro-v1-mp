@@ -65,10 +65,10 @@
       content="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
     />
 
-    <!-- iPhone Production Theme Override - PRIMEIRO A SER CARREGADO -->
+    <!-- Scripts específicos para correções de produção no iPhone -->
+    <!-- WebSocket Security - DEVE ser o primeiro script -->
+    <script src="/src/debug/websocket-security-init.js"></script>
     <script src="/src/debug/iphone-production-theme-override.js"></script>
-
-    <!-- Production iPhone Fix - Correções específicas para mdinheiro.com.br -->
     <script src="/src/debug/production-iphone-fix.js"></script>
 
     <!-- iPhone Debug Script - DEVE ser carregado primeiro -->

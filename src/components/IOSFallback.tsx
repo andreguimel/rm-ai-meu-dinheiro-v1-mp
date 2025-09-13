@@ -8,6 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { 
+  applySecureWebSocketConfig, 
+  testWebSocketConnection, 
+  detectIOSWebSocketIssues,
+  createSecureWebSocket 
+} from "@/utils/websocket-config";
 
 interface IOSFallbackProps {
   children: React.ReactNode;
@@ -38,12 +44,30 @@ const isPhysicalIPhone = () => {
 };
 
 // Função para forçar fallback HTTP quando WebSocket falha
-const forceHTTPFallback = () => {
+const forceHTTPFallback = async () => {
   try {
-    // Desabilita WebSocket temporariamente
-    if (window.WebSocket) {
-      (window as any).WebSocketBackup = window.WebSocket;
-      (window as any).WebSocket = undefined;
+    console.log('🔄 Aplicando fallback HTTP para WebSocket...');
+    
+    // Testar conectividade WebSocket primeiro
+    const wsWorking = await testWebSocketConnection();
+    
+    if (!wsWorking) {
+      console.log('❌ WebSocket não funciona, aplicando fallback');
+      
+      // Desabilita WebSocket temporariamente
+      if (window.WebSocket) {
+        (window as any).WebSocketBackup = window.WebSocket;
+        (window as any).WebSocket = undefined;
+      }
+      
+      // Configurar para usar polling
+      const config = applySecureWebSocketConfig();
+      config.ios.forcePolling = true;
+      config.ios.disableWebSocket = true;
+      
+      // Salvar configuração no localStorage
+      localStorage.setItem('__websocket_fallback', 'true');
+      localStorage.setItem('__force_polling', 'true');
     }
 
     // Força reload para usar polling
@@ -52,6 +76,57 @@ const forceHTTPFallback = () => {
     }, 1000);
   } catch (e) {
     console.warn("Erro ao aplicar fallback HTTP:", e);
+    // Fallback do fallback - apenas recarregar
+    window.location.reload();
+  }
+};
+
+// Função para restaurar WebSocket
+const restoreWebSocket = () => {
+  try {
+    if ((window as any).WebSocketBackup) {
+      (window as any).WebSocket = (window as any).WebSocketBackup;
+      delete (window as any).WebSocketBackup;
+    }
+    
+    // Limpar configurações de fallback
+    localStorage.removeItem('__websocket_fallback');
+    localStorage.removeItem('__force_polling');
+    
+    console.log('✅ WebSocket restaurado');
+  } catch (e) {
+    console.warn('Erro ao restaurar WebSocket:', e);
+  }
+};
+
+// Função para verificar e aplicar configurações automáticas
+const autoConfigureWebSocket = async () => {
+  try {
+    const config = applySecureWebSocketConfig();
+    const iosIssues = detectIOSWebSocketIssues();
+    
+    // Se há problemas no iOS, aplicar configurações automáticas
+    if (iosIssues.hasIssues) {
+      console.log('🍎 Problemas iOS detectados, aplicando configurações automáticas');
+      
+      // Verificar se fallback já foi aplicado
+      const fallbackApplied = localStorage.getItem('__websocket_fallback') === 'true';
+      
+      if (!fallbackApplied) {
+        // Testar WebSocket primeiro
+        const wsWorking = await testWebSocketConnection();
+        
+        if (!wsWorking) {
+          console.log('🔄 Aplicando fallback automático');
+          await forceHTTPFallback();
+        }
+      }
+    }
+    
+    return config;
+  } catch (e) {
+    console.warn('Erro na configuração automática:', e);
+    return null;
   }
 };
 
@@ -152,14 +227,28 @@ const IOSErrorFallback: React.FC<{
             )}
 
             {isWebSocketError && isPhysicalDevice && (
-              <Button
-                onClick={handleHTTPFallback}
-                className="w-full bg-orange-600 hover:bg-orange-700"
-                variant="default"
-              >
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Usar Modo Compatibilidade (iPhone)
-              </Button>
+              <>
+                <Button
+                  onClick={handleHTTPFallback}
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                  variant="default"
+                >
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Usar Modo Compatibilidade (iPhone)
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    restoreWebSocket();
+                    window.location.reload();
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  variant="default"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Restaurar WebSocket
+                </Button>
+              </>
             )}
           </div>
 
@@ -276,7 +365,6 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
 
       setIsIOSDevice(iosDetected);
       setIsPrivateModeDetected(privateMode);
-      setIsLoading(false);
 
       if (iosDetected) {
         console.log("🍎 iOS detectado:", {
@@ -287,7 +375,15 @@ export const IOSFallback: React.FC<IOSFallbackProps> = ({
             height: window.innerHeight,
           },
         });
+        
+        // Aplicar configuração automática de WebSocket para iOS
+        await autoConfigureWebSocket();
+      } else {
+        // Para outros dispositivos, apenas aplicar configuração básica
+        applySecureWebSocketConfig();
       }
+      
+      setIsLoading(false);
     };
 
     checkIOSAndPrivateMode();
