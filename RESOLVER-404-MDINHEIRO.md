@@ -1,6 +1,7 @@
 # Resolver Erro 404 - mdinheiro.com.br
 
 ## Problema Atual
+
 ```
 HTTP/2 404
 content-type: text/plain; charset=utf-8
@@ -12,6 +13,7 @@ date: Sat, 13 Sep 2025 00:13:49 GMT
 ## Diagnóstico Completo
 
 ### 1. Verificar Status dos Containers
+
 ```bash
 # Verificar se containers estão rodando
 docker ps
@@ -24,6 +26,7 @@ docker ps -a | grep -E "(app-app|traefik)"
 ```
 
 ### 2. Verificar Logs dos Containers
+
 ```bash
 # Logs do container da aplicação
 docker logs app-app --tail 50
@@ -36,6 +39,7 @@ docker logs -f app-app
 ```
 
 ### 3. Verificar Configuração de Rede
+
 ```bash
 # Verificar redes
 docker network ls
@@ -49,6 +53,7 @@ docker inspect traefik-app | grep -A 10 "Networks"
 ```
 
 ### 4. Verificar Labels do Traefik
+
 ```bash
 # Inspecionar labels do container app-app
 docker inspect app-app | grep -A 20 "Labels"
@@ -60,6 +65,7 @@ curl http://localhost:8080/api/http/services
 ## Soluções por Cenário
 
 ### Cenário 1: Container app-app não está rodando
+
 ```bash
 # Verificar se container existe
 docker ps -a | grep app-app
@@ -79,6 +85,7 @@ docker run -d --name app-app \
 ```
 
 ### Cenário 2: Traefik não está rodando
+
 ```bash
 # Verificar Traefik
 docker ps | grep traefik
@@ -100,6 +107,7 @@ docker run -d --name traefik-app \
 ```
 
 ### Cenário 3: Problema de Roteamento
+
 ```bash
 # Verificar se Traefik está detectando o serviço
 curl -s http://localhost:8080/api/http/routers | jq .
@@ -112,6 +120,7 @@ curl -H "Host: mdinheiro.com.br" http://localhost
 ```
 
 ### Cenário 4: Aplicação não responde na porta 80
+
 ```bash
 # Verificar se aplicação está rodando internamente
 docker exec app-app curl -I http://localhost:80
@@ -124,6 +133,7 @@ docker exec app-app netstat -tlnp
 ```
 
 ## Script de Resolução Automática
+
 ```bash
 #!/bin/bash
 # resolver-404.sh
@@ -146,17 +156,17 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 # 2. Verificar se app-app está rodando
 if ! docker ps | grep -q app-app; then
     log_warning "Container app-app não está rodando!"
-    
+
     # Tentar iniciar se existe
     if docker ps -a | grep -q app-app; then
         log_info "Tentando iniciar container app-app..."
         docker start app-app
     else
         log_error "Container app-app não existe! Recriando..."
-        
+
         # Criar rede se não existir
         docker network create traefik-network 2>/dev/null || true
-        
+
         # Recriar container
         docker run -d --name app-app \
           --network traefik-network \
@@ -174,10 +184,10 @@ fi
 # 3. Verificar se Traefik está rodando
 if ! docker ps | grep -q traefik; then
     log_warning "Traefik não está rodando!"
-    
+
     # Criar rede se não existir
     docker network create traefik-network 2>/dev/null || true
-    
+
     # Iniciar Traefik
     docker run -d --name traefik-app \
       --network traefik-network \
@@ -255,6 +265,7 @@ echo "- Rede: docker network inspect traefik-network"
 ```
 
 ## Comandos de Verificação Rápida
+
 ```bash
 # Status geral
 docker ps | grep -E "(app-app|traefik)"
@@ -270,6 +281,7 @@ docker logs -f app-app
 ```
 
 ## Verificação Pós-Resolução
+
 ```bash
 # 1. Verificar resposta HTTP
 curl -I https://mdinheiro.com.br
@@ -285,6 +297,7 @@ docker logs -f app-app
 ```
 
 ## Próximos Passos
+
 1. Executar script de resolução: `chmod +x resolver-404.sh && ./resolver-404.sh`
 2. Aguardar 2-3 minutos para estabilização
 3. Testar aplicação no navegador

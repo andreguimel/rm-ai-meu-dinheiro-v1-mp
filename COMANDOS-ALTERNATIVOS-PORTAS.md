@@ -1,6 +1,7 @@
 # Comandos Alternativos para Verificar Portas
 
 ## Problema: netstat não encontrado
+
 ```
 Command 'netstat' not found, but can be installed with:
 apt install net-tools
@@ -9,6 +10,7 @@ apt install net-tools
 ## Soluções Rápidas
 
 ### 1. Instalar net-tools (Recomendado)
+
 ```bash
 # Atualizar repositórios e instalar
 apt update && apt install -y net-tools
@@ -18,6 +20,7 @@ netstat -tlnp | grep -E ":(80|443|8080)\s"
 ```
 
 ### 2. Usar comando 'ss' (Alternativa moderna)
+
 ```bash
 # ss é o substituto moderno do netstat
 # Verificar portas TCP em listening
@@ -31,6 +34,7 @@ ss -tlnp | grep -E ":(80|443|8080)"
 ```
 
 ### 3. Usar comando 'lsof'
+
 ```bash
 # Verificar processos usando portas específicas
 lsof -i :80
@@ -47,17 +51,19 @@ lsof -iTCP:8080 -sTCP:LISTEN
 ```
 
 ### 4. Usar /proc/net/tcp (Método direto)
+
 ```bash
 # Verificar conexões TCP ativas
 cat /proc/net/tcp | grep -E ":(0050|01BB|1F90)" # 80, 443, 8080 em hex
 
 # Converter portas para hexadecimal:
 # 80 = 0x50 = 0050
-# 443 = 0x1BB = 01BB  
+# 443 = 0x1BB = 01BB
 # 8080 = 0x1F90 = 1F90
 ```
 
 ### 5. Verificar com Docker
+
 ```bash
 # Verificar containers usando as portas
 docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -E "(80|443|8080)"
@@ -67,6 +73,7 @@ docker ps -a --format "table {{.Names}}\t{{.Ports}}" | grep -E "(80|443|8080)"
 ```
 
 ## Script de Verificação Completa
+
 ```bash
 #!/bin/bash
 # verificar-portas.sh
@@ -125,6 +132,7 @@ log_info "Verificação concluída!"
 ## Comandos para Liberar Portas
 
 ### Matar processos por porta
+
 ```bash
 # Usando fuser (mais seguro)
 sudo fuser -k 80/tcp
@@ -145,6 +153,7 @@ docker stop $(docker ps -q --filter "publish=8080")
 ## Instalação de Ferramentas
 
 ### Ubuntu/Debian
+
 ```bash
 # net-tools (netstat)
 apt update && apt install -y net-tools
@@ -156,6 +165,7 @@ apt install -y lsof
 ```
 
 ### CentOS/RHEL
+
 ```bash
 # net-tools
 yum install -y net-tools
@@ -167,6 +177,7 @@ yum install -y lsof
 ## Uso no Contexto do Traefik
 
 ### Verificação antes de iniciar Traefik
+
 ```bash
 # 1. Verificar se portas estão livres
 ss -tlnp | grep -E ":(80|443|8080)\s" && echo "⚠️ Portas em uso!" || echo "✅ Portas livres"
@@ -182,6 +193,7 @@ docker run -d --name traefik-app -p 80:80 -p 443:443 -p 8080:8080 ...
 ```
 
 ### Diagnóstico pós-inicialização
+
 ```bash
 # Verificar se Traefik está usando as portas
 ss -tlnp | grep -E ":(80|443|8080)\s"
@@ -195,6 +207,7 @@ curl -I http://localhost:8080
 ```
 
 ## Próximos Passos
+
 1. Escolher um dos métodos acima para verificar portas
 2. Executar `chmod +x verificar-portas.sh && ./verificar-portas.sh`
 3. Liberar portas se necessário

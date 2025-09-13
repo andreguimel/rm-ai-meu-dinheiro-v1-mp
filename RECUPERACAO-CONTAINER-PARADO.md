@@ -1,6 +1,7 @@
 # 🚨 RECUPERAÇÃO - CONTAINER APP-APP PARADO
 
 ## 📋 SITUAÇÃO ATUAL
+
 - ✅ Container traefik-app: Rodando
 - ❌ Container app-app: **NÃO ESTÁ RODANDO**
 - 📍 Localização: `/root/app/`
@@ -8,16 +9,19 @@
 ## 🔍 DIAGNÓSTICO INICIAL
 
 ### 1. Verificar se o container existe (parado)
+
 ```bash
 docker ps -a | grep app-app
 ```
 
 ### 2. Verificar imagens disponíveis
+
 ```bash
 docker images | grep app-app
 ```
 
 ### 3. Verificar logs do último container (se existir)
+
 ```bash
 docker logs app-app
 ```
@@ -25,6 +29,7 @@ docker logs app-app
 ## 🚀 SOLUÇÕES POR CENÁRIO
 
 ### CENÁRIO A: Container existe mas está parado
+
 ```bash
 # Tentar iniciar o container existente
 docker start app-app
@@ -37,6 +42,7 @@ docker logs app-app --tail 20
 ```
 
 ### CENÁRIO B: Container foi removido mas imagem existe
+
 ```bash
 # Listar imagens
 docker images | grep app-app
@@ -53,6 +59,7 @@ docker run -d --name app-app \
 ```
 
 ### CENÁRIO C: Nem container nem imagem existem
+
 ```bash
 # Verificar se existe Dockerfile
 ls -la /root/app/Dockerfile
@@ -69,6 +76,7 @@ docker build -t app-app .
 ## 🛠️ SOLUÇÃO COMPLETA PASSO A PASSO
 
 ### 1. Diagnóstico completo
+
 ```bash
 echo "=== DIAGNÓSTICO COMPLETO ==="
 echo "Containers:"
@@ -85,6 +93,7 @@ find /root -name "Dockerfile" -o -name "docker-compose.yml" 2>/dev/null
 ```
 
 ### 2. Localizar e preparar ambiente
+
 ```bash
 # Ir para diretório do projeto
 cd /root/app
@@ -102,6 +111,7 @@ fi
 ```
 
 ### 3. Criar Dockerfile se não existir
+
 ```bash
 # Se não existir Dockerfile, criar um
 if [ ! -f "Dockerfile" ]; then
@@ -142,6 +152,7 @@ fi
 ```
 
 ### 4. Criar configuração nginx se não existir
+
 ```bash
 # Criar nginx.conf se não existir
 if [ ! -f "nginx.conf" ]; then
@@ -179,20 +190,22 @@ fi
 ```
 
 ### 5. Build da aplicação
+
 ```bash
 # Instalar dependências e fazer build
 if [ -f "package.json" ]; then
     echo "📦 Instalando dependências..."
     npm install
-    
+
     echo "🔨 Fazendo build..."
     npm run build
-    
+
     echo "✅ Build concluído!"
 fi
 ```
 
 ### 6. Build da imagem Docker
+
 ```bash
 echo "🐳 Fazendo build da imagem Docker..."
 docker build -t app-app .
@@ -206,6 +219,7 @@ fi
 ```
 
 ### 7. Criar e iniciar container
+
 ```bash
 echo "🚀 Criando e iniciando container..."
 
@@ -231,6 +245,7 @@ fi
 ```
 
 ### 8. Verificação final
+
 ```bash
 echo "🔍 Verificação final..."
 
@@ -294,13 +309,13 @@ docker rm -f app-app 2>/dev/null || true
 # Verificar se precisa fazer build
 if ! docker images | grep -q "app-app"; then
     echo "🔨 Fazendo build da imagem..."
-    
+
     # Criar Dockerfile se não existir
     if [ ! -f "Dockerfile" ]; then
         echo "📄 Criando Dockerfile..."
         # [Conteúdo do Dockerfile aqui]
     fi
-    
+
     # Build
     docker build -t app-app .
 fi
@@ -325,6 +340,7 @@ echo "✅ Container recuperado!"
 ## 🆘 COMANDOS DE EMERGÊNCIA
 
 ### Se tudo falhar, usar imagem nginx simples:
+
 ```bash
 # Criar container temporário com nginx
 docker run -d --name app-app-temp \
@@ -345,6 +361,7 @@ docker start app-app
 ---
 
 **🎯 PRÓXIMOS PASSOS:**
+
 1. Execute o diagnóstico completo
 2. Siga o cenário apropriado
 3. Teste a aplicação no iPhone

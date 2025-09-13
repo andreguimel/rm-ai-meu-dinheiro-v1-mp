@@ -1,6 +1,7 @@
 # 🐳 GUIA DE ATUALIZAÇÃO DOCKER NA VPS
 
 ## 📋 SITUAÇÃO ATUAL
+
 - **Container app-app**: Rodando (healthy)
 - **Container traefik-app**: Rodando (proxy reverso)
 - **Problema**: Assets JS/CSS retornando 404 (tela branca no iPhone)
@@ -8,6 +9,7 @@
 ## 🚀 MÉTODO 1: ATUALIZAÇÃO RÁPIDA (RECOMENDADO)
 
 ### 1. Conectar na VPS e verificar estrutura
+
 ```bash
 # Verificar containers rodando
 docker ps -a
@@ -22,6 +24,7 @@ find /var -name "Dockerfile" -o -name "docker-compose.yml" 2>/dev/null
 ```
 
 ### 2. Backup dos containers atuais
+
 ```bash
 # Criar backup da imagem atual
 docker commit app-app app-app:backup-$(date +%Y%m%d-%H%M%S)
@@ -31,6 +34,7 @@ docker images | grep backup
 ```
 
 ### 3. Atualizar código fonte
+
 ```bash
 # Localizar diretório do projeto
 docker exec app-app pwd
@@ -46,6 +50,7 @@ npm run build
 ```
 
 ### 4. Rebuild do container
+
 ```bash
 # Parar container atual
 docker stop app-app
@@ -63,6 +68,7 @@ docker-compose up -d --build app
 ## 🔧 MÉTODO 2: ATUALIZAÇÃO COMPLETA
 
 ### 1. Script de atualização automática
+
 ```bash
 #!/bin/bash
 # update-vps-app.sh
@@ -190,6 +196,7 @@ server {
 ## 🔍 DIAGNÓSTICO E TROUBLESHOOTING
 
 ### Verificar logs
+
 ```bash
 # Logs do container
 docker logs app-app -f
@@ -203,6 +210,7 @@ docker network inspect traefik-network
 ```
 
 ### Testar assets
+
 ```bash
 # Entrar no container
 docker exec -it app-app sh
@@ -216,6 +224,7 @@ nginx -t
 ```
 
 ### Verificar conectividade
+
 ```bash
 # Teste interno
 curl -I http://app-app/
@@ -228,20 +237,28 @@ curl -I https://mdinheiro.com.br/assets/
 ## 📱 OTIMIZAÇÕES ESPECÍFICAS PARA IPHONE
 
 ### Meta tags no index.html
+
 ```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+/>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 ```
 
 ### Service Worker para cache
+
 ```javascript
 // sw.js
-self.addEventListener('fetch', event => {
-  if (event.request.destination === 'script' || event.request.destination === 'style') {
+self.addEventListener("fetch", (event) => {
+  if (
+    event.request.destination === "script" ||
+    event.request.destination === "style"
+  ) {
     event.respondWith(
-      caches.match(event.request).then(response => {
+      caches.match(event.request).then((response) => {
         return response || fetch(event.request);
       })
     );

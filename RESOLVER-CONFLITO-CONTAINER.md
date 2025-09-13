@@ -1,9 +1,11 @@
 # Resolver Conflito de Container Docker
 
 ## Problema
+
 Erro: `Conflict. The container name "/app-app" is already in use`
 
 ## Diagnóstico Rápido
+
 ```bash
 # Verificar containers existentes
 docker ps -a | grep app-app
@@ -15,6 +17,7 @@ docker inspect app-app
 ## Soluções
 
 ### 1. Remover Container + Criar Rede (Recomendado)
+
 ```bash
 # Parar o container se estiver rodando
 docker stop app-app
@@ -40,6 +43,7 @@ docker run -d --name app-app \
 ```
 
 ### 2. Forçar Remoção (Se container travado)
+
 ```bash
 # Forçar parada e remoção
 docker rm -f app-app
@@ -56,6 +60,7 @@ docker run -d --name app-app \
 ```
 
 ### 3. Usar Nome Diferente (Alternativa)
+
 ```bash
 # Usar nome único com timestamp
 docker run -d --name app-app-$(date +%s) \
@@ -69,6 +74,7 @@ docker run -d --name app-app-$(date +%s) \
 ```
 
 ## Script de Resolução Automática
+
 ```bash
 #!/bin/bash
 # resolver-conflito.sh
@@ -100,6 +106,7 @@ curl -I https://mdinheiro.com.br
 ```
 
 ## Verificação Pós-Resolução
+
 ```bash
 # Verificar se container está rodando
 docker ps | grep app-app
@@ -115,6 +122,7 @@ curl -I https://mdinheiro.com.br
 ```
 
 ## Comandos de Emergência
+
 ```bash
 # Limpar todos os containers parados
 docker container prune -f
@@ -130,12 +138,14 @@ docker network create traefik-network
 ```
 
 ## Prevenção
+
 - Sempre parar e remover containers antes de recriar
 - Usar scripts automatizados para deploy
 - Implementar health checks
 - Monitorar status dos containers regularmente
 
 ## Próximos Passos
+
 1. Resolver o conflito usando Solução 1
 2. Verificar se aplicação está funcionando
 3. Testar no iPhone para confirmar resolução da tela branca

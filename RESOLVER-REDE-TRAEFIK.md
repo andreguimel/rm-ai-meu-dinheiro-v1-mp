@@ -1,12 +1,15 @@
 # Resolver Erro: Network traefik-network not found
 
 ## Problema
+
 Erro: `failed to set up container networking: network traefik-network not found`
 
 ## Causa
+
 A rede Docker `traefik-network` não existe no sistema.
 
 ## Solução Rápida
+
 ```bash
 # 1. Criar a rede traefik-network
 docker network create traefik-network
@@ -26,6 +29,7 @@ docker run -d --name app-app \
 ```
 
 ## Solução Completa (Recomendada)
+
 ```bash
 #!/bin/bash
 # Script completo de resolução
@@ -89,6 +93,7 @@ echo "✅ Resolução concluída!"
 ```
 
 ## Comandos de Diagnóstico
+
 ```bash
 # Verificar todas as redes
 docker network ls
@@ -106,11 +111,13 @@ docker ps --filter "network=traefik-network"
 ## Cenários Comuns
 
 ### 1. Rede não existe
+
 ```bash
 docker network create traefik-network
 ```
 
 ### 2. Rede existe mas Traefik não está rodando
+
 ```bash
 # Verificar se Traefik existe
 docker ps -a | grep traefik
@@ -127,6 +134,7 @@ docker run -d --name traefik-app \
 ```
 
 ### 3. Conflito de redes
+
 ```bash
 # Remover rede problemática
 docker network rm traefik-network
@@ -140,6 +148,7 @@ docker network connect traefik-network app-app
 ```
 
 ## Configuração Completa do Traefik
+
 ```bash
 # docker-compose.yml para Traefik
 version: '3.7'
@@ -172,6 +181,7 @@ networks:
 ```
 
 ## Verificação Final
+
 ```bash
 # Verificar tudo funcionando
 docker ps
@@ -184,6 +194,7 @@ docker logs app-app
 ```
 
 ## Próximos Passos
+
 1. Executar solução completa
 2. Verificar se Traefik está configurado corretamente
 3. Testar aplicação no navegador

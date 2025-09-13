@@ -7,25 +7,31 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    
+
     <!-- iOS Safari specific meta tags - Otimizadas -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="RM AI Meu Dinheiro" />
     <meta name="apple-touch-fullscreen" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    
+
     <!-- Configurações específicas para iPhone -->
     <meta name="format-detection" content="telephone=no" />
     <meta name="msapplication-tap-highlight" content="no" />
     <meta name="theme-color" content="#000000" />
-    
+
     <!-- Prevenção de zoom automático em inputs -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+    />
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    
+
     <title>Meu Dinheiro - Controle Financeiro Inteligente</title>
     <meta
       name="description"
@@ -61,22 +67,22 @@
 
     <!-- iPhone Production Theme Override - PRIMEIRO A SER CARREGADO -->
     <script src="/src/debug/iphone-production-theme-override.js"></script>
-    
+
     <!-- Production iPhone Fix - Correções específicas para mdinheiro.com.br -->
     <script src="/src/debug/production-iphone-fix.js"></script>
-    
+
     <!-- iPhone Debug Script - DEVE ser carregado primeiro -->
     <script src="/src/debug/iphone-debug-enhanced.js"></script>
-    
+
     <!-- iPhone Fallback System - Soluções automáticas -->
     <script src="/src/debug/iphone-fallback.js"></script>
-    
+
     <!-- iPhone Theme Sync - Corrige conflitos de tema -->
     <script src="/src/debug/iphone-theme-sync.js"></script>
-    
+
     <!-- iPhone Cache Cleaner - Remove caches problemáticos -->
     <script src="src/debug/iphone-cache-cleaner.js"></script>
-    
+
     <!-- MercadoPago SDK -->
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script>
@@ -88,18 +94,18 @@
               "APP_USR-f718c91e-2940-4fe7-95a0-91b0a0946f10"
             );
             if (window.addLog) {
-              window.addLog('info', 'MercadoPago SDK initialized successfully');
+              window.addLog("info", "MercadoPago SDK initialized successfully");
             }
           } else {
             if (window.addLog) {
-              window.addLog('warning', 'MercadoPago SDK not loaded');
+              window.addLog("warning", "MercadoPago SDK not loaded");
             }
           }
         } catch (error) {
           if (window.addLog) {
-            window.addLog('error', 'Error initializing MercadoPago SDK', error);
+            window.addLog("error", "Error initializing MercadoPago SDK", error);
           }
-          console.error('MercadoPago initialization error:', error);
+          console.error("MercadoPago initialization error:", error);
         }
       });
     </script>

@@ -20,6 +20,7 @@ docker logs traefik-app -f
 ## 🔧 ATUALIZAÇÃO RÁPIDA (MÉTODO SIMPLES)
 
 ### 1. Backup e parada
+
 ```bash
 # Criar backup
 docker commit app-app app-app:backup-$(date +%Y%m%d-%H%M%S)
@@ -30,6 +31,7 @@ docker rm app-app
 ```
 
 ### 2. Rebuild e restart
+
 ```bash
 # Localizar Dockerfile (testar cada caminho)
 ls -la /root/Dockerfile
@@ -52,6 +54,7 @@ docker run -d --name app-app \
 ```
 
 ### 3. Verificação
+
 ```bash
 # Verificar se subiu
 docker ps
@@ -67,6 +70,7 @@ docker logs app-app --tail 20
 ## 🛠️ ATUALIZAÇÃO COM CÓDIGO FONTE
 
 ### Se o código está mapeado como volume:
+
 ```bash
 # Encontrar diretório do projeto
 docker exec app-app pwd
@@ -83,6 +87,7 @@ docker restart app-app
 ```
 
 ### Se o código está dentro da imagem:
+
 ```bash
 # Precisa rebuild completo (usar método simples acima)
 ```
@@ -90,6 +95,7 @@ docker restart app-app
 ## 🚨 SCRIPT AUTOMATIZADO
 
 ### Fazer download e executar:
+
 ```bash
 # Fazer download do script (se estiver no repositório)
 wget https://raw.githubusercontent.com/seu-usuario/seu-repo/main/update-vps-docker.sh
@@ -104,6 +110,7 @@ chmod +x update-vps-docker.sh
 ```
 
 ### Ou copiar e colar o script:
+
 ```bash
 # Criar arquivo
 nano update-vps-docker.sh
@@ -119,6 +126,7 @@ chmod +x update-vps-docker.sh
 ## 🔍 DIAGNÓSTICO DE PROBLEMAS
 
 ### Assets 404 (tela branca):
+
 ```bash
 # Verificar se assets existem no container
 docker exec app-app ls -la /usr/share/nginx/html/
@@ -134,6 +142,7 @@ curl -I https://mdinheiro.com.br/assets/index-[hash].css
 ```
 
 ### Problemas de rede:
+
 ```bash
 # Verificar redes Docker
 docker network ls
@@ -145,6 +154,7 @@ docker exec app-app ping traefik-app
 ```
 
 ### Problemas de certificado:
+
 ```bash
 # Verificar certificados Traefik
 docker exec traefik-app ls -la /data/acme.json

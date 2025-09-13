@@ -1,6 +1,7 @@
 # Resolver Erros Críticos do Traefik
 
 ## Problemas Identificados nos Logs
+
 ```
 2025-09-13T00:12:41Z ERR error="accept tcp [::]:8080: use of closed network connection" entryPointName=traefik
 2025-09-13T00:12:41Z ERR error="accept tcp [::]:80: use of closed network connection" entryPointName=web
@@ -11,11 +12,13 @@
 ## Análise dos Erros
 
 ### 1. **Conexões de Rede Fechadas**
+
 - Portas 80, 443 e 8080 com "closed network connection"
 - Indica que o Traefik não consegue bind nas portas
 - Possível conflito de portas ou container mal configurado
 
 ### 2. **Falha na Comunicação com Docker**
+
 - Erro ao acessar `/var/run/docker.sock`
 - Traefik não consegue descobrir containers
 - Socket Docker pode não estar montado corretamente
@@ -23,6 +26,7 @@
 ## Solução Imediata
 
 ### Passo 1: Parar e Remover Traefik Problemático
+
 ```bash
 # Parar Traefik atual
 docker stop traefik-app
@@ -47,6 +51,7 @@ sudo fuser -k 80/tcp 443/tcp 8080/tcp
 ```
 
 ### Passo 2: Recriar Traefik Corretamente
+
 ```bash
 # Criar rede se não existir
 docker network create traefik-network 2>/dev/null || echo "Rede já existe"
@@ -80,6 +85,7 @@ docker run -d --name traefik-app \
 ```
 
 ### Passo 3: Verificar e Recriar Container da Aplicação
+
 ```bash
 # Parar e remover app-app se existir
 docker stop app-app 2>/dev/null || true
@@ -101,6 +107,7 @@ docker run -d --name app-app \
 ```
 
 ## Script de Resolução Completa
+
 ```bash
 #!/bin/bash
 # resolver-traefik-critico.sh
@@ -138,7 +145,7 @@ if netstat -tlnp 2>/dev/null | grep -E ":(80|443|8080)\s" | grep -v docker; then
     log_warning "Portas ainda em uso por outros processos"
     log_info "Processos usando as portas:"
     netstat -tlnp | grep -E ":(80|443|8080)\s" || ss -tlnp | grep -E ":(80|443|8080)\s"
-    
+
     read -p "Deseja matar os processos? (y/N): " kill_processes
     if [[ $kill_processes =~ ^[Yy]$ ]]; then
         sudo fuser -k 80/tcp 443/tcp 8080/tcp 2>/dev/null || true
@@ -284,6 +291,7 @@ echo "- Status: docker ps"
 ```
 
 ## Verificação Pós-Resolução
+
 ```bash
 # 1. Verificar containers rodando
 docker ps | grep -E "(traefik|app-app)"
@@ -306,6 +314,7 @@ curl -s https://mdinheiro.com.br | head -10
 ```
 
 ## Comandos de Emergência
+
 ```bash
 # Se ainda houver problemas
 docker system prune -f
@@ -323,6 +332,7 @@ docker inspect traefik-app
 ```
 
 ## Prevenção de Problemas Futuros
+
 1. **Usar --restart unless-stopped** em todos os containers
 2. **Monitorar logs regularmente**
 3. **Verificar espaço em disco**
@@ -330,6 +340,7 @@ docker inspect traefik-app
 5. **Health checks nos containers**
 
 ## Próximos Passos
+
 1. Executar: `chmod +x resolver-traefik-critico.sh && ./resolver-traefik-critico.sh`
 2. Aguardar 3-5 minutos para estabilização completa
 3. Testar aplicação no navegador
