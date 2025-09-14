@@ -39,7 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { useCategorias } from "@/hooks/useCategorias";
-import { useDespesas } from "@/hooks/useDespesas";
+import { useSmartDespesas } from "@/hooks/useSmartHooks";
 import { EditarDespesaModal } from "@/components/EditarDespesaModal";
 import { CategoriaSelect } from "@/components/CategoriaSelect";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
@@ -76,7 +76,7 @@ const Despesas = () => {
     updateDespesa,
     deleteDespesa,
     deleteMultipleDespesas,
-  } = useDespesas();
+  } = useSmartDespesas();
   const { wrapAction } = useBasicAccessControl();
   const [activeTab, setActiveTab] = useState("lista");
 

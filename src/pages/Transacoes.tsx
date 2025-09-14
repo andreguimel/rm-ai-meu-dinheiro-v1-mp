@@ -21,7 +21,7 @@ import {
   Filter,
 } from "lucide-react";
 import { useCategorias } from "@/hooks/useCategorias";
-import { useTransacoes } from "@/hooks/useTransacoes";
+import { useSmartTransacoes } from "@/hooks/useSmartHooks";
 import { useAuth } from "@/hooks/useAuth";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { useProfile } from "@/hooks/useProfile";
@@ -43,7 +43,7 @@ const Transacoes = () => {
   const { profile } = useProfile();
   const { sharedUsers } = useSharedUsers();
   const { categoriasReceita, categoriasDespesa } = useCategorias();
-  const { transacoes } = useTransacoes();
+  const { transacoes } = useSmartTransacoes();
 
   const [filtro, setFiltro] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");

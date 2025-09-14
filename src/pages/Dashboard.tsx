@@ -16,7 +16,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useTransacoes } from "@/hooks/useTransacoes";
+import { useSmartTransacoes } from "@/hooks/useSmartHooks";
 import { useItensMercado } from "@/hooks/useItensMercado";
 import { useDividas } from "@/hooks/useDividas";
 import { useVeiculos } from "@/hooks/useVeiculos";
@@ -101,7 +101,7 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   // Usar dados reais dos hooks
-  const { transacoes, loading: loadingTransacoes } = useTransacoes();
+  const { transacoes, loading: loadingTransacoes } = useSmartTransacoes();
   const { itensMercado, loading: loadingItens } = useItensMercado();
   const { dividas, loading: loadingDividas } = useDividas();
   const { veiculos, loading: loadingVeiculos } = useVeiculos();

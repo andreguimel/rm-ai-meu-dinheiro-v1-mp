@@ -32,7 +32,7 @@ import {
   PieChart as PieChartIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useTransacoes } from "@/hooks/useTransacoes";
+import { useSmartTransacoes } from "@/hooks/useSmartHooks";
 import { useCategorias } from "@/hooks/useCategorias";
 import { IPhoneChartFallback } from "@/components/IPhoneChartFallback";
 import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
@@ -127,7 +127,7 @@ const Relatorios = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const [selectedCategory, setSelectedCategory] = useState("todas");
   const { toast } = useToast();
-  const { transacoes, loading: loadingTransacoes } = useTransacoes();
+  const { transacoes, loading: loadingTransacoes } = useSmartTransacoes();
   const { categorias, loading: loadingCategorias } = useCategorias();
 
   const processedData = useMemo(() => {
