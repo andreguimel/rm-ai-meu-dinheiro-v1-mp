@@ -15,12 +15,12 @@ services:
       - "traefik.docker.network=traefik-network"
       
       # HTTP configuration
-      - "traefik.http.routers.app.rule=Host(`meu-dinheiro.com`) || Host(`www.meu-dinheiro.com`)"
+      - "traefik.http.routers.app.rule=Host(`mdinheiro.com.br`) || Host(`www.mdinheiro.com.br`)"
       - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.routers.app.middlewares=redirect-to-https"
       
       # HTTPS configuration
-      - "traefik.http.routers.app-secure.rule=Host(`meu-dinheiro.com`) || Host(`www.meu-dinheiro.com`)"
+      - "traefik.http.routers.app-secure.rule=Host(`mdinheiro.com.br`) || Host(`www.mdinheiro.com.br`)"
       - "traefik.http.routers.app-secure.entrypoints=websecure"
       - "traefik.http.routers.app-secure.tls=true"
       - "traefik.http.routers.app-secure.tls.certresolver=letsencrypt"

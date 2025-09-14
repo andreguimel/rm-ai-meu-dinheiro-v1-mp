@@ -428,22 +428,23 @@ const Receitas = () => {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <Checkbox
-                         checked={selectedReceitas.includes(receita.id)}
-                         onCheckedChange={() => handleSelectReceita(receita.id)}
-                         aria-label={`Selecionar receita ${receita.descricao}`}
-                       />
+                        checked={selectedReceitas.includes(receita.id)}
+                        onCheckedChange={() => handleSelectReceita(receita.id)}
+                        aria-label={`Selecionar receita ${receita.descricao}`}
+                      />
                       <div>
                         <h4 className="font-medium text-gray-900 dark:text-gray-100">
                           {receita.descricao}
                         </h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                           {receita.categoria?.nome || "Sem categoria"}
-                         </p>
+                          {receita.categoria?.nome || "Sem categoria"}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-green-600">
-                        R$ {receita.valor.toLocaleString("pt-BR", {
+                        R${" "}
+                        {receita.valor.toLocaleString("pt-BR", {
                           minimumFractionDigits: 2,
                         })}
                       </p>
@@ -452,20 +453,20 @@ const Receitas = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                     <span>
-                       {receita.data
-                         ? format(new Date(receita.data), "dd/MM/yyyy")
-                         : "N/A"}
-                     </span>
-                     <CreatedByBadge
-                       createdBy={receita.created_by}
-                       currentUserId={user?.id}
-                       sharedUsers={sharedUsers}
-                     />
+                      {receita.data
+                        ? format(new Date(receita.data), "dd/MM/yyyy")
+                        : "N/A"}
+                    </span>
+                    <CreatedByBadge
+                      createdBy={receita.created_by}
+                      currentUserId={user?.id}
+                      sharedUsers={sharedUsers}
+                    />
                   </div>
-                  
+
                   <div className="flex items-center justify-end space-x-2">
                     <Button
                       variant="outline"
@@ -502,9 +503,9 @@ const Receitas = () => {
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => {
-                             setReceitaParaExcluir(receita);
-                             setDialogExcluirAberto(true);
-                           }}
+                              setReceitaParaExcluir(receita);
+                              setDialogExcluirAberto(true);
+                            }}
                           >
                             Excluir
                           </AlertDialogAction>
@@ -581,9 +582,9 @@ const Receitas = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                         setReceitaEditando(receita);
-                         setModalEditarAberto(true);
-                       }}
+                                setReceitaEditando(receita);
+                                setModalEditarAberto(true);
+                              }}
                               className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                             >
                               <Edit className="w-4 h-4" />
