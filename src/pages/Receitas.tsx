@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCategorias } from "@/hooks/useCategorias";
-import { useSmartReceitas } from "@/hooks/useSmartHooks";
+import { useReceitas } from "@/hooks/useReceitas";
 import { useAuth } from "@/hooks/useAuth";
 import { useSharedUsers } from "@/hooks/useSharedUsers";
 import { useProfile } from "@/hooks/useProfile";
@@ -76,7 +76,7 @@ const Receitas = () => {
     updateReceita,
     deleteReceita,
     deleteMultipleReceitas,
-  } = useSmartReceitas();
+  } = useReceitas();
   const { wrapAction } = useBasicAccessControl();
   const [activeTab, setActiveTab] = useState("lista");
 
