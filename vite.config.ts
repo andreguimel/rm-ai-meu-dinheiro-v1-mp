@@ -6,26 +6,26 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    // Para VPS: usar 0.0.0.0 para aceitar conexões externas
-    host: mode === "production" ? "0.0.0.0" : "::",
+    // Para VPS e acesso via rede local: usar 0.0.0.0 para aceitar conexões externas
+    host: "0.0.0.0",
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
-    // Configuração HTTPS para produção
+    // Configuração HTTPS para desenvolvimento e produção
     https: mode === "production" ? {
       // Certificados SSL serão configurados pelo proxy reverso (nginx/traefik)
       // Esta configuração força HTTPS no desenvolvimento se necessário
-    } : false,
+    } : false, // Desabilitando HTTPS temporariamente para resolver problemas de SSL
     cors: {
       origin: mode === "production" 
         ? [process.env.VITE_APP_URL || "*"] 
-        : true,
+        : "*",
       credentials: true
     },
     hmr: {
       // Configuração segura para WebSocket
       port: 24678,
       overlay: false,
-      // Para VPS: configurar host do HMR
-      host: mode === "production" ? "0.0.0.0" : "localhost",
+      // Para VPS e rede local: configurar host do HMR
+      host: "localhost",
       // Força WSS (WebSocket Seguro) em produção
       protocol: mode === "production" ? "wss" : "ws",
       // Configurações adicionais para iPhone/Safari

@@ -16,7 +16,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSmartTransacoes } from "@/hooks/useSmartHooks";
+import { useTransacoes } from "@/hooks/useTransacoes";
 import { useItensMercado } from "@/hooks/useItensMercado";
 import { useDividas } from "@/hooks/useDividas";
 import { useVeiculos } from "@/hooks/useVeiculos";
@@ -104,7 +104,7 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const { toast } = useToast();
 
-  const { transacoes, loading: loadingTransacoes } = useSmartTransacoes();
+  const { transacoes, loading: loadingTransacoes } = useTransacoes();
   const { itensMercado, loading: loadingItens } = useItensMercado();
   const { dividas, loading: loadingDividas } = useDividas();
   const { veiculos, loading: loadingVeiculos } = useVeiculos();

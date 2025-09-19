@@ -96,35 +96,29 @@ export const detectIOSWebSocketIssues = (): {
       );
     }
 
-    // CORREÇÃO: Só considerar problema se for HTTPS em produção com problemas reais
-    // Não bloquear localhost ou desenvolvimento
-    if (
-      window.location.protocol === "http:" &&
-      window.location.hostname !== "localhost" &&
-      !window.location.hostname.includes("192.168") &&
-      !window.location.hostname.includes("127.0.0.1")
-    ) {
-      // Só adicionar se realmente não conseguir conectar WebSocket
-      try {
-        const testWs = new WebSocket('ws://localhost:3001');
-        testWs.close();
-      } catch (e) {
-        issues.push("HTTP inseguro em iOS - WebSocket pode falhar");
-      }
+    // CORREÇÃO: Para iPhone físico acessando via IP de rede, sempre considerar como tendo problemas
+    // pois WebSocket pode não funcionar corretamente com IP em HTTP
+    const isNetworkIP = window.location.hostname.includes("192.168") || 
+                       window.location.hostname.includes("10.") ||
+                       window.location.hostname.includes("172.");
+    
+    if (isNetworkIP && window.location.protocol === "http:") {
+      issues.push("iPhone acessando via IP de rede - WebSocket pode falhar");
     }
 
     // Verificar se WebSocket está disponível
     if (!window.WebSocket) {
       issues.push("WebSocket não disponível no Safari");
     }
+
+    // Para iPhone físico, sempre reportar como tendo problemas potenciais
+    if (isIOS && isNetworkIP) {
+      issues.push("iPhone físico detectado - usando hooks otimizados");
+    }
   }
 
-  // CORREÇÃO CRÍTICA: Ser mais conservador - só retornar hasIssues se houver problemas REAIS
-  // Não apenas por ser iOS, mas por ter problemas concretos
-  const hasRealIssues = issues.length > 0 && issues.some(issue => 
-    issue.includes("não disponível") || 
-    issue.includes("Modo privado")
-  );
+  // CORREÇÃO CRÍTICA: Para iPhone físico, sempre usar hooks otimizados
+  const hasRealIssues = isIOS || issues.length > 0;
 
   return {
     hasIssues: hasRealIssues,
