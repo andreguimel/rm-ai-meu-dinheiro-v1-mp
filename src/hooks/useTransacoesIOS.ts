@@ -39,7 +39,7 @@ export const useTransacoesIOS = () => {
   const [realtimeStatus, setRealtimeStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'polling'>('disconnected');
   
   const { toast } = useToast();
-  const { mainAccountUserId } = useAuth();
+  const { user, mainAccountUserId } = useAuth();
   
   const channelRef = useRef<any>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -385,28 +385,7 @@ export const useTransacoesIOS = () => {
     }
   };
 
-  const getMainAccountUserId = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase.rpc("get_main_account_user_id", {
-        user_id: user.id,
-      });
-
-      if (error) throw error;
-      setMainAccountUserId(data);
-    } catch (error) {
-      console.error("Erro ao buscar user_id da conta principal:", error);
-    }
-  };
-
   // Effects
-  useEffect(() => {
-    if (user) {
-      getMainAccountUserId();
-    }
-  }, [user]);
-
   useEffect(() => {
     if (mainAccountUserId) {
       fetchTransacoes();

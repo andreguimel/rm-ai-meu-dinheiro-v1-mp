@@ -6,6 +6,7 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(null);
 
   useEffect(() => {
     // Get initial session
@@ -26,6 +27,31 @@ export const useAuth = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Get main account user ID
+  const getMainAccountUserId = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase.rpc("get_main_account_user_id", {
+        user_id: user.id,
+      });
+
+      if (error) throw error;
+      setMainAccountUserId(data);
+    } catch (error) {
+      console.error("Erro ao buscar user_id da conta principal:", error);
+    }
+  };
+
+  // Effect to get main account user ID when user changes
+  useEffect(() => {
+    if (user) {
+      getMainAccountUserId();
+    } else {
+      setMainAccountUserId(null);
+    }
+  }, [user]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -235,6 +261,7 @@ export const useAuth = () => {
     user,
     session,
     loading,
+    mainAccountUserId,
     signIn,
     signUp,
     signOut,
