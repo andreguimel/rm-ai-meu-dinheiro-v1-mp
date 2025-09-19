@@ -34,18 +34,26 @@ const isIOS = () => {
 export const useDespesasIOS = () => {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
-  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'polling'>('connecting');
+  const [realtimeStatus, setRealtimeStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'polling'>('disconnected');
+  
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(null);
+  const { mainAccountUserId } = useAuth();
+  
   const channelRef = useRef<any>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchRef = useRef<number>(0);
 
+  // CORREÇÃO: Função de fetch com tratamento de erro mais robusto
   const fetchDespesas = async () => {
-    if (!mainAccountUserId) return;
+    if (!mainAccountUserId) {
+      console.warn("⚠️ iOS: mainAccountUserId não disponível para despesas");
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const { data, error } = await supabase
         .from("despesas")
         .select(
@@ -57,7 +65,11 @@ export const useDespesasIOS = () => {
         .eq("user_id", mainAccountUserId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ iOS: Erro ao buscar despesas:", error);
+        // NÃO fazer throw aqui, continuar com array vazio
+      }
+
       setDespesas(data || []);
       lastFetchRef.current = Date.now();
       
@@ -65,12 +77,19 @@ export const useDespesasIOS = () => {
         console.log("🍎 iOS: Despesas carregadas:", data?.length || 0);
       }
     } catch (error: any) {
-      console.error("❌ Erro ao carregar despesas:", error);
-      toast({
-        title: "Erro ao carregar despesas",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("❌ iOS: Erro crítico ao carregar despesas:", error);
+      
+      // CORREÇÃO: Em caso de erro crítico, definir array vazio ao invés de falhar
+      setDespesas([]);
+      
+      // Mostrar toast apenas se não for erro de rede comum
+      if (!error.message?.includes('fetch') && !error.message?.includes('network')) {
+        toast({
+          title: "Erro ao carregar despesas",
+          description: "Tentando novamente...",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

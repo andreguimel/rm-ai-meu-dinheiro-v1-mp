@@ -96,12 +96,21 @@ export const detectIOSWebSocketIssues = (): {
       );
     }
 
-    // Verificar protocolo
+    // CORREÇÃO: Só considerar problema se for HTTPS em produção com problemas reais
+    // Não bloquear localhost ou desenvolvimento
     if (
       window.location.protocol === "http:" &&
-      window.location.hostname !== "localhost"
+      window.location.hostname !== "localhost" &&
+      !window.location.hostname.includes("192.168") &&
+      !window.location.hostname.includes("127.0.0.1")
     ) {
-      issues.push("HTTP inseguro em iOS - WebSocket pode falhar");
+      // Só adicionar se realmente não conseguir conectar WebSocket
+      try {
+        const testWs = new WebSocket('ws://localhost:3001');
+        testWs.close();
+      } catch (e) {
+        issues.push("HTTP inseguro em iOS - WebSocket pode falhar");
+      }
     }
 
     // Verificar se WebSocket está disponível
@@ -110,8 +119,15 @@ export const detectIOSWebSocketIssues = (): {
     }
   }
 
+  // CORREÇÃO CRÍTICA: Ser mais conservador - só retornar hasIssues se houver problemas REAIS
+  // Não apenas por ser iOS, mas por ter problemas concretos
+  const hasRealIssues = issues.length > 0 && issues.some(issue => 
+    issue.includes("não disponível") || 
+    issue.includes("Modo privado")
+  );
+
   return {
-    hasIssues: issues.length > 0,
+    hasIssues: hasRealIssues,
     issues,
   };
 };

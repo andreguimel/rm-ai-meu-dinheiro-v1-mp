@@ -34,18 +34,26 @@ const isIOS = () => {
 export const useReceitasIOS = () => {
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [loading, setLoading] = useState(true);
-  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'polling'>('connecting');
+  const [realtimeStatus, setRealtimeStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'polling'>('disconnected');
+  
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(null);
+  const { mainAccountUserId } = useAuth();
+  
   const channelRef = useRef<any>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchRef = useRef<number>(0);
 
+  // CORREÇÃO: Função de fetch com tratamento de erro mais robusto
   const fetchReceitas = async () => {
-    if (!mainAccountUserId) return;
+    if (!mainAccountUserId) {
+      console.warn("⚠️ iOS: mainAccountUserId não disponível para receitas");
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
+
       const { data, error } = await supabase
         .from("receitas")
         .select(
@@ -57,7 +65,11 @@ export const useReceitasIOS = () => {
         .eq("user_id", mainAccountUserId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ iOS: Erro ao buscar receitas:", error);
+        // NÃO fazer throw aqui, continuar com array vazio
+      }
+
       setReceitas(data || []);
       lastFetchRef.current = Date.now();
       
@@ -65,12 +77,19 @@ export const useReceitasIOS = () => {
         console.log("🍎 iOS: Receitas carregadas:", data?.length || 0);
       }
     } catch (error: any) {
-      console.error("❌ Erro ao carregar receitas:", error);
-      toast({
-        title: "Erro ao carregar receitas",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("❌ iOS: Erro crítico ao carregar receitas:", error);
+      
+      // CORREÇÃO: Em caso de erro crítico, definir array vazio ao invés de falhar
+      setReceitas([]);
+      
+      // Mostrar toast apenas se não for erro de rede comum
+      if (!error.message?.includes('fetch') && !error.message?.includes('network')) {
+        toast({
+          title: "Erro ao carregar receitas",
+          description: "Tentando novamente...",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

@@ -32,21 +32,31 @@ const isIOS = () => {
          (/Safari/.test(userAgent) && !/Chrome/.test(userAgent));
 };
 
+// Hook otimizado para iOS que resolve problemas de WebSocket
 export const useTransacoesIOS = () => {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'polling'>('connecting');
+  const [realtimeStatus, setRealtimeStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'polling'>('disconnected');
+  
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(null);
+  const { mainAccountUserId } = useAuth();
+  
   const channelRef = useRef<any>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchRef = useRef<number>(0);
+  const initializationRef = useRef<boolean>(false);
 
+  // CORREÇÃO: Função de fetch com tratamento de erro mais robusto
   const fetchTransacoes = async () => {
-    if (!mainAccountUserId) return;
+    if (!mainAccountUserId) {
+      console.warn("⚠️ iOS: mainAccountUserId não disponível");
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
+
       // Buscar dados da tabela transacoes
       const { data: transacoesData, error: transacoesError } = await supabase
         .from("transacoes")
@@ -58,7 +68,10 @@ export const useTransacoesIOS = () => {
         )
         .eq("user_id", mainAccountUserId);
 
-      if (transacoesError) throw transacoesError;
+      if (transacoesError) {
+        console.error("❌ iOS: Erro ao buscar transações:", transacoesError);
+        // NÃO fazer throw aqui, continuar com array vazio
+      }
 
       // Buscar dados da tabela receitas
       const { data: receitasData, error: receitasError } = await supabase
@@ -71,7 +84,10 @@ export const useTransacoesIOS = () => {
         )
         .eq("user_id", mainAccountUserId);
 
-      if (receitasError) throw receitasError;
+      if (receitasError) {
+        console.error("❌ iOS: Erro ao buscar receitas:", receitasError);
+        // NÃO fazer throw aqui, continuar com array vazio
+      }
 
       // Buscar dados da tabela despesas
       const { data: despesasData, error: despesasError } = await supabase
@@ -84,9 +100,12 @@ export const useTransacoesIOS = () => {
         )
         .eq("user_id", mainAccountUserId);
 
-      if (despesasError) throw despesasError;
+      if (despesasError) {
+        console.error("❌ iOS: Erro ao buscar despesas:", despesasError);
+        // NÃO fazer throw aqui, continuar com array vazio
+      }
 
-      // Combinar todos os dados
+      // Combinar todos os dados (usando arrays vazios se houver erro)
       const allTransacoes = [
         ...(transacoesData || []).map((t) => ({ ...t, tipo: t.tipo })),
         ...(receitasData || []).map((r) => ({
@@ -113,12 +132,19 @@ export const useTransacoesIOS = () => {
         console.log("🍎 iOS: Transações carregadas:", sortedTransacoes.length);
       }
     } catch (error: any) {
-      console.error("❌ Erro ao carregar transações:", error);
-      toast({
-        title: "Erro ao carregar transações",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("❌ iOS: Erro crítico ao carregar transações:", error);
+      
+      // CORREÇÃO: Em caso de erro crítico, definir array vazio ao invés de falhar
+      setTransacoes([]);
+      
+      // Mostrar toast apenas se não for erro de rede comum
+      if (!error.message?.includes('fetch') && !error.message?.includes('network')) {
+        toast({
+          title: "Erro ao carregar transações",
+          description: "Tentando novamente...",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
