@@ -5,15 +5,17 @@ import { useProfile } from "@/hooks/useProfile";
 import { User } from "lucide-react";
 
 interface CreatedByBadgeProps {
-  userId: string;
+  userId?: string;
   createdBySharedUserId?: string;
   className?: string;
+  size?: "sm" | "default";
 }
 
 export function CreatedByBadge({
   userId,
   createdBySharedUserId,
   className = "",
+  size = "default",
 }: CreatedByBadgeProps) {
   const { user } = useAuth();
   const { sharedUsers } = useSharedUsers();
@@ -29,9 +31,9 @@ export function CreatedByBadge({
       return (
         <Badge
           variant="secondary"
-          className={`flex items-center gap-1 ${className}`}
+          className={`flex items-center gap-1 ${size === "sm" ? "text-xs px-1 py-0" : ""} ${className}`}
         >
-          <User className="h-3 w-3" />
+          <User className={size === "sm" ? "h-2 w-2" : "h-3 w-3"} />
           {sharedUser.name}
         </Badge>
       );
@@ -44,9 +46,9 @@ export function CreatedByBadge({
     return (
       <Badge
         variant="default"
-        className={`flex items-center gap-1 ${className}`}
+        className={`flex items-center gap-1 ${size === "sm" ? "text-xs px-1 py-0" : ""} ${className}`}
       >
-        <User className="h-3 w-3" />
+        <User className={size === "sm" ? "h-2 w-2" : "h-3 w-3"} />
         {userName === user?.email?.split("@")[0] ? "Você" : userName}
       </Badge>
     );
@@ -59,22 +61,28 @@ export function CreatedByBadge({
     return (
       <Badge
         variant="secondary"
-        className={`flex items-center gap-1 ${className}`}
+        className={`flex items-center gap-1 ${size === "sm" ? "text-xs px-1 py-0" : ""} ${className}`}
       >
-        <User className="h-3 w-3" />
+        <User className={size === "sm" ? "h-2 w-2" : "h-3 w-3"} />
         {sharedUser.name}
       </Badge>
     );
   }
 
+  // Se não encontrou o usuário mas temos um userId, mostrar nome baseado no perfil
+  if (userId && !createdBySharedUserId) {
+    const userName = profile?.name || user?.email?.split("@")[0] || "Usuário";
+    return (
+      <Badge
+        variant="default"
+        className={`flex items-center gap-1 ${size === "sm" ? "text-xs px-1 py-0" : ""} ${className}`}
+      >
+        <User className={size === "sm" ? "h-2 w-2" : "h-3 w-3"} />
+        {userName}
+      </Badge>
+    );
+  }
+
   // Se não encontrou o usuário (pode ser um usuário que já foi removido)
-  return (
-    <Badge
-      variant="outline"
-      className={`flex items-center gap-1 text-muted-foreground ${className}`}
-    >
-      <User className="h-3 w-3" />
-      Usuário desconhecido
-    </Badge>
-  );
+  return null; // Não mostrar badge se não conseguir identificar o usuário
 }

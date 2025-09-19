@@ -13,6 +13,7 @@ import {
   Bot,
   ShoppingCart,
   Car,
+  Bell,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -25,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "./ThemeToggle";
 import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { AccessStatusIndicator } from "@/components/AccessStatusIndicator";
+import { NotificacaoIcon } from "@/components/NotificacaoIcon";
 import { useAuth } from "@/hooks/useAuth";
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -118,6 +120,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       path: "/veiculos",
     },
     {
+      icon: Bell,
+      label: "Lembretes",
+      path: "/lembretes",
+    },
+    {
       icon: Users,
       label: "Perfil",
       path: "/perfil",
@@ -174,7 +181,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <AccessStatusIndicator />
       {/* Mobile Menu Button - Only show when menu is closed */}
       {!isMobileMenuOpen && (
-        <div className="lg:hidden fixed top-4 left-4 z-50">
+        <div className="lg:hidden fixed top-4 left-4 z-50 flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -183,6 +190,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           >
             <Menu className="h-6 w-6" />
           </Button>
+          <div className="bg-white shadow-md rounded-full">
+            <NotificacaoIcon />
+          </div>
         </div>
       )}
 
@@ -236,8 +246,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
 
             {/* Theme Toggle - Below logo */}
-            <div className="">
+            <div className="flex items-center gap-2">
               <ThemeToggle />
+              <div className="hidden lg:block">
+                <NotificacaoIcon />
+              </div>
             </div>
           </div>
         </div>

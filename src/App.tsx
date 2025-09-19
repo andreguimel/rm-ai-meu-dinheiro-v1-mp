@@ -10,6 +10,7 @@ import Relatorios from "./pages/Relatorios";
 import Metas from "./pages/Metas";
 import Mercado from "./pages/Mercado";
 import Veiculos from "./pages/Veiculos";
+import Lembretes from "./pages/Lembretes";
 import Perfil from "./pages/Perfil";
 import IA from "./pages/IA";
 import Login from "./pages/Login";
@@ -123,6 +124,16 @@ function App() {
               <ProtectedRoute>
                 <SubscriptionGuard>
                   <Veiculos />
+                </SubscriptionGuard>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lembretes"
+            element={
+              <ProtectedRoute>
+                <SubscriptionGuard>
+                  <Lembretes />
                 </SubscriptionGuard>
               </ProtectedRoute>
             }

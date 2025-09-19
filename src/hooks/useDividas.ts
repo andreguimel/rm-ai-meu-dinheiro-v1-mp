@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useDespesas } from "@/hooks/useDespesas";
 
 export interface Divida {
   id: string;
@@ -48,6 +49,7 @@ export const useDividas = () => {
   const [dividas, setDividas] = useState<Divida[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { createDespesa } = useDespesas();
 
   const fetchDividas = async () => {
     try {
@@ -188,13 +190,23 @@ export const useDividas = () => {
         .single();
 
       if (error) throw error;
+      
+      // Criar despesa automaticamente quando dívida for paga
+      const dividaPaga = data as Divida;
+      await createDespesa({
+        descricao: `Pagamento: ${dividaPaga.descricao}`,
+        valor: dividaPaga.valor_parcela,
+        data: new Date().toISOString().split('T')[0], // Data atual
+        categoria_id: dividaPaga.categoria_id,
+      });
+      
       setDividas((prev) =>
         prev.map((divida) => (divida.id === id ? (data as Divida) : divida))
       );
 
       toast({
-        title: "Parcela paga",
-        description: "Parcela marcada como paga!",
+        title: "Pagamento registrado",
+        description: "Parcela marcada como paga e despesa criada automaticamente!",
       });
 
       return { data, error: null };

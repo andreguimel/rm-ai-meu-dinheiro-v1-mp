@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PieChartData {
   name: string;
@@ -22,7 +22,7 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
   size = 300,
   showLegend = true,
   showLabels = true,
-  formatValue = (value) => value.toString()
+  formatValue = (value) => value.toString(),
 }) => {
   if (!data || data.length === 0) {
     return (
@@ -41,9 +41,18 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
     );
   }
 
-  const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+  const colors = [
+    "#3b82f6",
+    "#ef4444",
+    "#10b981",
+    "#f59e0b",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+    "#84cc16",
+  ];
   const total = data.reduce((sum, item) => sum + item.value, 0);
-  
+
   if (total === 0) {
     return (
       <Card>
@@ -64,43 +73,43 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
   const radius = size / 2 - 20;
   const centerX = size / 2;
   const centerY = size / 2;
-  
+
   let currentAngle = -90; // Start from top
-  
+
   const slices = data.map((item, index) => {
     const percentage = (item.value / total) * 100;
     const angle = (item.value / total) * 360;
     const color = item.color || colors[index % colors.length];
-    
+
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
-    
+
     const startAngleRad = (startAngle * Math.PI) / 180;
     const endAngleRad = (endAngle * Math.PI) / 180;
-    
+
     const x1 = centerX + radius * Math.cos(startAngleRad);
     const y1 = centerY + radius * Math.sin(startAngleRad);
     const x2 = centerX + radius * Math.cos(endAngleRad);
     const y2 = centerY + radius * Math.sin(endAngleRad);
-    
+
     const largeArcFlag = angle > 180 ? 1 : 0;
-    
+
     const pathData = [
       `M ${centerX} ${centerY}`,
       `L ${x1} ${y1}`,
       `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-      'Z'
-    ].join(' ');
-    
+      "Z",
+    ].join(" ");
+
     // Calculate label position
     const labelAngle = startAngle + angle / 2;
     const labelAngleRad = (labelAngle * Math.PI) / 180;
     const labelRadius = radius * 0.7;
     const labelX = centerX + labelRadius * Math.cos(labelAngleRad);
     const labelY = centerY + labelRadius * Math.sin(labelAngleRad);
-    
+
     currentAngle += angle;
-    
+
     return {
       path: pathData,
       color,
@@ -109,7 +118,7 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
       value: item.value,
       labelX,
       labelY,
-      showLabel: percentage > 5 // Only show label if slice is bigger than 5%
+      showLabel: percentage > 5, // Only show label if slice is bigger than 5%
     };
   });
 
@@ -135,12 +144,14 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
                     className="hover:opacity-80 transition-opacity cursor-pointer"
                     style={{
                       transformOrigin: `${centerX}px ${centerY}px`,
-                      animation: `fadeIn 0.6s ease-out ${index * 0.1}s both`
+                      animation: `fadeIn 0.6s ease-out ${index * 0.1}s both`,
                     }}
                   >
-                    <title>{`${slice.name}: ${formatValue(slice.value)} (${slice.percentage.toFixed(1)}%)`}</title>
+                    <title>{`${slice.name}: ${formatValue(
+                      slice.value
+                    )} (${slice.percentage.toFixed(1)}%)`}</title>
                   </path>
-                  
+
                   {/* Labels on slices */}
                   {showLabels && slice.showLabel && (
                     <text
@@ -160,7 +171,7 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
               ))}
             </svg>
           </div>
-          
+
           {/* Legend */}
           {showLegend && (
             <div className="flex flex-col gap-2 min-w-0 flex-1">
@@ -175,7 +186,8 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
                       {slice.name}
                     </div>
                     <div className="text-gray-600 dark:text-gray-400">
-                      {formatValue(slice.value)} ({slice.percentage.toFixed(1)}%)
+                      {formatValue(slice.value)} ({slice.percentage.toFixed(1)}
+                      %)
                     </div>
                   </div>
                 </div>
@@ -183,9 +195,9 @@ export const NativePieChart: React.FC<NativePieChartProps> = ({
             </div>
           )}
         </div>
-        
+
         {/* CSS Animation */}
-        <style jsx>{`
+        <style>{`
           @keyframes fadeIn {
             from {
               opacity: 0;
