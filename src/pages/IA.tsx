@@ -580,7 +580,7 @@ Responda APENAS com o JSON, sem explicações adicionais.`;
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                   dragOver
-                    ? "border-blue-400 bg-blue-50"
+                    ? "border-blue-400 bg-blue-50 dark:bg-transparent"
                     : "border-gray-300 hover:border-gray-400"
                 }`}
                 onDragOver={handleDragOver}

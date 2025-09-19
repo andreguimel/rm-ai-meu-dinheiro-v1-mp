@@ -540,7 +540,7 @@ const Metas = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => abrirModalEdicao(meta)}
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-transparent"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -648,7 +648,7 @@ const Metas = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => abrirModalEdicao(meta)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-transparent"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>

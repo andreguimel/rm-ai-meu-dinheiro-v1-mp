@@ -168,7 +168,7 @@ export const InsightsDashboard: React.FC<InsightsDashboardProps> = ({
 
   const getColorClasses = (color: string) => {
     const colors = {
-      blue: "text-blue-600 bg-blue-50 border-blue-200",
+      blue: "text-blue-600 bg-blue-50 dark:bg-transparent border-blue-200 dark:border-blue-800",
       red: "text-red-600 bg-red-50 border-red-200",
       orange: "text-orange-600 bg-orange-50 border-orange-200",
       green: "text-green-600 bg-green-50 border-green-200",

@@ -517,7 +517,7 @@ const Dividas = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditarDivida(divida.id)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:bg-transparent border border-blue-200 rounded-lg p-4"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>

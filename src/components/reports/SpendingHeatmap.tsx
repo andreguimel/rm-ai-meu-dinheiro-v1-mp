@@ -197,7 +197,7 @@ export const SpendingHeatmap: React.FC<SpendingHeatmapProps> = ({
           </div>
 
           {/* Insights Rápidos */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 dark:bg-transparent border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h4 className="font-medium text-blue-800 mb-2">💡 Insight</h4>
             <p className="text-sm text-blue-700">
               {viewMode === "day"

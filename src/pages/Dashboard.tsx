@@ -322,10 +322,10 @@ const Dashboard = () => {
         )}
 
         <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Ola, {profile?.name || user?.email?.split('@')[0] || 'Usuário'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Bem-vindo ao seu painel financeiro
           </p>
         </div>
@@ -350,10 +350,10 @@ const Dashboard = () => {
                   <Card key={index} className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                           {stat.title}
                         </p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900">
+                        <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">
                           {stat.value}
                         </p>
                         {stat.badge && (
@@ -416,7 +416,7 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <CreditCard className="h-5 w-5 text-red-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Dividas Vencidas
                       </h3>
                     </div>
@@ -424,7 +424,7 @@ const Dashboard = () => {
                   
                   {dividasVencidas.length > 0 ? (
                     <div>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                         R$ {totalDividasVencidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} &bull; {dividasVencidas.length} divida
                         {dividasVencidas.length > 1 ? "s" : ""}
                       </p>
@@ -432,8 +432,8 @@ const Dashboard = () => {
                         {dividasVencidas.slice(0, 3).map((divida) => (
                           <div key={divida.id} className="flex justify-between items-center p-2 bg-red-50 rounded">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{divida.descricao}</p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{divida.descricao}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                                 Venceu em {formatarData(divida.data_vencimento)}
                               </p>
                             </div>
@@ -454,7 +454,7 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-500">Nenhuma divida vencida</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma divida vencida</p>
                     </div>
                   )}
                 </Card>
@@ -464,7 +464,7 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <Bell className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Proximos Lembretes
                       </h3>
                     </div>
@@ -472,7 +472,7 @@ const Dashboard = () => {
                   
                   {lembretesPendentes.length > 0 ? (
                     <div>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                         {lembretesPendentes.length} lembrete{lembretesPendentes.length > 1 ? "s" : ""} pendente{lembretesPendentes.length > 1 ? "s" : ""}
                       </p>
                       <div className="space-y-2">
@@ -483,10 +483,10 @@ const Dashboard = () => {
                           const isProximo = dataLembrete.getTime() - hoje.getTime() <= 3 * 24 * 60 * 60 * 1000;
                           
                           return (
-                            <div key={lembrete.id} className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                            <div key={lembrete.id} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-transparent rounded">
                               <div>
-                                <p className="text-sm font-medium text-gray-900">{lembrete.titulo}</p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{lembrete.titulo}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {formatarData(lembrete.data_lembrete)} as {new Date(lembrete.data_lembrete).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </div>
@@ -514,7 +514,7 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-500">Nenhum lembrete pendente</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum lembrete pendente</p>
                     </div>
                   )}
                 </Card>
@@ -524,24 +524,24 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <Car className="h-5 w-5 text-green-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Meus Veiculos
-                      </h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Meus Veiculos
+            </h3>
                     </div>
                   </div>
                   
                   {loadingVeiculos ? (
-                    <p className="text-sm text-gray-500">Carregando veiculos...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Carregando veiculos...</p>
                   ) : veiculos && veiculos.length > 0 ? (
                     <div className="space-y-3">
                       {veiculos.slice(0, 2).map((veiculo) => (
                         <div key={veiculo.id} className="p-3 bg-gray-50 rounded-lg">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {veiculo.marca} {veiculo.modelo}
-                              </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {veiculo.marca} {veiculo.modelo} ({veiculo.ano})
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {veiculo.ano} &bull; {veiculo.quilometragem.toLocaleString()} km
                               </p>
                             </div>
@@ -559,7 +559,7 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-500">Nenhum veiculo cadastrado ainda.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum veiculo cadastrado ainda.</p>
                     </div>
                   )}
                 </Card>
@@ -568,9 +568,9 @@ const Dashboard = () => {
               {/* Transacoes Recentes - Movido para o final */}
               <Card className="p-4 md:p-6 mb-6 md:mb-8 mt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Últimas Transações - {selectedPeriod === "Mes" ? "Mês" : selectedPeriod}
-                  </h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Últimas Transações - {selectedPeriod === 'Mes' ? 'Mês' : selectedPeriod}
+            </h2>
                   <Button
                     variant="outline"
                     size="sm"
@@ -585,17 +585,17 @@ const Dashboard = () => {
                     {transacoesRecentes.map((transacao) => (
                       <div
                         key={transacao.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-transparent rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-full bg-white ${transacao.colorClass}`}>
+                          <div className={`p-2 rounded-full bg-white dark:bg-gray-800 ${transacao.colorClass}`}>
                             <transacao.icon className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {transacao.descricao}
-                            </p>
-                            <div className="flex items-center space-x-2 text-xs text-gray-500">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {transacao.descricao}
+                      </p>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                               <span>{transacao.categoria}</span>
                               <span>&bull;</span>
                               <span>{transacao.dataFormatada}</span>
@@ -625,9 +625,9 @@ const Dashboard = () => {
                 ) : (
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">
-                      Nenhuma transacao encontrada para o periodo selecionado.
-                    </p>
+                    <p className="text-gray-500 dark:text-gray-400">
+                        Nenhuma transacao encontrada para o periodo selecionado.
+                      </p>
                   </div>
                 )}
               </Card>

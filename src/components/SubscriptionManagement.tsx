@@ -180,7 +180,7 @@ export const SubscriptionManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="bg-blue-50 dark:bg-transparent border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-center gap-2 text-blue-700 font-medium">
               <Crown className="h-4 w-4" />
               <span>Administrador do Sistema</span>
@@ -364,7 +364,7 @@ export const SubscriptionManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="bg-blue-50 dark:bg-transparent border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-center gap-2 text-blue-700 font-medium">
               <Crown className="h-4 w-4" />
               <span>Bem-vindo! Seu teste gratuito já está ativo.</span>
@@ -447,7 +447,7 @@ export const SubscriptionManagement = () => {
 
           {/* Próxima Renovação - Seção em destaque */}
           {current_period_end && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-transparent border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <CalendarDays className="h-5 w-5 text-blue-600" />
                 <h3 className="font-semibold text-blue-900">

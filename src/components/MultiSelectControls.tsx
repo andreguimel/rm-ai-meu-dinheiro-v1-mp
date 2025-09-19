@@ -63,7 +63,7 @@ export const MultiSelectControls = ({
   }
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+    <div className="bg-blue-50 dark:bg-transparent border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-sm text-blue-700 font-medium">

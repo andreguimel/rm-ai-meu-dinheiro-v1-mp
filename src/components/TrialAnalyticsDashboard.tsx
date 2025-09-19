@@ -289,7 +289,7 @@ export const TrialAnalyticsDashboard: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-center p-4 bg-blue-50 dark:bg-transparent rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">
                         {funnelData.total_trials_created}
                       </div>

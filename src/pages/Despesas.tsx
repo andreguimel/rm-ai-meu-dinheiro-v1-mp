@@ -397,8 +397,9 @@ const Despesas = () => {
                   </select>
                   <Button
                     variant="outline"
-                    onClick={limparFiltros}
-                    className="w-full sm:w-auto"
+                    size="sm"
+                    className="bg-blue-50 dark:bg-transparent hover:bg-blue-100 dark:hover:bg-transparent text-blue-600 border-blue-200"
+                    onClick={() => handleEditDespesa(despesa)}
                   >
                     <Filter className="w-4 h-4 mr-2" />
                     Limpar Filtros
@@ -581,7 +582,7 @@ const Despesas = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditarDespesa(despesa)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-transparent"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -689,7 +690,7 @@ const Despesas = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditarDespesa(despesa)}
-                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-transparent"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
