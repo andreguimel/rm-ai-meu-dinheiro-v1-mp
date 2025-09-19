@@ -16,14 +16,13 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SubscriptionGuard } from "./components/SubscriptionGuard";
-import { IOSFallback } from "./components/IOSFallback";
+
 import { Toaster } from "@/components/ui/toaster";
 import "./App.css";
 
 function App() {
   return (
-    <IOSFallback fallbackMessage="Carregando Meu Dinheiro...">
-      <Router>
+    <Router>
       <div className="min-h-screen bg-background">
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -151,7 +150,6 @@ function App() {
         <Toaster />
       </div>
       </Router>
-    </IOSFallback>
   );
 }
 
