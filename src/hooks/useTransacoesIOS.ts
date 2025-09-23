@@ -2,7 +2,7 @@
 // Resolve problemas de "websocket not available" usando fallbacks inteligentes
 
 import { useState, useEffect, useRef } from "react";
-import { supabase, testRealtimeConnection } from "@/integrations/supabase/ios-client";
+import { supabase } from "@/integrations/supabase/ios-client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { detectIOSWebSocketIssues } from "@/utils/websocket-config";
@@ -174,11 +174,11 @@ export const useTransacoesIOS = () => {
   const setupRealtime = async () => {
     if (!mainAccountUserId) return;
 
-    // Testar conectividade realtime primeiro
-    const realtimeWorks = await testRealtimeConnection();
+    // Verificar se há problemas de WebSocket no iOS
+    const iosIssues = detectIOSWebSocketIssues();
     
-    if (!realtimeWorks || detectIOSWebSocketIssues().hasIssues) {
-      console.log("🍎 iOS: Realtime não funciona, usando polling");
+    if (iosIssues.hasIssues) {
+      console.log("🍎 iOS: WebSocket não funciona, usando polling");
       setupPolling();
       return;
     }
