@@ -100,7 +100,7 @@ export const useLembretes = () => {
         `)
         .single();
 
-      console.log("Resposta do Supabase:", { data, error });
+      console.log("Resposta do Supabase:", JSON.stringify({ data, error }, null, 2));
 
       if (error) {
         console.error("Erro detalhado do Supabase:", {

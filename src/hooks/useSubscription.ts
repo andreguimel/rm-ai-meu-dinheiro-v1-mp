@@ -511,7 +511,7 @@ export const useSubscription = () => {
       }
 
       console.log("🚀 Chamando Edge Function simple-checkout (TOKEN VÁLIDO!)");
-      console.log("📝 Body sendo enviado:", { planId: "monthly" });
+      console.log("📝 Body sendo enviado:", JSON.stringify({ planId: "monthly" }, null, 2));
 
       const { data, error } = await supabase.functions.invoke(
         "simple-checkout",

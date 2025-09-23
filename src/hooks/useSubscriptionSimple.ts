@@ -102,7 +102,7 @@ export const useSubscriptionSimple = () => {
         { check_user_id: user.id }
       );
 
-      console.log("📊 Dados do banco:", { accessData, accessError });
+      console.log("📊 Dados do banco:", JSON.stringify({ accessData, accessError }, null, 2));
 
       if (accessError) {
         throw new Error(`Erro ao consultar banco: ${accessError.message}`);

@@ -100,7 +100,7 @@ export const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         metadata
       );
 
-      console.log("📝 Resultado do registro:", { data, authError });
+      console.log("📝 Resultado do registro:", JSON.stringify({ data, authError }, null, 2));
 
       if (authError) {
         console.error("❌ Erro de registro:", authError);

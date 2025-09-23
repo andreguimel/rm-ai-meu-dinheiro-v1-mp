@@ -76,10 +76,10 @@ export const useAuth = () => {
           name: error.name,
         });
       } else {
-        console.log("✅ useAuth.signIn - Login bem-sucedido:", {
+        console.log("✅ useAuth.signIn - Login bem-sucedido:", JSON.stringify({
           userId: data.user?.id,
           email: data.user?.email,
-        });
+        }, null, 2));
       }
 
       return { data, error };

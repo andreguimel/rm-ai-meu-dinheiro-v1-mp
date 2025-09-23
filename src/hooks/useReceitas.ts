@@ -116,7 +116,7 @@ export const useReceitas = () => {
         )
         .single();
 
-      console.log("Resultado da inserção:", { data, error });
+      console.log("Resultado da inserção:", JSON.stringify({ data, error }, null, 2));
       console.log("===============================");
 
       if (error) throw error;

@@ -163,7 +163,7 @@ export const useSubscriptionDirect = () => {
         }
       );
 
-      console.log("📊 [DIRECT] Dados do banco:", { bankData, bankError });
+      console.log("📊 [DIRECT] Dados do banco:", JSON.stringify({ bankData, bankError }, null, 2));
 
       if (bankError) {
         console.error("❌ [DIRECT] Erro ao buscar dados do banco:", bankError);

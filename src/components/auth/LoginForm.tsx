@@ -64,11 +64,11 @@ export const LoginForm = ({
     }
 
     try {
-      console.log("🔐 Tentando fazer login com:", { email: email.trim() });
+      console.log("🔐 Tentando fazer login com:", JSON.stringify({ email: email.trim() }, null, 2));
 
       const { data, error: authError } = await signIn(email.trim(), password);
 
-      console.log("🔐 Resultado do login:", { data, authError });
+      console.log("🔐 Resultado do login:", JSON.stringify({ data, authError }, null, 2));
 
       if (authError) {
         console.error("❌ Erro de autenticação:", authError);
