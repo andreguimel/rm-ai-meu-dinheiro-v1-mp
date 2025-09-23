@@ -150,18 +150,70 @@ const applyIOSHTTPSFixes = () => {
 };
 
 // 9. Executar todas as correções
-const initVPSFixes = () => {
-  try {
-    addHTTPSMeta();
-    preventMultipleSupabaseInstances();
-    setupServiceWorker();
-    increaseRequestTimeout();
-    applyIOSHTTPSFixes();
+// 4. Suprimir avisos de desenvolvimento em produção
+const suppressDevWarnings = () => {
+  if (import.meta.env.PROD) {
+    console.log("🔇 Suprimindo avisos de desenvolvimento em produção");
     
-    console.log("✅ VPS WebSocket Fix - Todas as correções aplicadas");
-  } catch (error) {
-    console.error("❌ Erro ao aplicar correções VPS:", error);
+    // Interceptar console.warn para suprimir avisos específicos
+    const originalWarn = console.warn;
+    console.warn = function(...args) {
+      const message = args.join(' ');
+      
+      // Lista de avisos para suprimir em produção
+      const suppressWarnings = [
+        'Multiple GoTrueClient instances detected',
+        'iOS Supabase Client initialized',
+        'iOS WebSocket Issues',
+        'Problemas iOS detectados',
+        'Configuração WebSocket Seguro',
+        'Private Mode: false',
+        'User Agent: Mozilla'
+      ];
+      
+      // Verificar se deve suprimir o aviso
+      const shouldSuppress = suppressWarnings.some(warning => 
+        message.includes(warning)
+      );
+      
+      if (!shouldSuppress) {
+        originalWarn.apply(console, args);
+      }
+    };
+    
+    // Interceptar console.info para suprimir informações de debug
+    const originalInfo = console.info;
+    console.info = function(...args) {
+      const message = args.join(' ');
+      
+      const suppressInfo = [
+        'iOS Supabase Client initialized',
+        'Private Mode: false',
+        'User Agent: Mozilla'
+      ];
+      
+      const shouldSuppress = suppressInfo.some(info => 
+        message.includes(info)
+      );
+      
+      if (!shouldSuppress) {
+        originalInfo.apply(console, args);
+      }
+    };
   }
+};
+
+const initVPSFixes = () => {
+  console.log("🚀 Iniciando correções VPS WebSocket Fix v1.1.0");
+  
+  addHTTPSMeta();
+  preventMultipleSupabaseInstances();
+  setupServiceWorker();
+  increaseRequestTimeout();
+  applyIOSHTTPSFixes();
+  suppressDevWarnings(); // Adicionar supressão de avisos
+  
+  console.log("✅ Correções VPS aplicadas com sucesso!");
 };
 
 // Executar quando o DOM estiver pronto
