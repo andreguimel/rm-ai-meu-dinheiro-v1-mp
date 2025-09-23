@@ -8,6 +8,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      port: 24678,
+      host: 'localhost',
+      // Configurações para resolver erro "WebSocket not available: the operation is insecure"
+      clientPort: mode === 'development' ? 24678 : undefined,
+    },
+    // Configurações de segurança para WebSocket
+    https: false, // Em desenvolvimento local, HTTP é aceitável
   },
   plugins: [
     react(),
