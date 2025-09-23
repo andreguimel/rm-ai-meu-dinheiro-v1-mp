@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 
@@ -29,7 +29,7 @@ export const useAuth = () => {
   }, []);
 
   // Get main account user ID
-  const getMainAccountUserId = async () => {
+  const getMainAccountUserId = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -42,7 +42,7 @@ export const useAuth = () => {
     } catch (error) {
       console.error("Erro ao buscar user_id da conta principal:", error);
     }
-  };
+  }, [user]);
 
   // Effect to get main account user ID when user changes
   useEffect(() => {
@@ -51,7 +51,7 @@ export const useAuth = () => {
     } else {
       setMainAccountUserId(null);
     }
-  }, [user]);
+  }, [user, getMainAccountUserId]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -188,7 +188,7 @@ export const useAuth = () => {
     }
   };
 
-  const ensureUserProfile = async () => {
+  const ensureUserProfile = useCallback(async () => {
     try {
       if (!user) {
         console.log("⚠️ Usuário não logado, não é possível criar perfil");
@@ -255,7 +255,7 @@ export const useAuth = () => {
       console.error("❌ Erro inesperado ao criar perfil:", error);
       return { success: false, message: "Erro inesperado" };
     }
-  };
+  }, [user]);
 
   return {
     user,

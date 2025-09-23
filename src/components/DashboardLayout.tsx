@@ -64,8 +64,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       }
     };
 
-    createProfileIfNeeded();
-  }, [user, ensureUserProfile]);
+    // Adicionar debounce para evitar múltiplas execuções
+    const timeoutId = setTimeout(() => {
+      createProfileIfNeeded();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [user?.id, ensureUserProfile]); // Usar user.id ao invés de user completo
   // Use effective subscription from subscription data
   const isEffectivelySubscribed = subscriptionData.effective_subscription;
   const menuItems = [
