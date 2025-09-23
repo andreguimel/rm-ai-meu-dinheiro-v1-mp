@@ -1,10 +1,10 @@
 import React from "react";
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
 
 export const AccessStatusIndicator: React.FC = () => {
   const { subscriptionData, loading, hasActiveSubscription, hasActiveTrial } =
-    useSubscriptionDirect();
+    useSubscription();
 
   if (loading) {
     return (

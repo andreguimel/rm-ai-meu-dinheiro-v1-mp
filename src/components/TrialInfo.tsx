@@ -1,11 +1,11 @@
 import React from "react";
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, CheckCircle } from "lucide-react";
 
 export const TrialInfo: React.FC = () => {
-  const { subscriptionData, loading, hasActiveTrial } = useSubscriptionDirect();
+  const { subscriptionData, loading, hasActiveTrial } = useSubscription();
 
   if (loading) {
     return (

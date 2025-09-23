@@ -34,7 +34,6 @@ import {
   cleanPhoneForStorage,
   formatPhoneBrazil,
 } from "@/lib/utils";
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
@@ -48,8 +47,7 @@ const Perfil = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile, loading, updateProfile, uploadAvatar } = useProfile();
-  const { subscriptionData } = useSubscriptionDirect();
-  const { createCheckout } = useSubscription(); // Apenas para função de checkout
+  const { subscriptionData, createCheckout } = useSubscription();
 
   // Verificar se chegou de um pagamento mock
   useEffect(() => {

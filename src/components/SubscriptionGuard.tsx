@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,8 +11,7 @@ interface SubscriptionGuardProps {
 }
 
 export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
-  const { subscriptionData, loading } = useSubscriptionDirect();
-  const { createCheckout } = useSubscription(); // Apenas para função de checkout
+  const { subscriptionData, loading, createCheckout } = useSubscription();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

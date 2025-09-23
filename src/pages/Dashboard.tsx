@@ -23,7 +23,7 @@ import { useVeiculos } from "@/hooks/useVeiculos";
 import { useTiposManutencao } from "@/hooks/useTiposManutencao";
 import { useManutencoesPendentes } from "@/hooks/useManutencoesPendentes";
 import { useProfile } from "@/hooks/useProfile";
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
+import { useSubscription } from "@/hooks/useSubscription";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
@@ -111,7 +111,7 @@ const Dashboard = () => {
   const { tiposManutencao, loading: loadingTiposManutencao } = useTiposManutencao();
   const { manutencoesPendentes, loading: loadingManutencoes } = useManutencoesPendentes(veiculos || [], tiposManutencao || []);
   const { profile, user } = useProfile();
-  const { subscriptionData, loading: loadingSubscription } = useSubscriptionDirect();
+  const { subscriptionData, loading: loadingSubscription } = useSubscription();
   const { lembretes, loading: loadingLembretes } = useLembretes();
 
   // Verificar se houve sucesso no pagamento
@@ -153,24 +153,74 @@ const Dashboard = () => {
   // Filtrar transacoes do periodo
   const transacoesPeriodo = useMemo(() => {
     if (!transacoes) return [];
+    
+    // Para o período "mes", filtrar pelo mês completo
+    if (selectedPeriod === "mes") {
+      const now = new Date();
+      const anoAtual = now.getFullYear();
+      const mesAtual = now.getMonth() + 1;
+      
+      return transacoes.filter((transacao) => {
+        // Extrair ano e mês da string de data (formato: YYYY-MM-DD)
+        const [anoStr, mesStr] = transacao.data.split('T')[0].split('-');
+        const anoTransacao = parseInt(anoStr);
+        const mesTransacao = parseInt(mesStr);
+        
+        return anoTransacao === anoAtual && mesTransacao === mesAtual;
+      });
+    }
+    
+    // Para o período "semana", filtrar pela semana atual
+    if (selectedPeriod === "semana") {
+      const now = new Date();
+      const primeiroDiaSemana = new Date(now.setDate(now.getDate() - now.getDay()));
+      const ultimoDiaSemana = new Date(primeiroDiaSemana);
+      ultimoDiaSemana.setDate(primeiroDiaSemana.getDate() + 6);
+      
+      return transacoes.filter((transacao) => {
+        const dataTransacao = new Date(transacao.data.split('T')[0]);
+        return dataTransacao >= primeiroDiaSemana && dataTransacao <= ultimoDiaSemana;
+      });
+    }
+    
+    // Para o período "ano", filtrar pelo ano atual
+    if (selectedPeriod === "ano") {
+      const now = new Date();
+      const anoAtual = now.getFullYear();
+      
+      return transacoes.filter((transacao) => {
+        const [anoStr] = transacao.data.split('T')[0].split('-');
+        const anoTransacao = parseInt(anoStr);
+        
+        return anoTransacao === anoAtual;
+      });
+    }
+    
+    // Fallback para outros períodos
     return transacoes.filter((transacao) =>
       compararDatas(transacao.data, dataInicio)
     );
-  }, [transacoes, dataInicio]);
+  }, [transacoes, dataInicio, selectedPeriod]);
 
-  // Calcular receitas e despesas do periodo
+  // Calcular receitas do período selecionado
   const receitasPeriodo = useMemo(() => {
+    if (!transacoesPeriodo) return 0;
+    
     return transacoesPeriodo
-      .filter((t) => t.tipo === "receita")
+      .filter((transacao) => transacao.tipo === "receita")
       .reduce((acc, t) => acc + t.valor, 0);
   }, [transacoesPeriodo]);
 
+  // Calcular despesas do período selecionado
   const despesasPeriodo = useMemo(() => {
+    if (!transacoesPeriodo) return 0;
+    
     return transacoesPeriodo
-      .filter((t) => t.tipo === "despesa")
+      .filter((transacao) => transacao.tipo === "despesa")
       .reduce((acc, t) => acc + t.valor, 0);
   }, [transacoesPeriodo]);
 
+  // Saldo baseado no período selecionado
   const saldoPeriodo = receitasPeriodo - despesasPeriodo;
 
   // Funcao para obter icone da categoria

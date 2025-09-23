@@ -54,6 +54,7 @@ import {
   SelectAllCheckbox,
   ItemCheckbox,
 } from "@/components/MultiSelectControls";
+import { MonthSelector } from "@/components/MonthSelector";
 
 interface Receita {
   id: string;
@@ -92,6 +93,8 @@ const Receitas = () => {
   const [filtro, setFiltro] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [usuarioFiltro, setUsuarioFiltro] = useState("");
+  const [mesFilter, setMesFilter] = useState("");
+  const [anoFilter, setAnoFilter] = useState("");
 
   // Estados para o modal de edição
   const [receitaEditando, setReceitaEditando] = useState<Receita | null>(null);
@@ -208,7 +211,19 @@ const Receitas = () => {
           !receita.created_by_shared_user_id) ||
         receita.created_by_shared_user_id === usuarioFiltro;
 
-      return matchDescricao && matchCategoria && matchUsuario;
+      // Filtro por mês e ano
+      const matchMesAno = (() => {
+        if (!mesFilter && !anoFilter) return true;
+        
+        const [receitaAno, receitaMes] = receita.data.split('-');
+        
+        const matchMes = !mesFilter || receitaMes === mesFilter;
+        const matchAno = !anoFilter || receitaAno === anoFilter;
+        
+        return matchMes && matchAno;
+      })();
+
+      return matchDescricao && matchCategoria && matchUsuario && matchMesAno;
     })
     .sort((a, b) => {
       const dateA = new Date(a.created_at || a.data);
@@ -216,7 +231,7 @@ const Receitas = () => {
       return dateB.getTime() - dateA.getTime();
     });
 
-  const totalReceitas = receitas.reduce(
+  const totalReceitas = receitasFiltradas.reduce(
     (total, receita) => total + receita.valor,
     0
   );
@@ -253,6 +268,8 @@ const Receitas = () => {
     setFiltro("");
     setCategoriaFiltro("");
     setUsuarioFiltro("");
+    setMesFilter("");
+    setAnoFilter("");
   };
 
   return (
@@ -359,6 +376,18 @@ const Receitas = () => {
                 Filtros
               </h2>
               <div className="flex flex-col space-y-4">
+                {/* Filtro por mês */}
+                <MonthSelector
+                  selectedMonth={mesFilter}
+                  selectedYear={anoFilter}
+                  onMonthChange={setMesFilter}
+                  onYearChange={setAnoFilter}
+                  onClear={() => {
+                    setMesFilter("");
+                    setAnoFilter("");
+                  }}
+                />
+                
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input

@@ -54,6 +54,7 @@ import {
   ItemCheckbox,
 } from "@/components/MultiSelectControls";
 import { supabase } from "@/integrations/supabase/client";
+import { MonthSelector } from "@/components/MonthSelector";
 
 interface Despesa {
   id: string;
@@ -92,6 +93,8 @@ const Despesas = () => {
   const [filtro, setFiltro] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [usuarioFiltro, setUsuarioFiltro] = useState("");
+  const [mesFilter, setMesFilter] = useState("");
+  const [anoFilter, setAnoFilter] = useState("");
 
   // Estados para o modal de edição
   const [despesaEditando, setDespesaEditando] = useState<Despesa | null>(null);
@@ -233,7 +236,20 @@ const Despesas = () => {
         (usuarioFiltro === user?.id && !despesa.created_by_shared_user_id) ||
         despesa.created_by_shared_user_id === usuarioFiltro;
 
-      return matchDescricao && matchCategoria && matchUsuario;
+      // Filtro por mês e ano
+      const matchMesAno = (() => {
+        if (!mesFilter && !anoFilter) return true;
+        
+        // Extrair ano e mês diretamente da string de data (formato YYYY-MM-DD)
+        const [despesaAno, despesaMes] = despesa.data.split('-');
+        
+        const matchMes = !mesFilter || despesaMes === mesFilter;
+        const matchAno = !anoFilter || despesaAno === anoFilter;
+        
+        return matchMes && matchAno;
+      })();
+
+      return matchDescricao && matchCategoria && matchUsuario && matchMesAno;
     })
     .sort((a, b) => {
       const dateA = new Date(a.created_at || a.data);
@@ -241,7 +257,7 @@ const Despesas = () => {
       return dateB.getTime() - dateA.getTime();
     });
 
-  const totalDespesas = despesas.reduce(
+  const totalDespesas = despesasFiltradas.reduce(
     (total, despesa) => total + despesa.valor,
     0
   );
@@ -251,6 +267,8 @@ const Despesas = () => {
     setFiltro("");
     setCategoriaFiltro("");
     setUsuarioFiltro("");
+    setMesFilter("");
+    setAnoFilter("");
   };
 
   return (
@@ -357,6 +375,18 @@ const Despesas = () => {
                 Filtros
               </h2>
               <div className="flex flex-col space-y-4">
+                {/* Filtro por mês */}
+                <MonthSelector
+                  selectedMonth={mesFilter}
+                  selectedYear={anoFilter}
+                  onMonthChange={setMesFilter}
+                  onYearChange={setAnoFilter}
+                  onClear={() => {
+                    setMesFilter("");
+                    setAnoFilter("");
+                  }}
+                />
+                
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input

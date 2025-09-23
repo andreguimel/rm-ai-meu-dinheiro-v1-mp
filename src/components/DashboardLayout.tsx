@@ -24,7 +24,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "./ThemeToggle";
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
+import { useSubscription } from "@/hooks/useSubscription";
 import { AccessStatusIndicator } from "@/components/AccessStatusIndicator";
 import { NotificacaoIcon } from "@/components/NotificacaoIcon";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,7 +37,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { toast } = useToast();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { subscriptionData } = useSubscriptionDirect();
+  const { subscriptionData } = useSubscription();
   const { signOut, user, ensureUserProfile } = useAuth();
 
   // Garantir que o perfil existe quando o usuário acessa o dashboard

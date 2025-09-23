@@ -1,4 +1,4 @@
-import { useSubscriptionDirect } from "@/hooks/useSubscriptionDirect";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
 import {
   calculateDaysRemaining,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/utils";
 
 export function SubscriptionStatus() {
-  const { subscriptionData, loading } = useSubscriptionDirect();
+  const { subscriptionData, loading } = useSubscription();
 
   if (loading) {
     return <Badge variant="outline">Carregando...</Badge>;
