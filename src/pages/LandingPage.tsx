@@ -119,8 +119,7 @@ const LandingPage = () => {
                   Transforme sua{" "}
                   <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
                     Vida Financeira
-                  </span>{" "}
-                  com Inteligência Artificial
+                  </span>
                 </h1>
                 <p className="text-xl text-gray-600 leading-relaxed">
                   O único sistema que combina gestão financeira avançada com IA
