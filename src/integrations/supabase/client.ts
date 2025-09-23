@@ -11,30 +11,92 @@ const SUPABASE_PUBLISHABLE_KEY =
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// iOS Safari localStorage compatibility fix
-function createSafeStorage() {
+// Detectar iOS/Safari
+const isIOS = () => {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+         (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome'));
+};
+
+// Detectar modo privado no Safari
+const isPrivateMode = async (): Promise<boolean> => {
+  if (typeof window === 'undefined') return false;
+  
   try {
-    // Test if localStorage is available and working
-    const testKey = "__supabase_test__";
-    localStorage.setItem(testKey, "test");
+    const testKey = '__private_mode_test__';
+    localStorage.setItem(testKey, 'test');
+    localStorage.removeItem(testKey);
+    return false;
+  } catch (e) {
+    return true;
+  }
+};
+
+// Função para criar armazenamento seguro compatível com iOS Safari
+const createSafeStorage = () => {
+  // Verificar se estamos no navegador
+  if (typeof window === 'undefined') {
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+      clear: () => {}
+    };
+  }
+
+  // Para iOS, usar armazenamento específico
+  if (isIOS()) {
+    console.log('🍎 Detectado iOS - usando armazenamento otimizado');
+    
+    // Verificar modo privado
+    try {
+      const testKey = '__private_mode_test__';
+      localStorage.setItem(testKey, 'test');
+      localStorage.removeItem(testKey);
+      
+      // localStorage disponível
+      return {
+        getItem: (key: string) => localStorage.getItem(key),
+        setItem: (key: string, value: string) => localStorage.setItem(key, value),
+        removeItem: (key: string) => localStorage.removeItem(key),
+        clear: () => localStorage.clear()
+      };
+    } catch (e) {
+      console.log('🔒 Modo privado detectado - usando memory storage');
+      // Memory storage para modo privado
+      const memoryStorage: { [key: string]: string } = {};
+      
+      return {
+        getItem: (key: string) => memoryStorage[key] || null,
+        setItem: (key: string, value: string) => { memoryStorage[key] = value; },
+        removeItem: (key: string) => { delete memoryStorage[key]; },
+        clear: () => { Object.keys(memoryStorage).forEach(key => delete memoryStorage[key]); }
+      };
+    }
+  }
+
+  // Para outros navegadores, tentar usar localStorage com fallback
+  try {
+    const testKey = '__storage_test__';
+    localStorage.setItem(testKey, 'test');
     localStorage.removeItem(testKey);
     return localStorage;
-  } catch (error) {
-    console.warn(
-      "localStorage not available, using memory storage for iOS Safari compatibility"
-    );
-    // Fallback to memory storage for iOS Safari private mode
-    const memoryStorage: Storage = {
-      length: 0,
-      clear: () => {},
-      getItem: (key: string) => null,
-      key: (index: number) => null,
-      removeItem: (key: string) => {},
-      setItem: (key: string, value: string) => {},
-    };
-    return memoryStorage;
+  } catch (e) {
+    console.warn('localStorage não disponível, usando sessionStorage');
+    try {
+      return sessionStorage;
+    } catch (e2) {
+      console.warn('sessionStorage não disponível, usando memory storage');
+      const memoryStorage: { [key: string]: string } = {};
+      return {
+        getItem: (key: string) => memoryStorage[key] || null,
+        setItem: (key: string, value: string) => { memoryStorage[key] = value; },
+        removeItem: (key: string) => { delete memoryStorage[key]; },
+        clear: () => { Object.keys(memoryStorage).forEach(key => delete memoryStorage[key]); }
+      };
+    }
   }
-}
+};
 
 // Singleton pattern para prevenir múltiplas instâncias
 let supabaseInstance: SupabaseClient | null = null;
@@ -46,19 +108,37 @@ const createSupabaseClient = (): SupabaseClient => {
   }
 
   console.log('🆕 Criando nova instância do Supabase');
-  supabaseInstance = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  
+  // Configurações específicas para iOS
+  const iosConfig = isIOS() ? {
+    realtime: {
+      params: {
+        eventsPerSecond: 2
+      }
+    },
+    auth: {
+      storage: createSafeStorage(),
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false, // Desabilitar para iOS
+      flowType: "pkce" as const,
+    },
+  } : {
     auth: {
       storage: createSafeStorage(),
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      flowType: "pkce",
+      flowType: "pkce" as const,
     },
-  });
+  };
+
+  supabaseInstance = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, iosConfig);
 
   // Marcar instância globalmente para debug
   if (typeof window !== 'undefined') {
     (window as any).__supabase_client_created = true;
+    (window as any).__supabase_client_platform = isIOS() ? 'iOS' : 'standard';
   }
 
   return supabaseInstance;
