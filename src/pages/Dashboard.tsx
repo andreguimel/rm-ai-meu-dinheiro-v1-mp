@@ -177,9 +177,13 @@ const Dashboard = () => {
       const ultimoDiaSemana = new Date(primeiroDiaSemana);
       ultimoDiaSemana.setDate(primeiroDiaSemana.getDate() + 6);
       
+      // Formatando as datas para comparação string
+      const primeiroDiaStr = primeiroDiaSemana.toISOString().split('T')[0];
+      const ultimoDiaStr = ultimoDiaSemana.toISOString().split('T')[0];
+      
       return transacoes.filter((transacao) => {
-        const dataTransacao = new Date(transacao.data.split('T')[0]);
-        return dataTransacao >= primeiroDiaSemana && dataTransacao <= ultimoDiaSemana;
+        const dataTransacao = transacao.data.split('T')[0];
+        return dataTransacao >= primeiroDiaStr && dataTransacao <= ultimoDiaStr;
       });
     }
     
