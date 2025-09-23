@@ -10,22 +10,19 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
     // Configuração HTTPS para desenvolvimento e produção
-    https: mode === "production" ? {
-      // Certificados SSL serão configurados pelo proxy reverso (nginx/traefik)
-      // Esta configuração força HTTPS no desenvolvimento se necessário
-    } : false, // Desabilitando HTTPS temporariamente para resolver problemas de SSL
+    https: false, // Desabilitado - SSL será gerenciado pelo proxy reverso (Traefik/Nginx)
     cors: {
       origin: mode === "production" 
         ? [process.env.VITE_APP_URL || "*"] 
         : "*",
       credentials: true
     },
-    hmr: {
+    hmr: mode === "production" ? false : {
       // Configuração otimizada para iOS Safari/WebKit
       port: 24678,
       overlay: false,
       // Usar IP específico ao invés de localhost para iOS
-      host: mode === "development" ? "0.0.0.0" : "localhost",
+      host: "0.0.0.0",
       // Protocolo WebSocket padrão para desenvolvimento
       protocol: "ws",
       // Configurações específicas para iOS

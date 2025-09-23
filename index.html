@@ -66,7 +66,10 @@
     />
 
     <!-- Scripts específicos para correções de produção no iPhone -->
-    <!-- iOS WebSocket Fix - DEVE ser o PRIMEIRO script -->
+    <!-- VPS HTTPS WebSocket Fix - DEVE ser o PRIMEIRO script para produção -->
+    <script src="/src/debug/vps-websocket-fix.js"></script>
+    
+    <!-- iOS WebSocket Fix - DEVE ser o SEGUNDO script -->
     <script src="/src/debug/ios-websocket-fix.js"></script>
     
     <!-- WebSocket Security - DEVE ser o segundo script -->
