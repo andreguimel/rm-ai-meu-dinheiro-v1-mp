@@ -248,10 +248,10 @@ export const useSubscriptionDirect = () => {
 
   // useEffect para verificar assinatura quando sessão muda
   useEffect(() => {
-    if (session) {
+    if (session?.user?.id) {
       checkSubscription();
     }
-  }, [session, checkSubscription]);
+  }, [session?.user?.id, checkSubscription]);
 
   return {
     subscriptionData: state.data,

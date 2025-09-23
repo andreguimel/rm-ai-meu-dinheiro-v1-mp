@@ -54,63 +54,31 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   // Hierarchical access checking: admin > paid > trial > basic > none
   const accessResult = (() => {
     try {
-      console.log(
-        "🛡️ SubscriptionGuard - Verificando acesso hierárquico (HOOK DIRETO)"
-      );
-      console.log("🛡️ isAdmin:", isAdmin);
-      console.log("🛡️ subscriptionData (DIRETO DO BANCO):", {
-        access_level: subscriptionData.access_level,
-        effective_subscription: subscriptionData.effective_subscription,
-        trial_active: subscriptionData.trial_active,
-        has_paid_subscription: subscriptionData.has_paid_subscription,
-        subscription_tier: subscriptionData.subscription_tier,
-        trial_days_remaining: subscriptionData.trial_days_remaining,
-      });
-
       // Level 1: Admin users have full access (highest priority)
       if (isAdmin) {
-        console.log("✅ Acesso liberado - Usuário é admin (nível 1)");
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 2: Users with paid subscription (second priority)
       if (subscriptionData.has_paid_subscription) {
-        console.log("✅ Acesso liberado - Assinatura paga ativa (nível 2)");
-        console.log("🔍 Tier:", subscriptionData.subscription_tier);
-        console.log("🔍 Status:", subscriptionData.status);
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 3: Users with active trial (third priority)
       if (subscriptionData.trial_active) {
-        console.log("✅ Acesso liberado - Trial ativo (nível 3)");
-        console.log(
-          "🔍 Trial days remaining:",
-          subscriptionData.trial_days_remaining
-        );
-        console.log("🔍 Trial end:", subscriptionData.trial_end);
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 4: Basic access for expired trial users on specific pages (fourth priority)
       const hasTrialHistory = subscriptionData.trial_data?.trial_end !== null;
       if (hasTrialHistory && isBasicAccessPage) {
-        console.log(
-          "✅ Acesso básico liberado - Trial expirado em página básica (nível 4)"
-        );
-        console.log("🔍 Página:", location.pathname);
         return { hasAccess: true, accessType: "basic" };
       }
 
       // Level 5: No access (lowest priority)
-      console.log(
-        "❌ Acesso negado - Sem assinatura ou trial válido (nível 5)"
-      );
+      console.log("❌ Acesso negado - Sem assinatura ou trial válido");
       console.log("🔍 Access level:", subscriptionData.access_level);
-      console.log(
-        "🔍 Effective subscription:",
-        subscriptionData.effective_subscription
-      );
+      console.log("🔍 Effective subscription:", subscriptionData.effective_subscription);
       return { hasAccess: false, accessType: "none" };
     } catch (err) {
       console.error("SubscriptionGuard - Error checking access:", err);
