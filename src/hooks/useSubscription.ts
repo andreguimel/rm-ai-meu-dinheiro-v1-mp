@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,6 +97,10 @@ export const useSubscription = () => {
   const { logTrialAccessed, logTrialExpired, logTrialError } =
     useTrialAnalytics();
 
+  // Debouncing para evitar requisições excessivas
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastCheckRef = useRef<number>(0);
+
   // Helper para obter headers de autenticação
   const getAuthHeaders = useCallback(async () => {
     const token =
@@ -120,11 +124,24 @@ export const useSubscription = () => {
     setState((prev) => ({ ...prev, error }));
   }, []);
 
-  // Verificar assinatura
+  // Verificar assinatura com debouncing e otimização
   const checkSubscription = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
+    }
+
+    // Debouncing - evitar chamadas muito frequentes
+    const now = Date.now();
+    if (now - lastCheckRef.current < 1000) { // 1 segundo de debounce
+      console.log("🚫 Debouncing: Ignorando chamada muito frequente");
+      return;
+    }
+    lastCheckRef.current = now;
+
+    // Cancelar timeout anterior se existir
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
     }
 
     try {
@@ -158,7 +175,6 @@ export const useSubscription = () => {
           trial_end: null,
           trial_start: null,
           trial_days_remaining: null,
-          // Enhanced trial fields for admin - admins have premium access without trials
           trial_active: false,
           access_level: "premium",
           effective_subscription: true,
@@ -175,35 +191,29 @@ export const useSubscription = () => {
         return;
       }
 
-      // 2. Verificar trial diretamente do banco PRIMEIRO
-      console.log("🔍 Verificando trial diretamente do banco...");
-      const { data: directTrialStatus, error: directTrialError } =
-        await supabase.rpc("get_user_access_status", {
+      // 2. Fazer chamadas em paralelo para otimizar performance
+      const headers = await getAuthHeaders();
+      
+      const [trialResult, subscriptionResult] = await Promise.all([
+        supabase.rpc("get_user_access_status", {
           check_user_id: user.id,
-        });
+        }),
+        supabase.functions.invoke("check-subscription-with-trial", { headers })
+      ]);
 
-      console.log("🔍 Status direto do banco:", {
-        directTrialStatus,
-        directTrialError,
+      console.log("🔍 Resultados paralelos:", {
+        trial: trialResult,
+        subscription: subscriptionResult,
       });
 
-      // 3. Verificar assinatura via Edge Function (nova função que inclui trial)
-      const headers = await getAuthHeaders();
-      const { data, error } = await supabase.functions.invoke(
-        "check-subscription-with-trial",
-        { headers }
-      );
-
-      console.log("🔍 Resposta da verificação:", { data, error });
-
-      // 4. SEMPRE usar dados diretos do banco quando disponíveis (prioridade total)
-      let finalData = data;
-      if (directTrialStatus && directTrialStatus[0]) {
-        const trialData = directTrialStatus[0];
+      // 3. Usar dados diretos do banco quando disponíveis
+      let finalData = subscriptionResult.data;
+      if (trialResult.data && trialResult.data[0]) {
+        const trialData = trialResult.data[0];
         console.log("🎯 PRIORIZANDO dados do trial do banco:", trialData);
 
         finalData = {
-          ...data,
+          ...subscriptionResult.data,
           trial_active: trialData.trial_active,
           trial_start: trialData.trial_start,
           trial_end: trialData.trial_end,
@@ -213,27 +223,23 @@ export const useSubscription = () => {
           has_paid_subscription: trialData.has_paid_subscription,
           subscription_tier: trialData.subscription_tier,
         };
-      } else {
-        console.log(
-          "⚠️ Nenhum dado de trial encontrado no banco - usando dados da Edge Function"
-        );
       }
 
       console.log("🔍 Dados finais após correção:", finalData);
 
-      if (error) {
-        console.warn("Erro ao verificar assinatura:", error.message);
+      if (subscriptionResult.error) {
+        console.warn("Erro ao verificar assinatura:", subscriptionResult.error.message);
 
         // Enhanced error handling for trial-related failures
         const isTrialError =
-          error.message?.toLowerCase().includes("trial") ||
-          error.message?.toLowerCase().includes("teste") ||
-          error.message?.toLowerCase().includes("período") ||
-          error.message?.toLowerCase().includes("periodo");
+          subscriptionResult.error.message?.toLowerCase().includes("trial") ||
+          subscriptionResult.error.message?.toLowerCase().includes("teste") ||
+          subscriptionResult.error.message?.toLowerCase().includes("período") ||
+          subscriptionResult.error.message?.toLowerCase().includes("periodo");
 
         if (isTrialError) {
           console.warn("⚠️ Erro relacionado a trial detectado");
-          setError(`Erro ao verificar período de teste: ${error.message}`);
+          setError(`Erro ao verificar período de teste: ${subscriptionResult.error.message}`);
 
           // Show user-friendly toast for trial verification errors
           toast({
@@ -243,7 +249,7 @@ export const useSubscription = () => {
             variant: "destructive",
           });
         } else {
-          setError(`Erro ao verificar assinatura: ${error.message}`);
+          setError(`Erro ao verificar assinatura: ${subscriptionResult.error.message}`);
         }
 
         // Se há erro, assumir sem assinatura mas manter estrutura de trial
@@ -475,7 +481,7 @@ export const useSubscription = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, getAuthHeaders, setLoading, setError, setSubscriptionData]);
+  }, [user, getAuthHeaders, setLoading, setError, setSubscriptionData, logTrialAccessed, logTrialExpired, logTrialError, toast]);
 
   // Criar checkout
   const createCheckout = useCallback(async () => {
@@ -659,14 +665,27 @@ export const useSubscription = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, getAuthHeaders, setLoading, toast, checkSubscription]);
+  }, [user, getAuthHeaders, setLoading, toast]);
 
-  // useEffect para verificar assinatura quando sessão muda
+  // useEffect para verificar assinatura quando sessão muda (com debounce)
   useEffect(() => {
-    if (session) {
-      checkSubscription();
+    if (session && user) {
+      // Debounce o useEffect também
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      
+      debounceRef.current = setTimeout(() => {
+        checkSubscription();
+      }, 500); // 500ms de debounce para useEffect
     }
-  }, [session, checkSubscription]);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [session?.access_token, user?.id, checkSubscription]);
 
   // Função para iniciar trial manualmente
   const startTrial = useCallback(async () => {
