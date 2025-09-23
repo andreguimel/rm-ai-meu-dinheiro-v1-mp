@@ -21,15 +21,31 @@ export default defineConfig(({ mode }) => ({
       credentials: true
     },
     hmr: {
-      // Configuração segura para WebSocket
+      // Configuração otimizada para iOS Safari/WebKit
       port: 24678,
       overlay: false,
-      // Para VPS e rede local: configurar host do HMR
-      host: "localhost",
-      // Força WSS (WebSocket Seguro) em produção
-      protocol: mode === "production" ? "wss" : "ws",
-      // Configurações adicionais para iPhone/Safari
-      clientPort: mode === "production" ? 443 : 24678
+      // Usar IP específico ao invés de localhost para iOS
+      host: mode === "development" ? "0.0.0.0" : "localhost",
+      // Protocolo WebSocket padrão para desenvolvimento
+      protocol: "ws",
+      // Configurações específicas para iOS
+      clientPort: 24678,
+      // Timeout aumentado para conexões iOS
+      timeout: 60000,
+      // Configurações adicionais para compatibilidade iOS
+      skipSSLVerify: true
+    },
+    // Configurações adicionais para iOS Safari
+    fs: {
+      strict: false
+    },
+    // Headers específicos para iOS
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none',
+      'Cross-Origin-Opener-Policy': 'unsafe-none'
     }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(

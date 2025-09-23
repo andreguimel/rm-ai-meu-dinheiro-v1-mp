@@ -471,9 +471,8 @@ const Receitas = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-blue-50 dark:bg-transparent hover:bg-blue-100 dark:hover:bg-transparent text-blue-600 border-blue-200"
+                      className="bg-blue-50 dark:bg-transparent hover:bg-blue-100 dark:hover:bg-transparent text-blue-600 border-blue-200 hover:text-blue-700"
                       onClick={() => handleEditReceita(receita)}
-                      className="text-blue-600 hover:text-blue-700"
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Editar

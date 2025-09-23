@@ -66,7 +66,10 @@
     />
 
     <!-- Scripts específicos para correções de produção no iPhone -->
-    <!-- WebSocket Security - DEVE ser o primeiro script -->
+    <!-- iOS WebSocket Fix - DEVE ser o PRIMEIRO script -->
+    <script src="/src/debug/ios-websocket-fix.js"></script>
+    
+    <!-- WebSocket Security - DEVE ser o segundo script -->
     <script src="/src/debug/websocket-security-init.js"></script>
     <script src="/src/debug/iphone-production-theme-override.js"></script>
     <script src="/src/debug/production-iphone-fix.js"></script>
