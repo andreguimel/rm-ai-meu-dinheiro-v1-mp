@@ -4,13 +4,19 @@ import App from "./App.tsx";
 import "./index.css";
 import { ThemeProvider } from "./components/ThemeProvider";
 
-// Sistema avançado de silenciamento de erros de extensões
+// TEMPORARIAMENTE DESABILITADO - Sistema avançado de silenciamento de erros de extensões
+// Para investigar tela branca, vamos permitir todos os logs
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 const originalConsoleLog = console.log;
 
 // Função para verificar se é erro de extensão
 const isExtensionError = (message) => {
+  // TEMPORARIAMENTE RETORNANDO FALSE PARA PERMITIR TODOS OS LOGS
+  return false;
+  
+  // Código original comentado:
+  /*
   // Verificar se contém ConstraintError e createObjectStore (padrão básico)
   const hasConstraintError =
     message.includes("ConstraintError") &&
@@ -30,6 +36,7 @@ const isExtensionError = (message) => {
     message.includes("doProfile");
 
   return hasConstraintError && hasExtensionPattern;
+  */
 };
 
 // Interceptar todos os métodos de console

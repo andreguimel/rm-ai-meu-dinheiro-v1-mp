@@ -248,8 +248,18 @@ export const useSubscriptionDirect = () => {
 
   // useEffect para verificar assinatura quando sessão muda
   useEffect(() => {
+    console.log("🔄 useSubscriptionDirect useEffect triggered:", {
+      sessionUserId: session?.user?.id,
+      userEmail: session?.user?.email,
+      hasSession: !!session
+    });
+    
     if (session?.user?.id) {
+      console.log("✅ Sessão válida encontrada, chamando checkSubscription");
       checkSubscription();
+    } else {
+      console.log("⚠️ Nenhuma sessão válida, definindo loading como false");
+      setLoading(false);
     }
   }, [session?.user?.id, checkSubscription]);
 
