@@ -169,6 +169,12 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   ]);
 
   useEffect(() => {
+    // ADMIN BYPASS: Administradores nunca devem ser redirecionados
+    if (isAdmin && !adminLoading) {
+      console.log("👑 Admin detectado - cancelando redirecionamentos");
+      return;
+    }
+
     if (!loading && !adminLoading && !hasValidAccess) {
       // If no valid access and not on profile page, redirect to profile
       if (location.pathname !== "/perfil") {
@@ -176,7 +182,7 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
         navigate("/perfil");
       }
     }
-  }, [hasValidAccess, loading, adminLoading, location.pathname, navigate]);
+  }, [hasValidAccess, loading, adminLoading, isAdmin, location.pathname, navigate]);
 
   // Enhanced loading states during trial verification
   if (loading || adminLoading) {
@@ -227,6 +233,24 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     subscriptionData.trial_data?.trial_end &&
     !subscriptionData.trial_active &&
     !subscriptionData.has_paid_subscription;
+
+  // ADMIN BYPASS: Administradores têm acesso total a todas as páginas
+  if (isAdmin && !adminLoading) {
+    console.log("👑 ADMIN BYPASS - Acesso total liberado para administrador");
+    return (
+      <>
+        <BasicAccessProvider
+          isBasicAccess={false}
+          onShowUpgradePrompt={() => {
+            setModalDismissedThisSession(false);
+            setShowTrialExpirationModal(true);
+          }}
+        >
+          {children}
+        </BasicAccessProvider>
+      </>
+    );
+  }
 
   // Block access if no valid access and not on profile page
   if (!hasValidAccess && location.pathname !== "/perfil") {
