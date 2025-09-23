@@ -72,18 +72,30 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   // Hierarchical access checking: admin > paid > trial > basic > none
   const accessResult = (() => {
     try {
+      console.log("🔍 Verificando acesso hierárquico:", {
+        isAdmin,
+        adminLoading,
+        loading,
+        hasPaidSubscription: subscriptionData.has_paid_subscription,
+        trialActive: subscriptionData.trial_active,
+        location: location.pathname
+      });
+
       // Level 1: Admin users have full access (highest priority)
       if (isAdmin) {
+        console.log("✅ ADMIN ACCESS GRANTED - Usuário é administrador");
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 2: Users with paid subscription (second priority)
       if (subscriptionData.has_paid_subscription) {
+        console.log("✅ PAID ACCESS GRANTED - Usuário tem assinatura paga");
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 3: Users with active trial (third priority)
       if (subscriptionData.trial_active) {
+        console.log("✅ TRIAL ACCESS GRANTED - Usuário tem trial ativo");
         return { hasAccess: true, accessType: "full" };
       }
 
