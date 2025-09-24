@@ -267,7 +267,7 @@ const Dashboard = () => {
   // Dividas vencidas
   const dividasVencidas = dividas?.filter((divida) => {
     if (!divida.data_vencimento) return false;
-    return compararDatas(dataAtual, divida.data_vencimento) && divida.status !== "paga";
+    return compararDatas(dataAtual, divida.data_vencimento) && !divida.pago;
   }) || [];
 
   const totalDividasVencidas = dividasVencidas.reduce((acc, divida) => acc + divida.valor_parcela, 0);
