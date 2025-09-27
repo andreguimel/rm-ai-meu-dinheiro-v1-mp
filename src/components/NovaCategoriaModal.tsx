@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,6 +88,9 @@ export const NovaCategoriaModal = ({ trigger }: NovaCategoriaModalProps) => {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Adicionar Nova Categoria</DialogTitle>
+          <DialogDescription>
+            Crie uma nova categoria para organizar melhor seus itens do mercado.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

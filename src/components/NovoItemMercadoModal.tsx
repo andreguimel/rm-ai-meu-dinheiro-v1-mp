@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,6 +100,9 @@ export const NovoItemMercadoModal = ({ trigger }: NovoItemMercadoModalProps) => 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Adicionar Novo Item</DialogTitle>
+          <DialogDescription>
+            Adicione um novo item à sua lista de mercado com categoria, preço e quantidade.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -155,6 +156,12 @@ export const LembreteForm = ({
           <DialogTitle>
             {lembreteParaEditar ? "Editar Lembrete" : "Novo Lembrete"}
           </DialogTitle>
+          <DialogDescription>
+            {lembreteParaEditar 
+              ? "Edite as informações do seu lembrete abaixo." 
+              : "Preencha as informações para criar um novo lembrete."
+            }
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
