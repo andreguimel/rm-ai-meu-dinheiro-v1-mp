@@ -32,6 +32,8 @@ import { NotificacaoLembretes } from "@/components/NotificacaoLembretes";
 import { useToast } from "@/hooks/use-toast";
 import { useLembretes } from "@/hooks/useLembretes";
 import { Bell, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Funcao para formatar a data corretamente
 const formatarData = (dataString: string) => {
@@ -531,7 +533,19 @@ const Dashboard = () => {
                       </p>
                       <div className="space-y-2">
                         {lembretesPendentes.map((lembrete) => {
-                          const dataLembrete = new Date(lembrete.data_lembrete);
+                          // Criar data e hora completas no fuso horário local para evitar problemas de timezone
+                          const dateTimeParts = lembrete.data_lembrete.split('T');
+                          const dateParts = dateTimeParts[0].split('-');
+                          const timeParts = dateTimeParts[1] ? dateTimeParts[1].split(':') : ['00', '00'];
+                          
+                          const dataLembrete = new Date(
+                            parseInt(dateParts[0]), 
+                            parseInt(dateParts[1]) - 1, 
+                            parseInt(dateParts[2]),
+                            parseInt(timeParts[0]),
+                            parseInt(timeParts[1])
+                          );
+                          
                           const hoje = new Date();
                           const isHoje = dataLembrete.toDateString() === hoje.toDateString();
                           const isProximo = dataLembrete.getTime() - hoje.getTime() <= 3 * 24 * 60 * 60 * 1000;
@@ -541,7 +555,7 @@ const Dashboard = () => {
                               <div>
                                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{lembrete.titulo}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatarData(lembrete.data_lembrete)} as {new Date(lembrete.data_lembrete).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  {formatarData(lembrete.data_lembrete)} às {format(dataLembrete, "HH:mm", { locale: ptBR })}
                                 </p>
                               </div>
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${
