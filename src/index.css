@@ -126,6 +126,34 @@
     user-select: none;
   }
 
+  /* Calendar specific fixes for clickability */
+  .rdp,
+  .rdp * {
+    pointer-events: auto !important;
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    -moz-user-select: auto !important;
+    -ms-user-select: auto !important;
+  }
+
+  .rdp button,
+  .rdp [role="button"],
+  .rdp [role="gridcell"] button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+    touch-action: manipulation !important;
+  }
+
+  /* Ensure calendar navigation buttons are clickable */
+  .rdp-nav_button,
+  .rdp-day {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+
   /* iOS Safari viewport fixes */
   html {
     -webkit-text-size-adjust: 100%;
