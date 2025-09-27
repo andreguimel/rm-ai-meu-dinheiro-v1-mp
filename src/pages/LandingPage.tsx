@@ -30,6 +30,9 @@ import {
   Settings,
   ChartLine,
   FolderOpen,
+  Bell,
+  AlertTriangle,
+  Moon,
 } from "lucide-react";
 
 const LandingPage = () => {
@@ -374,6 +377,27 @@ const LandingPage = () => {
                 description:
                   "Assistente inteligente que oferece insights financeiros personalizados e recomendações.",
                 color: "violet",
+              },
+              {
+                icon: Bell,
+                title: "Lembretes",
+                description:
+                  "Sistema de notificações inteligente para não perder prazos importantes e compromissos financeiros.",
+                color: "yellow",
+              },
+              {
+                icon: AlertTriangle,
+                title: "Alerta de Dívida 1 dia antes",
+                description:
+                  "Receba notificações automáticas um dia antes do vencimento de suas dívidas e compromissos.",
+                color: "amber",
+              },
+              {
+                icon: Moon,
+                title: "Modo Dark/Light",
+                description:
+                  "Interface adaptável com tema claro e escuro para melhor experiência visual em qualquer horário.",
+                color: "slate",
               },
             ].map((feature, index) => (
               <Card
