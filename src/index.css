@@ -126,32 +126,78 @@
     user-select: none;
   }
 
-  /* Calendar specific fixes for clickability */
+  /* Correções específicas para o calendário react-day-picker */
   .rdp,
-  .rdp * {
+  .rdp *,
+  .rdp button,
+  .rdp [role="button"],
+  .rdp [role="gridcell"] button,
+  .rdp-nav_button,
+  .rdp-day,
+  .rdp-calendar-interactive,
+  .rdp-calendar-interactive * {
     pointer-events: auto !important;
     user-select: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
     -webkit-user-select: auto !important;
     -moz-user-select: auto !important;
     -ms-user-select: auto !important;
-  }
-
-  .rdp button,
-  .rdp [role="button"],
-  .rdp [role="gridcell"] button {
-    pointer-events: auto !important;
-    cursor: pointer !important;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
-    touch-action: manipulation !important;
   }
 
-  /* Ensure calendar navigation buttons are clickable */
+  /* Correções específicas para Popover com calendário */
+  [data-radix-popper-content-wrapper] {
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+  }
+
+  [data-radix-popper-content-wrapper] * {
+    pointer-events: auto !important;
+  }
+
+  /* Garantir que o PopoverContent tenha z-index alto */
+  .popover-content {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Correções para elementos do calendário dentro do Popover */
+  .popover-content .rdp,
+  .popover-content .rdp *,
+  .popover-content .rdp button,
+  .popover-content .rdp [role="button"],
+  .popover-content .rdp [role="gridcell"] button,
+  .popover-content .rdp-nav_button,
+  .popover-content .rdp-day,
+  .popover-content .rdp-calendar-interactive,
+  .popover-content .rdp-calendar-interactive * {
+    pointer-events: auto !important;
+    user-select: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    z-index: 10000 !important;
+  }
+
+  /* Correções específicas para botões de navegação do calendário */
   .rdp-nav_button,
-  .rdp-day {
+  .rdp-nav_button:hover,
+  .rdp-nav_button:focus,
+  .rdp-nav_button:active {
     pointer-events: auto !important;
     cursor: pointer !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* Correções para dias do calendário */
+  .rdp-day,
+  .rdp-day:hover,
+  .rdp-day:focus,
+  .rdp-day:active,
+  .rdp-day_selected {
+    pointer-events: auto !important;
+    cursor: pointer !important;
   }
 
   /* iOS Safari viewport fixes */

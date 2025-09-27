@@ -207,7 +207,7 @@ export const LembreteForm = ({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 popover-content" align="start">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -215,6 +215,7 @@ export const LembreteForm = ({
                     initialFocus
                     locale={ptBR}
                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    className="rdp-calendar-interactive"
                   />
                 </PopoverContent>
               </Popover>
