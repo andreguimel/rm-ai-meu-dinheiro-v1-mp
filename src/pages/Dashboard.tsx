@@ -35,45 +35,99 @@ import { Bell, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// Funcao para formatar a data corretamente
+// Funcao para formatar a data corretamente - compatível com Safari iOS
 const formatarData = (dataString: string) => {
   if (!dataString) return "";
-  const [ano, mes, dia] = dataString.split("T")[0].split("-");
-  return `${dia}/${mes}/${ano}`;
+  try {
+    // Tentar usar ISO string primeiro (mais compatível com Safari)
+    if (dataString.includes('T')) {
+      const date = new Date(dataString);
+      if (!isNaN(date.getTime())) {
+        const dia = String(date.getDate()).padStart(2, "0");
+        const mes = String(date.getMonth() + 1).padStart(2, "0");
+        const ano = date.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+      }
+    }
+    
+    // Fallback para parsing manual
+    const [ano, mes, dia] = dataString.split("T")[0].split("-");
+    return `${dia}/${mes}/${ano}`;
+  } catch (error) {
+    console.warn('Erro ao formatar data:', dataString, error);
+    return "";
+  }
 };
 
-// Funcao para obter a data atual no formato do banco (YYYY-MM-DD)
+// Funcao para obter a data atual no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getDataAtual = () => {
-  const now = new Date();
-  const ano = now.getFullYear();
-  const mes = String(now.getMonth() + 1).padStart(2, "0");
-  const dia = String(now.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
+  try {
+    const now = new Date();
+    // Verificar se a data é válida
+    if (isNaN(now.getTime())) {
+      throw new Error('Data inválida');
+    }
+    const ano = now.getFullYear();
+    const mes = String(now.getMonth() + 1).padStart(2, "0");
+    const dia = String(now.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  } catch (error) {
+    console.warn('Erro ao obter data atual:', error);
+    // Fallback para uma data padrão
+    return new Date().toISOString().split('T')[0];
+  }
 };
 
-// Funcao para obter o primeiro dia da semana no formato do banco (YYYY-MM-DD)
+// Funcao para obter o primeiro dia da semana no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getPrimeiroDiaSemana = () => {
-  const now = new Date();
-  const primeiroDia = new Date(now.setDate(now.getDate() - now.getDay()));
-  const ano = primeiroDia.getFullYear();
-  const mes = String(primeiroDia.getMonth() + 1).padStart(2, "0");
-  const dia = String(primeiroDia.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
+  try {
+    const now = new Date();
+    if (isNaN(now.getTime())) {
+      throw new Error('Data inválida');
+    }
+    // Criar nova instância para evitar mutação
+    const primeiroDia = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+    const ano = primeiroDia.getFullYear();
+    const mes = String(primeiroDia.getMonth() + 1).padStart(2, "0");
+    const dia = String(primeiroDia.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  } catch (error) {
+    console.warn('Erro ao obter primeiro dia da semana:', error);
+    return new Date().toISOString().split('T')[0];
+  }
 };
 
-// Funcao para obter o primeiro dia do mes no formato do banco (YYYY-MM-DD)
+// Funcao para obter o primeiro dia do mes no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getPrimeiroDiaMes = () => {
-  const now = new Date();
-  const ano = now.getFullYear();
-  const mes = String(now.getMonth() + 1).padStart(2, "0");
-  return `${ano}-${mes}-01`;
+  try {
+    const now = new Date();
+    if (isNaN(now.getTime())) {
+      throw new Error('Data inválida');
+    }
+    const ano = now.getFullYear();
+    const mes = String(now.getMonth() + 1).padStart(2, "0");
+    return `${ano}-${mes}-01`;
+  } catch (error) {
+    console.warn('Erro ao obter primeiro dia do mês:', error);
+    const fallback = new Date().toISOString().split('T')[0];
+    return fallback.substring(0, 8) + '01';
+  }
 };
 
-// Funcao para obter o primeiro dia do ano no formato do banco (YYYY-MM-DD)
+// Funcao para obter o primeiro dia do ano no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getPrimeiroDiaAno = () => {
-  const now = new Date();
-  const ano = now.getFullYear();
-  return `${ano}-01-01`;
+  try {
+    const now = new Date();
+    if (isNaN(now.getTime())) {
+      throw new Error('Data inválida');
+    }
+    const ano = now.getFullYear();
+    return `${ano}-01-01`;
+  } catch (error) {
+    console.warn('Erro ao obter primeiro dia do ano:', error);
+    const fallback = new Date().toISOString().split('T')[0];
+    return fallback.substring(0, 4) + '-01-01';
+  }
 };
 
 // Funcao para comparar datas no formato do banco (YYYY-MM-DD)
@@ -533,18 +587,41 @@ const Dashboard = () => {
                       </p>
                       <div className="space-y-2">
                         {lembretesPendentes.map((lembrete) => {
-                          // Criar data e hora completas no fuso horário local para evitar problemas de timezone
-                          const dateTimeParts = lembrete.data_lembrete.split('T');
-                          const dateParts = dateTimeParts[0].split('-');
-                          const timeParts = dateTimeParts[1] ? dateTimeParts[1].split(':') : ['00', '00'];
-                          
-                          const dataLembrete = new Date(
-                            parseInt(dateParts[0]), 
-                            parseInt(dateParts[1]) - 1, 
-                            parseInt(dateParts[2]),
-                            parseInt(timeParts[0]),
-                            parseInt(timeParts[1])
-                          );
+                          // Processamento de data compatível com Safari iOS
+                          let dataLembrete: Date;
+                          try {
+                            // Usar ISO string diretamente quando possível (mais compatível com Safari)
+                            if (lembrete.data_lembrete.includes('T')) {
+                              // Garantir que a string está no formato ISO correto
+                              const isoString = lembrete.data_lembrete.endsWith('Z') 
+                                ? lembrete.data_lembrete 
+                                : lembrete.data_lembrete + (lembrete.data_lembrete.includes('+') ? '' : 'Z');
+                              dataLembrete = new Date(isoString);
+                            } else {
+                              // Fallback para parsing manual mais seguro
+                              const dateTimeParts = lembrete.data_lembrete.split('T');
+                              const dateParts = dateTimeParts[0].split('-');
+                              const timeParts = dateTimeParts[1] ? dateTimeParts[1].split(':') : ['00', '00'];
+                              
+                              // Usar parseInt com radix 10 explícito para Safari
+                              dataLembrete = new Date(
+                                parseInt(dateParts[0], 10), 
+                                parseInt(dateParts[1], 10) - 1, 
+                                parseInt(dateParts[2], 10),
+                                parseInt(timeParts[0], 10),
+                                parseInt(timeParts[1], 10)
+                              );
+                            }
+                            
+                            // Verificar se a data é válida
+                            if (isNaN(dataLembrete.getTime())) {
+                              throw new Error('Data inválida');
+                            }
+                          } catch (error) {
+                            console.warn('Erro ao processar data do lembrete:', lembrete.data_lembrete, error);
+                            // Usar data atual como fallback
+                            dataLembrete = new Date();
+                          }
                           
                           const hoje = new Date();
                           const isHoje = dataLembrete.toDateString() === hoje.toDateString();
@@ -554,8 +631,15 @@ const Dashboard = () => {
                             <div key={lembrete.id} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-transparent rounded">
                               <div>
                                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{lembrete.titulo}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatarData(lembrete.data_lembrete)} às {format(dataLembrete, "HH:mm", { locale: ptBR })}
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {formatarData(lembrete.data_lembrete)} às {(() => {
+                                    try {
+                                      return format(dataLembrete, "HH:mm", { locale: ptBR });
+                                    } catch (error) {
+                                      console.warn('Erro ao formatar hora:', error);
+                                      return '00:00';
+                                    }
+                                  })()}
                                 </p>
                               </div>
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${
