@@ -65,22 +65,41 @@
       content="/lovable-uploads/b9870db5-5510-4f26-a060-487dcd4bac35.png"
     />
 
-
+    <<<<<<< HEAD
 
     <!-- Content Security Policy - Otimizada para iOS Safari -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com blob:; style-src 'self' 'unsafe-inline' blob:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss: ws: blob:; frame-src 'self' https:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self';">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com blob:; style-src 'self' 'unsafe-inline' blob:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss: ws: blob:; frame-src 'self' https:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self';"
+    />
 
     <!-- iOS Safari específico - Prevenção de problemas de CSP -->
-    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-touch-fullscreen" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    
+    <meta
+      name="format-detection"
+      content="telephone=no, date=no, email=no, address=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
     <!-- Prevenção de cache agressivo do Safari -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    =======
+    <!-- Content Security Policy -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss: ws:; frame-src 'self' https:;"
+    />
+    >>>>>>> c1c0ca44598e91c72342e1ec9bf3c54790e02e02
 
     <!-- MercadoPago SDK -->
     <script src="https://sdk.mercadopago.com/js/v2"></script>
