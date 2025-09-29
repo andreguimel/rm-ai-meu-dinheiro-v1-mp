@@ -46,7 +46,7 @@ import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
-import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
+
 import { useBasicAccessControl } from "@/hooks/useBasicAccessControl";
 import {
   MultiSelectControls,
@@ -447,152 +447,59 @@ const Despesas = () => {
               itemType="despesa"
             />
 
-            {/* Tabela de Despesas com IPhoneTableOptimizer */}
-            <IPhoneTableOptimizer
-              data={despesasFiltradas}
-              title="Lista de Despesas"
-              itemsPerPage={8}
-              mobileCardRenderer={(despesa, index) => (
-                <Card key={despesa.id} className="p-4 border border-gray-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <ItemCheckbox
-                        id={despesa.id}
-                        selectedIds={selectedIds}
-                        onSelectionChange={handleSelectionChange}
-                      />
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                          {despesa.descricao}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {despesa.categorias?.nome || "Sem categoria"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-red-600">
-                        R$ {despesa.valor.toLocaleString("pt-BR", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </p>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        Despesa
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span>
-                      {new Date(
-                        despesa.data + "T00:00:00"
-                      ).toLocaleDateString("pt-BR")}
-                    </span>
-                    <CreatedByBadge
-                      userId={despesa.user_id}
-                      createdBySharedUserId={
-                        despesa.created_by_shared_user_id
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditarDespesa(despesa)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Excluir
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="sm:max-w-[425px]">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Confirmar exclusão
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir a despesa "
-                            {despesa.descricao}"? Esta ação não pode ser
-                            desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>
-                            Cancelar
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() =>
-                              handleExcluirDespesa(despesa.id)
-                            }
-                          >
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </Card>
-              )}
-            >
-              <Card>
-                <Table>
+            {/* Tabela de Despesas */}
+            <Card className="min-w-full">
+              <div className="overflow-x-auto">
+                <Table className="min-w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-12">
+                      <TableHead className="w-12 min-w-[48px]">
                         <SelectAllCheckbox
                           allIds={despesasFiltradas.map((d) => d.id)}
                           selectedIds={selectedIds}
                           onSelectionChange={handleSelectionChange}
                         />
                       </TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Criado por</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
+                      <TableHead className="min-w-[150px]">Descrição</TableHead>
+                      <TableHead className="min-w-[120px]">Categoria</TableHead>
+                      <TableHead className="min-w-[80px]">Tipo</TableHead>
+                      <TableHead className="min-w-[100px]">Data</TableHead>
+                      <TableHead className="min-w-[120px]">Criado por</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                      <TableHead className="text-center min-w-[120px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {despesasFiltradas.map((despesa) => (
                       <TableRow key={despesa.id}>
-                        <TableCell>
+                        <TableCell className="w-12">
                           <ItemCheckbox
                             id={despesa.id}
                             selectedIds={selectedIds}
                             onSelectionChange={handleSelectionChange}
                           />
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {despesa.descricao}
+                        <TableCell className="font-medium min-w-[150px]">
+                          <div className="truncate max-w-[200px]" title={despesa.descricao}>
+                            {despesa.descricao}
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          {despesa.categorias?.nome || "Sem categoria"}
+                        <TableCell className="min-w-[120px]">
+                          <div className="truncate max-w-[120px]" title={despesa.categorias?.nome || "Sem categoria"}>
+                            {despesa.categorias?.nome || "Sem categoria"}
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <TableCell className="min-w-[80px]">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 whitespace-nowrap">
                             Despesa
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="min-w-[100px] whitespace-nowrap">
                           {new Date(
                             despesa.data + "T00:00:00"
                           ).toLocaleDateString("pt-BR")}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="min-w-[120px]">
                           <CreatedByBadge
                             userId={despesa.user_id}
                             createdBySharedUserId={
@@ -600,13 +507,13 @@ const Despesas = () => {
                             }
                           />
                         </TableCell>
-                        <TableCell className="text-right font-bold text-red-600">
+                        <TableCell className="text-right font-bold text-red-600 min-w-[100px] whitespace-nowrap">
                           R${" "}
                           {despesa.valor.toLocaleString("pt-BR", {
                             minimumFractionDigits: 2,
                           })}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center min-w-[120px]">
                           <div className="flex items-center justify-center space-x-2">
                             <Button
                               variant="ghost"
@@ -657,8 +564,8 @@ const Despesas = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </Card>
-            </IPhoneTableOptimizer>
+              </div>
+            </Card>
 
             {/* Visualização Mobile - Cards */}
             <div className="md:hidden space-y-4">

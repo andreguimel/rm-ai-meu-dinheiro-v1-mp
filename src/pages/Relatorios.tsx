@@ -35,7 +35,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useTransacoes } from "@/hooks/useTransacoes";
 import { useCategorias } from "@/hooks/useCategorias";
 import { IPhoneChartFallback } from "@/components/IPhoneChartFallback";
-import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { FinancialMetrics } from "@/components/reports/FinancialMetrics";
 import { InsightsDashboard } from "@/components/reports/InsightsDashboard";
@@ -778,48 +777,15 @@ const Relatorios = () => {
                 </Select>
               </CardHeader>
               <CardContent>
-                <IPhoneTableOptimizer
-                  data={filteredTransactions}
-                  title="Transações"
-                  itemsPerPage={10}
-                  mobileCardRenderer={(transaction, index) => (
-                    <Card key={transaction.id} className="p-3 border border-gray-200 mb-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                            {transaction.descricao}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {transaction.categoria}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${
-                            transaction.tipo === "receita"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}>
-                            {transaction.tipo === "receita" ? "+" : "-"}R$
-                            {Math.abs(transaction.valor).toLocaleString(
-                              "pt-BR"
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatarData(transaction.data)}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                >
+                <Card className="min-w-full">
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-full">
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[120px]">Data</TableHead>
-                          <TableHead>Descrição</TableHead>
-                          <TableHead>Categoria</TableHead>
-                          <TableHead className="text-right w-[150px]">
+                          <TableHead className="w-[120px] min-w-[120px]">Data</TableHead>
+                          <TableHead className="min-w-[150px]">Descrição</TableHead>
+                          <TableHead className="min-w-[120px]">Categoria</TableHead>
+                          <TableHead className="text-right w-[150px] min-w-[150px]">
                             Valor
                           </TableHead>
                         </TableRow>
@@ -827,15 +793,21 @@ const Relatorios = () => {
                       <TableBody>
                         {filteredTransactions.map((transaction) => (
                           <TableRow key={transaction.id}>
-                            <TableCell className="whitespace-nowrap">
+                            <TableCell className="whitespace-nowrap min-w-[120px]">
                               {formatarData(transaction.data)}
                             </TableCell>
-                            <TableCell className="font-medium">
-                              {transaction.descricao}
+                            <TableCell className="font-medium min-w-[150px]">
+                              <div className="truncate max-w-[200px]" title={transaction.descricao}>
+                                {transaction.descricao}
+                              </div>
                             </TableCell>
-                            <TableCell>{transaction.categoria}</TableCell>
+                            <TableCell className="min-w-[120px]">
+                              <div className="truncate max-w-[120px]" title={transaction.categoria}>
+                                {transaction.categoria}
+                              </div>
+                            </TableCell>
                             <TableCell
-                              className={`text-right font-medium whitespace-nowrap ${
+                              className={`text-right font-medium whitespace-nowrap min-w-[150px] ${
                                 transaction.tipo === "receita"
                                   ? "text-green-600"
                                   : "text-red-600"
@@ -857,7 +829,7 @@ const Relatorios = () => {
                       </div>
                     )}
                   </div>
-                </IPhoneTableOptimizer>
+                </Card>
               </CardContent>
             </Card>
           </TabsContent>

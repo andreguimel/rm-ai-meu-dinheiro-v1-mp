@@ -33,6 +33,8 @@ export const useDespesas = () => {
   const fetchDespesas = async () => {
     if (!mainAccountUserId) return;
 
+    let currentUser = null;
+
     try {
       setError(null);
       console.log("📱 useDespesas - Iniciando fetch universal");
@@ -41,9 +43,11 @@ export const useDespesas = () => {
       // Verificar se o usuário está autenticado com fallback
       try {
         const {
-          data: { user: currentUser },
+          data: { user },
           error: authError,
         } = await supabase.auth.getUser();
+        
+        currentUser = user;
         
         if (authError) {
           console.log("Erro de autenticação, redirecionando para login...");

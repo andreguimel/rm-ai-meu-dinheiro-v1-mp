@@ -47,7 +47,7 @@ import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { SharedUserSelector } from "@/components/SharedUserSelector";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
-import { IPhoneTableOptimizer } from "@/components/IPhoneTableOptimizer";
+
 import { useBasicAccessControl } from "@/hooks/useBasicAccessControl";
 import {
   MultiSelectControls,
@@ -102,6 +102,22 @@ const Receitas = () => {
 
   // Estados para seleção múltipla
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Estados para exclusão
+  const [receitaParaExcluir, setReceitaParaExcluir] = useState<any>(null);
+  const [dialogExcluirAberto, setDialogExcluirAberto] = useState(false);
+
+  // Função para selecionar receita individual
+  const handleSelectReceita = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(selectedId => selectedId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Alias para compatibilidade
+  const selectedReceitas = selectedIds;
 
   const adicionarReceita = wrapAction(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -447,151 +463,59 @@ const Receitas = () => {
               itemType="receita"
             />
 
-            {/* Tabela de Receitas com IPhoneTableOptimizer */}
-            <IPhoneTableOptimizer
-              data={receitasFiltradas}
-              title="Lista de Receitas"
-              itemsPerPage={8}
-              mobileCardRenderer={(receita, index) => (
-                <Card key={receita.id} className="p-4 border border-gray-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        checked={selectedReceitas.includes(receita.id)}
-                        onCheckedChange={() => handleSelectReceita(receita.id)}
-                        aria-label={`Selecionar receita ${receita.descricao}`}
-                      />
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                          {receita.descricao}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {receita.categoria?.nome || "Sem categoria"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">
-                        R${" "}
-                        {receita.valor.toLocaleString("pt-BR", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </p>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Receita
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span>
-                      {receita.data
-                        ? format(new Date(receita.data), "dd/MM/yyyy")
-                        : "N/A"}
-                    </span>
-                    <CreatedByBadge
-                      createdBy={receita.created_by}
-                      currentUserId={user?.id}
-                      sharedUsers={sharedUsers}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-blue-50 dark:bg-transparent hover:bg-blue-100 dark:hover:bg-transparent text-blue-600 border-blue-200 hover:text-blue-700"
-                      onClick={() => handleEditReceita(receita)}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Excluir
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="sm:max-w-[425px]">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Confirmar exclusão
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir a receita "
-                            {receita.descricao}"? Esta ação não pode ser
-                            desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              setReceitaParaExcluir(receita);
-                              setDialogExcluirAberto(true);
-                            }}
-                          >
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </Card>
-              )}
-            >
-              <Card>
-                <Table>
+            {/* Tabela de Receitas */}
+            <Card className="min-w-full">
+              <div className="overflow-x-auto">
+                <Table className="min-w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-12">
+                      <TableHead className="w-12 min-w-[48px]">
                         <SelectAllCheckbox
                           allIds={receitasFiltradas.map((r) => r.id)}
                           selectedIds={selectedIds}
                           onSelectionChange={handleSelectionChange}
                         />
                       </TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Criado por</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
+                      <TableHead className="min-w-[150px]">Descrição</TableHead>
+                      <TableHead className="min-w-[120px]">Categoria</TableHead>
+                      <TableHead className="min-w-[80px]">Tipo</TableHead>
+                      <TableHead className="min-w-[100px]">Data</TableHead>
+                      <TableHead className="min-w-[120px]">Criado por</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                      <TableHead className="text-center min-w-[120px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {receitasFiltradas.map((receita) => (
                       <TableRow key={receita.id}>
-                        <TableCell>
+                        <TableCell className="w-12">
                           <ItemCheckbox
                             id={receita.id}
                             selectedIds={selectedIds}
                             onSelectionChange={handleSelectionChange}
                           />
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {receita.descricao}
+                        <TableCell className="font-medium min-w-[150px]">
+                          <div className="truncate max-w-[200px]" title={receita.descricao}>
+                            {receita.descricao}
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          {receita.categorias?.nome || "Sem categoria"}
+                        <TableCell className="min-w-[120px]">
+                          <div className="truncate max-w-[120px]" title={receita.categorias?.nome || "Sem categoria"}>
+                            {receita.categorias?.nome || "Sem categoria"}
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <TableCell className="min-w-[80px]">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
                             Receita
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="min-w-[100px] whitespace-nowrap">
                           {new Date(
                             receita.data + "T00:00:00"
                           ).toLocaleDateString("pt-BR")}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="min-w-[120px]">
                           <CreatedByBadge
                             userId={receita.user_id}
                             createdBySharedUserId={
@@ -599,13 +523,13 @@ const Receitas = () => {
                             }
                           />
                         </TableCell>
-                        <TableCell className="text-right font-bold text-green-600">
+                        <TableCell className="text-right font-bold text-green-600 min-w-[100px] whitespace-nowrap">
                           R${" "}
                           {receita.valor.toLocaleString("pt-BR", {
                             minimumFractionDigits: 2,
                           })}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center min-w-[120px]">
                           <div className="flex items-center justify-center space-x-2">
                             <Button
                               variant="ghost"
@@ -659,8 +583,8 @@ const Receitas = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </Card>
-            </IPhoneTableOptimizer>
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="adicionar">

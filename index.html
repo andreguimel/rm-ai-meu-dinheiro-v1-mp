@@ -68,7 +68,7 @@
     <!-- Content Security Policy - Otimizada para iOS Safari -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com blob:; style-src 'self' 'unsafe-inline' blob:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss: ws: blob:; frame-src 'self' https:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self';"
+      content="default-src 'self' http: https: data: blob: 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com blob:; style-src 'self' 'unsafe-inline' blob:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss: ws: blob: https://*.supabase.co wss://*.supabase.co https://ponxumxwjodpgwhepwxc.supabase.co wss://ponxumxwjodpgwhepwxc.supabase.co; frame-src 'self' https:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self';"
     />
 
     <!-- iOS Safari específico - Prevenção de problemas de CSP -->
