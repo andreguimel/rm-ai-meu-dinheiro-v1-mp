@@ -23,6 +23,7 @@ export interface Despesa {
 export const useDespesas = () => {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(
@@ -33,19 +34,26 @@ export const useDespesas = () => {
     if (!mainAccountUserId) return;
 
     try {
-      console.log("=== DEBUG FETCH DESPESAS ===");
+      setError(null);
+      console.log("📱 useDespesas - Iniciando fetch universal");
       console.log("mainAccountUserId:", mainAccountUserId);
 
-      // Verificar se o usuário está autenticado
-      const {
-        data: { user: currentUser },
-        error: authError,
-      } = await supabase.auth.getUser();
-      if (authError) {
-        console.log("Erro de autenticação, redirecionando para login...");
-        await supabase.auth.signOut();
-        window.location.reload();
-        return;
+      // Verificar se o usuário está autenticado com fallback
+      try {
+        const {
+          data: { user: currentUser },
+          error: authError,
+        } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.log("Erro de autenticação, redirecionando para login...");
+          await supabase.auth.signOut();
+          window.location.reload();
+          return;
+        }
+      } catch (authErr) {
+        console.warn('Erro na verificação de autenticação:', authErr);
+        // Continuar mesmo com erro de auth para tentar buscar dados
       }
 
       console.log("Usuário autenticado:", currentUser?.id);

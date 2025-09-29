@@ -23,6 +23,7 @@ export interface Receita {
 export const useReceitas = () => {
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(
@@ -33,32 +34,73 @@ export const useReceitas = () => {
     if (!mainAccountUserId) return;
 
     try {
-      // Buscar dados da tabela receitas
-      const { data: receitasData, error: receitasError } = await supabase
-        .from("receitas")
-        .select(
-          `
-          *,
-          categorias (nome, cor, icone)
-        `
-        )
-        .eq("user_id", mainAccountUserId);
+      setError(null);
+      console.log('📱 useReceitas - Iniciando fetch universal');
 
-      if (receitasError) throw receitasError;
+      // Buscar dados da tabela receitas com fallback robusto
+      let receitasData = [];
+      let transacoesData = [];
+
+      try {
+        const { data, error: receitasError } = await supabase
+          .from("receitas")
+          .select(`
+            *,
+            categorias (nome, cor, icone)
+          `)
+          .eq("user_id", mainAccountUserId)
+          .order("data", { ascending: false });
+
+        if (receitasError) {
+          console.warn('Erro ao buscar receitas, tentando sem categorias:', receitasError);
+          // Fallback: buscar sem categorias
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("receitas")
+            .select("*")
+            .eq("user_id", mainAccountUserId)
+            .order("data", { ascending: false });
+          
+          if (fallbackError) throw fallbackError;
+          receitasData = fallbackData || [];
+        } else {
+          receitasData = data || [];
+        }
+      } catch (err) {
+        console.error('Erro ao buscar receitas:', err);
+        receitasData = [];
+      }
 
       // Buscar dados da tabela transacoes com tipo receita
-      const { data: transacoesData, error: transacoesError } = await supabase
-        .from("transacoes")
-        .select(
-          `
-          *,
-          categorias (nome, cor, icone)
-        `
-        )
-        .eq("tipo", "receita")
-        .eq("user_id", mainAccountUserId);
+      try {
+        const { data, error: transacoesError } = await supabase
+          .from("transacoes")
+          .select(`
+            *,
+            categorias (nome, cor, icone)
+          `)
+          .eq("tipo", "receita")
+          .eq("user_id", mainAccountUserId)
+          .order("data", { ascending: false });
 
-      if (transacoesError) throw transacoesError;
+        if (transacoesError) {
+          console.warn('Erro ao buscar transações de receita, tentando sem categorias:', transacoesError);
+          // Fallback: buscar sem categorias
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("transacoes")
+            .select("*")
+            .eq("tipo", "receita")
+            .eq("user_id", mainAccountUserId)
+            .order("data", { ascending: false });
+          
+          if (fallbackError) throw fallbackError;
+          transacoesData = fallbackData || [];
+        } else {
+          transacoesData = data || [];
+        }
+      } catch (err) {
+        console.error('Erro ao buscar transações de receita:', err);
+        transacoesData = [];
+      }
 
       // Combinar os dados
       const allReceitas = [...(receitasData || []), ...(transacoesData || [])];
@@ -71,7 +113,10 @@ export const useReceitas = () => {
       });
 
       setReceitas(sortedReceitas);
+      console.log('📱 useReceitas - Dados carregados com sucesso:', sortedReceitas.length);
+      
     } catch (error: any) {
+      setError(error.message);
       toast({
         title: "Erro ao carregar receitas",
         description: error.message,

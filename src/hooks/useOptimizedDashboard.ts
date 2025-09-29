@@ -44,9 +44,6 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
   const [isSecondaryLoadComplete, setIsSecondaryLoadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Detectar se é iOS para aplicar otimizações específicas
-  const isIOSDevice = isIOS();
-  
   // Dados essenciais (sempre carregados primeiro) - com tratamento de erro
   let transacoesHook, profileHook, subscriptionHook;
   
@@ -145,8 +142,8 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
       if (!loadingTransacoes && !loadingSubscription && profile) {
         setIsInitialLoadComplete(true);
         
-        // Para iOS, aguardar mais tempo antes de carregar dados secundários
-        const delay = isIOSDevice ? 2000 : 500;
+        // Delay universal para melhor performance
+        const delay = 500;
         
         const timer = setTimeout(() => {
           setLoadSecondaryData(true);

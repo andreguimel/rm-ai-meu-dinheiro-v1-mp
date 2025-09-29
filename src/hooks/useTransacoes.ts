@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { isIOS } from "@/lib/ios-safe-utils";
 
 export interface Transacao {
   id: string;
@@ -32,61 +31,33 @@ export const useTransacoes = () => {
     null
   );
 
-  // Detectar se é iOS para aplicar otimizações específicas
-  const isIOSDevice = isIOS();
-
   const fetchTransacoes = async () => {
     if (!mainAccountUserId) return;
 
     try {
       setError(null);
       
-      // Log de debug para iPhone
-      if (isIOSDevice) {
-        console.log('🍎 useTransacoes - Iniciando fetch para iOS');
-      }
+      console.log('📱 useTransacoes - Iniciando fetch universal');
 
-      // Para iOS, usar uma abordagem mais simples e robusta
-      if (isIOSDevice) {
-        // Buscar apenas transações principais primeiro
-        const { data: transacoesData, error: transacoesError } = await supabase
-          .from("transacoes")
-          .select("*")
-          .eq("user_id", mainAccountUserId)
-          .limit(50); // Limitar para melhor performance no iPhone
-
-        if (transacoesError) {
-          console.error('Erro ao buscar transações no iOS:', transacoesError);
-          throw transacoesError;
-        }
-
-        // Processar dados de forma mais simples no iOS
-        const processedTransacoes = (transacoesData || []).map((t) => ({
-          ...t,
-          categorias: null // Simplificar para iOS
-        }));
-
-        setTransacoes(processedTransacoes as Transacao[]);
-        
-        if (isIOSDevice) {
-          console.log('🍎 useTransacoes - Dados carregados com sucesso no iOS:', processedTransacoes.length);
-        }
-        
-        return;
-      }
-
-      // Buscar dados da tabela transacoes (versão completa para outros dispositivos)
+      // Buscar transações com categorias (abordagem universal)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from("transacoes")
-        .select(
-          `
+        .select(`
           *,
-          categorias (nome, cor, icone)
-        `
-        )
-        .eq("user_id", mainAccountUserId);
+          categorias (
+            nome,
+            cor,
+            icone
+          )
+        `)
+        .eq("user_id", mainAccountUserId)
+        .order("data", { ascending: false })
+        .limit(100); // Limite razoável para performance
 
-      if (transacoesError) throw transacoesError;
+      if (transacoesError) {
+        console.error('Erro ao buscar transações:', transacoesError);
+        throw transacoesError;
+      }
 
       // Buscar dados da tabela receitas
       const { data: receitasData, error: receitasError } = await supabase
