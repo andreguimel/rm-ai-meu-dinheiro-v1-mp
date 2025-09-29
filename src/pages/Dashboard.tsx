@@ -32,7 +32,7 @@ import { IPhoneMinimalDashboard } from "@/components/IPhoneMinimalDashboard";
 import { IPhoneBasicDashboard } from "@/components/IPhoneBasicDashboard";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { NotificacaoLembretes } from "@/components/NotificacaoLembretes";
-import { IPhoneDebugger } from "@/components/IPhoneDebugger";
+
 import { useToast } from "@/hooks/use-toast";
 import { useLembretes } from "@/hooks/useLembretes";
 import { Bell, Clock } from "lucide-react";
@@ -722,7 +722,6 @@ const Dashboard = () => {
           </Tabs>
         </div>
       </div>
-      <IPhoneDebugger />
     </DashboardLayout>
   );
 };
