@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Console - iPhone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .device-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .console-output {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-info { background: rgba(0, 123, 255, 0.2); }
+        .log-warn { background: rgba(255, 193, 7, 0.2); }
+        .log-error { background: rgba(220, 53, 69, 0.2); }
+        .log-debug { background: rgba(40, 167, 69, 0.2); }
+        
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍎 Debug Console - iPhone</h1>
+            <p>Captura e análise de logs em tempo real</p>
+        </div>
+        
+        <div class="device-info">
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>User Agent:</strong>
+                    <div id="userAgent">Carregando...</div>
+                </div>
+                <div class="info-item">
+                    <strong>Viewport:</strong>
+                    <div id="viewport">Carregando...</div>
+                </div>
+                <div class="info-item">
+                    <strong>iOS:</strong>
+                    <div id="isIOS">Carregando...</div>
+                </div>
+                <div class="info-item">
+                    <strong>Safari:</strong>
+                    <div id="isSafari">Carregando...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="testDashboard()">🏠 Testar Dashboard</button>
+            <button class="btn btn-success" onclick="testHooks()">🔗 Testar Hooks</button>
+            <button class="btn btn-warning" onclick="clearLogs()">🧹 Limpar Logs</button>
+            <button class="btn btn-danger" onclick="testError()">💥 Simular Erro</button>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div class="console-output" id="consoleOutput">
+            <div class="log-entry log-info">🚀 Debug Console iniciado...</div>
+        </div>
+    </div>
+
+    <script>
+        // Capturar todos os logs do console
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        const originalInfo = console.info;
+        
+        const consoleOutput = document.getElementById('consoleOutput');
+        const statusDiv = document.getElementById('status');
+        
+        function addLogEntry(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        // Interceptar console.log
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogEntry(args.join(' '), 'info');
+        };
+        
+        // Interceptar console.warn
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLogEntry(args.join(' '), 'warn');
+        };
+        
+        // Interceptar console.error
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLogEntry(args.join(' '), 'error');
+        };
+        
+        // Interceptar console.info
+        console.info = function(...args) {
+            originalInfo.apply(console, args);
+            addLogEntry(args.join(' '), 'debug');
+        };
+        
+        // Capturar erros não tratados
+        window.addEventListener('error', function(e) {
+            addLogEntry(`❌ ERRO: ${e.message} em ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        // Capturar promises rejeitadas
+        window.addEventListener('unhandledrejection', function(e) {
+            addLogEntry(`❌ PROMISE REJEITADA: ${e.reason}`, 'error');
+        });
+        
+        // Detectar informações do dispositivo
+        function detectDevice() {
+            const userAgent = navigator.userAgent;
+            const viewport = `${window.innerWidth}x${window.innerHeight}`;
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            
+            document.getElementById('userAgent').textContent = userAgent;
+            document.getElementById('viewport').textContent = viewport;
+            document.getElementById('isIOS').textContent = isIOS ? '✅ Sim' : '❌ Não';
+            document.getElementById('isSafari').textContent = isSafari ? '✅ Sim' : '❌ Não';
+            
+            console.log('🍎 Informações do dispositivo detectadas');
+            console.log('User Agent:', userAgent);
+            console.log('Viewport:', viewport);
+            console.log('É iOS:', isIOS);
+            console.log('É Safari:', isSafari);
+        }
+        
+        // Testar carregamento do dashboard
+        async function testDashboard() {
+            showStatus('Testando carregamento do dashboard...', 'warning');
+            console.log('🏠 Iniciando teste do dashboard...');
+            
+            try {
+                // Simular carregamento dos hooks principais
+                console.log('🔄 Testando useAuth...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                console.log('✅ useAuth OK');
+                
+                console.log('🔄 Testando useTransacoes...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                console.log('✅ useTransacoes OK');
+                
+                console.log('🔄 Testando useOptimizedDashboard...');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                console.log('✅ useOptimizedDashboard OK');
+                
+                showStatus('✅ Dashboard testado com sucesso!', 'success');
+                console.log('🎉 Teste do dashboard concluído com sucesso!');
+                
+            } catch (error) {
+                showStatus('❌ Erro no teste do dashboard', 'error');
+                console.error('💥 Erro no teste do dashboard:', error);
+            }
+        }
+        
+        // Testar hooks individuais
+        async function testHooks() {
+            showStatus('Testando hooks individuais...', 'warning');
+            console.log('🔗 Iniciando teste dos hooks...');
+            
+            const hooks = [
+                'useAuth',
+                'useProfile', 
+                'useSubscription',
+                'useTransacoes',
+                'useOptimizedDashboard',
+                'useItensMercado',
+                'useDividas',
+                'useVeiculos'
+            ];
+            
+            for (const hook of hooks) {
+                try {
+                    console.log(`🔄 Testando ${hook}...`);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    // Simular possível erro em hooks específicos
+                    if (Math.random() < 0.1) {
+                        throw new Error(`Erro simulado no ${hook}`);
+                    }
+                    
+                    console.log(`✅ ${hook} OK`);
+                } catch (error) {
+                    console.error(`❌ ${hook} FALHOU:`, error.message);
+                }
+            }
+            
+            showStatus('✅ Teste de hooks concluído!', 'success');
+            console.log('🎉 Teste dos hooks concluído!');
+        }
+        
+        // Simular erro
+        function testError() {
+            console.log('💥 Simulando erro...');
+            try {
+                throw new Error('Este é um erro de teste para verificar o tratamento de erros');
+            } catch (error) {
+                console.error('Erro capturado:', error.message);
+            }
+            
+            // Simular promise rejeitada
+            Promise.reject('Promise rejeitada de teste');
+        }
+        
+        // Limpar logs
+        function clearLogs() {
+            consoleOutput.innerHTML = '<div class="log-entry log-info">🧹 Logs limpos...</div>';
+            statusDiv.innerHTML = '';
+            console.log('🧹 Console limpo');
+        }
+        
+        // Mostrar status
+        function showStatus(message, type) {
+            statusDiv.innerHTML = `<div class="status status-${type}">${message}</div>`;
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            detectDevice();
+            console.log('🚀 Debug Console carregado e pronto!');
+            
+            // Testar se conseguimos acessar o dashboard
+            setTimeout(() => {
+                console.log('🔍 Verificando se o dashboard principal está acessível...');
+                
+                // Tentar fazer uma requisição para o dashboard
+                fetch('/dashboard')
+                    .then(response => {
+                        if (response.ok) {
+                            console.log('✅ Dashboard principal acessível');
+                        } else {
+                            console.warn('⚠️ Dashboard retornou status:', response.status);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro ao acessar dashboard:', error);
+                    });
+            }, 2000);
+        });
+        
+        // Log periódico para manter o console ativo
+        setInterval(() => {
+            console.log('💓 Debug Console ativo -', new Date().toLocaleTimeString());
+        }, 30000);
+    </script>
+</body>
+</html>

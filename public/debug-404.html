@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug 404 - Arquivo não encontrado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .info {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .debug-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚫 404</h1>
+            <h2>Arquivo não encontrado</h2>
+        </div>
+        
+        <div class="info">
+            <strong>URL solicitada:</strong> <span id="currentUrl">Carregando...</span><br>
+            <strong>Timestamp:</strong> <span id="timestamp">Carregando...</span><br>
+            <strong>User Agent:</strong> <span id="userAgent">Carregando...</span><br>
+            <strong>Referrer:</strong> <span id="referrer">Carregando...</span>
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="/dashboard" class="btn">🏠 Ir para Dashboard</a>
+            <a href="/debug-console.html" class="btn">🔍 Debug Console</a>
+            <a href="/" class="btn">🏡 Página Inicial</a>
+        </div>
+        
+        <div class="debug-info">
+            <h3>🔧 Informações de Debug:</h3>
+            <div id="debugInfo">Carregando informações de debug...</div>
+        </div>
+    </div>
+
+    <script>
+        // Capturar informações da página
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('referrer').textContent = document.referrer || 'Nenhum';
+        
+        // Informações de debug específicas
+        const debugInfo = document.getElementById('debugInfo');
+        const info = [];
+        
+        info.push(`Pathname: ${window.location.pathname}`);
+        info.push(`Search: ${window.location.search}`);
+        info.push(`Hash: ${window.location.hash}`);
+        info.push(`Host: ${window.location.host}`);
+        info.push(`Protocol: ${window.location.protocol}`);
+        info.push(`Viewport: ${window.innerWidth}x${window.innerHeight}`);
+        info.push(`Screen: ${screen.width}x${screen.height}`);
+        info.push(`iOS: ${/iPad|iPhone|iPod/.test(navigator.userAgent) ? 'Sim' : 'Não'}`);
+        info.push(`Safari: ${/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) ? 'Sim' : 'Não'}`);
+        
+        // Verificar se é um arquivo de asset
+        const path = window.location.pathname;
+        if (path.includes('/assets/')) {
+            info.push(`🚨 ERRO DE ASSET DETECTADO!`);
+            info.push(`Arquivo solicitado: ${path}`);
+            info.push(`Tipo provável: ${path.includes('.js') ? 'JavaScript' : path.includes('.css') ? 'CSS' : 'Outro'}`);
+        }
+        
+        debugInfo.innerHTML = info.join('<br>');
+        
+        // Log no console também
+        console.log('🚫 Página 404 carregada');
+        console.log('URL:', window.location.href);
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Informações completas:', info);
+        
+        // Tentar redirecionar automaticamente após 10 segundos se for um asset
+        if (path.includes('/assets/')) {
+            let countdown = 10;
+            const countdownElement = document.createElement('div');
+            countdownElement.style.cssText = 'text-align: center; margin-top: 20px; font-size: 18px; font-weight: bold;';
+            countdownElement.innerHTML = `Redirecionando para o dashboard em <span id="countdown">${countdown}</span> segundos...`;
+            document.querySelector('.container').appendChild(countdownElement);
+            
+            const timer = setInterval(() => {
+                countdown--;
+                document.getElementById('countdown').textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    window.location.href = '/dashboard';
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
