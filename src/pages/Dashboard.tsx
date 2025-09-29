@@ -29,6 +29,7 @@ import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
 import { IPhoneMinimalDashboard } from "@/components/IPhoneMinimalDashboard";
+import { IPhoneBasicDashboard } from "@/components/IPhoneBasicDashboard";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { NotificacaoLembretes } from "@/components/NotificacaoLembretes";
 import { IPhoneDebugger } from "@/components/IPhoneDebugger";
@@ -90,10 +91,10 @@ const Dashboard = () => {
   // Detectar iPhone e usar versão simplificada
   const isIPhone = /iPhone/i.test(navigator.userAgent);
   
-  // Se for iPhone, usar versão mínima
+  // Se for iPhone, usar versão ultra básica
   if (isIPhone) {
-    console.log('iPhone detectado - usando dashboard simplificado');
-    return <IPhoneMinimalDashboard />;
+    console.log('iPhone detectado - usando dashboard ultra básico');
+    return <IPhoneBasicDashboard />;
   }
 
   // Usar hook otimizado para carregamento condicional no iOS
