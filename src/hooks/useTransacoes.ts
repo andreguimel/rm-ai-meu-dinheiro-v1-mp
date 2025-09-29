@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { isIOS } from "@/lib/ios-safe-utils";
 
 export interface Transacao {
   id: string;
@@ -111,7 +112,7 @@ export const useTransacoes = () => {
       setError(error.message);
       
       // Para iPhone, não mostrar toast de erro para evitar problemas
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Erro ao carregar transações",
           description: error.message,
@@ -152,7 +153,7 @@ export const useTransacoes = () => {
       if (error) throw error;
       setTransacoes((prev) => [data as Transacao, ...prev]);
 
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Transação criada",
           description: "Transação criada com sucesso!",
@@ -161,7 +162,7 @@ export const useTransacoes = () => {
 
       return { data, error: null };
     } catch (error: any) {
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Erro ao criar transação",
           description: error.message,
@@ -193,7 +194,7 @@ export const useTransacoes = () => {
         )
       );
 
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Transação atualizada",
           description: "Transação atualizada com sucesso!",
@@ -202,7 +203,7 @@ export const useTransacoes = () => {
 
       return { data, error: null };
     } catch (error: any) {
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Erro ao atualizar transação",
           description: error.message,
@@ -220,7 +221,7 @@ export const useTransacoes = () => {
       if (error) throw error;
       setTransacoes((prev) => prev.filter((transacao) => transacao.id !== id));
 
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Transação removida",
           description: "Transação removida com sucesso!",
@@ -229,7 +230,7 @@ export const useTransacoes = () => {
 
       return { error: null };
     } catch (error: any) {
-      if (!isIOSDevice) {
+      if (!isIOS()) {
         toast({
           title: "Erro ao remover transação",
           description: error.message,
@@ -257,8 +258,8 @@ export const useTransacoes = () => {
         fetchTransacoes();
 
         // Para iOS, não configurar realtime para evitar problemas
-        if (isIOSDevice) {
-          if (isIOSDevice) {
+        if (isIOS()) {
+          if (isIOS()) {
             console.log('🍎 useTransacoes - Pulando configuração realtime no iOS');
           }
           return;
@@ -316,7 +317,7 @@ export const useTransacoes = () => {
       console.error('Erro no useEffect do mainAccountUserId:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
-  }, [mainAccountUserId, isIOSDevice]);
+  }, [mainAccountUserId, isIOS()]);
 
   const getMainAccountUserId = async () => {
     if (!user) return;
@@ -329,7 +330,7 @@ export const useTransacoes = () => {
       if (error) throw error;
       setMainAccountUserId(data);
       
-      if (isIOSDevice) {
+      if (isIOS()) {
         console.log('🍎 useTransacoes - Main account user ID obtido:', data);
       }
     } catch (error) {

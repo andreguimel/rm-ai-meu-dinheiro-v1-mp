@@ -155,7 +155,7 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
       console.error('Erro no useEffect inicial:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
-  }, [loadingTransacoes, loadingSubscription, profile, isIOSDevice]);
+  }, [loadingTransacoes, loadingSubscription, profile, isIOS()]);
 
   // Verificar se o carregamento secundário está completo
   useEffect(() => {
@@ -185,7 +185,7 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
 
   // Log de debug para iPhone
   useEffect(() => {
-    if (isIOSDevice) {
+    if (isIOS()) {
       console.log('🍎 Dashboard iOS - Estado atual:', {
         isInitialLoadComplete,
         isSecondaryLoadComplete,
@@ -196,7 +196,7 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
         profile: !!profile
       });
     }
-  }, [isIOSDevice, isInitialLoadComplete, isSecondaryLoadComplete, loadSecondaryData, error, loadingTransacoes, loadingSubscription, profile]);
+  }, [isIOS(), isInitialLoadComplete, isSecondaryLoadComplete, loadSecondaryData, error, loadingTransacoes, loadingSubscription, profile]);
 
   return {
     // Dados essenciais
