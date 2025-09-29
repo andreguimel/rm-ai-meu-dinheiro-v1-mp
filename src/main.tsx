@@ -14,7 +14,7 @@ const originalConsoleLog = console.log;
 const isExtensionError = (message) => {
   // TEMPORARIAMENTE RETORNANDO FALSE PARA PERMITIR TODOS OS LOGS
   return false;
-  
+
   // Código original comentado:
   /*
   // Verificar se contém ConstraintError e createObjectStore (padrão básico)
