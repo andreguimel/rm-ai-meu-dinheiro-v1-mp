@@ -7,6 +7,14 @@ services:
       dockerfile: Dockerfile
     container_name: meu-dinheiro-app
     restart: unless-stopped
+    environment:
+      # Supabase Configuration
+      - VITE_SUPABASE_PROJECT_ID=ponxumxwjodpgwhepwxc
+      - VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbnh1bXh3am9kcGd3aGVwd3hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NTE4NTIsImV4cCI6MjA3MTAyNzg1Mn0.J43LGwbU8tQ8_xe3ua4ddb-HTFLsWXoR7R1MVIS3SdE
+      - VITE_SUPABASE_URL=https://ponxumxwjodpgwhepwxc.supabase.co
+      - VITE_ALLOW_TRIALS=true
+      - VITE_APP_URL=https://mdinheiro.com.br
+      - PORT=3000
     networks:
       - traefik-network
     labels:
