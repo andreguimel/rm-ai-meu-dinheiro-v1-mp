@@ -28,8 +28,10 @@ import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
+import { IPhoneMinimalDashboard } from "@/components/IPhoneMinimalDashboard";
 import { CreatedByBadge } from "@/components/CreatedByBadge";
 import { NotificacaoLembretes } from "@/components/NotificacaoLembretes";
+import { IPhoneDebugger } from "@/components/IPhoneDebugger";
 import { useToast } from "@/hooks/use-toast";
 import { useLembretes } from "@/hooks/useLembretes";
 import { Bell, Clock } from "lucide-react";
@@ -84,6 +86,15 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const { toast } = useToast();
+
+  // Detectar iPhone e usar versão simplificada
+  const isIPhone = /iPhone/i.test(navigator.userAgent);
+  
+  // Se for iPhone, usar versão mínima
+  if (isIPhone) {
+    console.log('iPhone detectado - usando dashboard simplificado');
+    return <IPhoneMinimalDashboard />;
+  }
 
   // Usar hook otimizado para carregamento condicional no iOS
   const {
@@ -719,6 +730,7 @@ const Dashboard = () => {
           </Tabs>
         </div>
       </div>
+      <IPhoneDebugger />
     </DashboardLayout>
   );
 };
