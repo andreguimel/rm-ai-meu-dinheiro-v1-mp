@@ -42,65 +42,132 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
   const [loadSecondaryData, setLoadSecondaryData] = useState(false);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   const [isSecondaryLoadComplete, setIsSecondaryLoadComplete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Detectar se é iOS para aplicar otimizações específicas
   const isIOSDevice = isIOS();
   
-  // Dados essenciais (sempre carregados primeiro)
-  const { transacoes, loading: loadingTransacoes } = useTransacoes();
-  const { profile, user } = useProfile();
-  const { subscriptionData, loading: loadingSubscription } = useSubscription();
+  // Dados essenciais (sempre carregados primeiro) - com tratamento de erro
+  let transacoesHook, profileHook, subscriptionHook;
   
-  // Dados secundários (carregados condicionalmente)
-  const { itensMercado, loading: loadingItens } = loadSecondaryData 
-    ? useItensMercado() 
-    : { itensMercado: null, loading: false };
-    
-  const { dividas, loading: loadingDividas } = loadSecondaryData 
-    ? useDividas() 
-    : { dividas: null, loading: false };
-    
-  const { veiculos, loading: loadingVeiculos } = loadSecondaryData 
-    ? useVeiculos() 
-    : { veiculos: null, loading: false };
-    
-  const { tiposManutencao, loading: loadingTiposManutencao } = loadSecondaryData 
-    ? useTiposManutencao() 
-    : { tiposManutencao: null, loading: false };
-    
-  const { lembretes, loading: loadingLembretes } = loadSecondaryData 
-    ? useLembretes() 
-    : { lembretes: null, loading: false };
+  try {
+    transacoesHook = useTransacoes();
+  } catch (err) {
+    console.error('Erro no hook useTransacoes:', err);
+    transacoesHook = { transacoes: [], loading: false };
+  }
+  
+  try {
+    profileHook = useProfile();
+  } catch (err) {
+    console.error('Erro no hook useProfile:', err);
+    profileHook = { profile: null, user: null };
+  }
+  
+  try {
+    subscriptionHook = useSubscription();
+  } catch (err) {
+    console.error('Erro no hook useSubscription:', err);
+    subscriptionHook = { subscriptionData: null, loading: false };
+  }
+  
+  const { transacoes, loading: loadingTransacoes } = transacoesHook;
+  const { profile, user } = profileHook;
+  const { subscriptionData, loading: loadingSubscription } = subscriptionHook;
+  
+  // Dados secundários (carregados condicionalmente) - com tratamento de erro
+  let itensHook, dividasHook, veiculosHook, tiposHook, lembretesHook;
+  
+  try {
+    itensHook = loadSecondaryData ? useItensMercado() : { itensMercado: null, loading: false };
+  } catch (err) {
+    console.error('Erro no hook useItensMercado:', err);
+    itensHook = { itensMercado: null, loading: false };
+  }
+  
+  try {
+    dividasHook = loadSecondaryData ? useDividas() : { dividas: null, loading: false };
+  } catch (err) {
+    console.error('Erro no hook useDividas:', err);
+    dividasHook = { dividas: null, loading: false };
+  }
+  
+  try {
+    veiculosHook = loadSecondaryData ? useVeiculos() : { veiculos: null, loading: false };
+  } catch (err) {
+    console.error('Erro no hook useVeiculos:', err);
+    veiculosHook = { veiculos: null, loading: false };
+  }
+  
+  try {
+    tiposHook = loadSecondaryData ? useTiposManutencao() : { tiposManutencao: null, loading: false };
+  } catch (err) {
+    console.error('Erro no hook useTiposManutencao:', err);
+    tiposHook = { tiposManutencao: null, loading: false };
+  }
+  
+  try {
+    lembretesHook = loadSecondaryData ? useLembretes() : { lembretes: null, loading: false };
+  } catch (err) {
+    console.error('Erro no hook useLembretes:', err);
+    lembretesHook = { lembretes: null, loading: false };
+  }
+  
+  const { itensMercado, loading: loadingItens } = itensHook;
+  const { dividas, loading: loadingDividas } = dividasHook;
+  const { veiculos, loading: loadingVeiculos } = veiculosHook;
+  const { tiposManutencao, loading: loadingTiposManutencao } = tiposHook;
+  const { lembretes, loading: loadingLembretes } = lembretesHook;
 
-  // Hook de manutenções pendentes (depende de veículos e tipos)
-  const { manutencoesPendentes, loading: loadingManutencoes } = loadSecondaryData && veiculos && tiposManutencao
-    ? useManutencoesPendentes(veiculos, tiposManutencao)
-    : { manutencoesPendentes: null, loading: false };
+  // Hook de manutenções pendentes (depende de veículos e tipos) - com tratamento de erro
+  let manutencoesHook;
+  try {
+    manutencoesHook = loadSecondaryData && veiculos && tiposManutencao
+      ? useManutencoesPendentes(veiculos, tiposManutencao)
+      : { manutencoesPendentes: null, loading: false };
+  } catch (err) {
+    console.error('Erro no hook useManutencoesPendentes:', err);
+    manutencoesHook = { manutencoesPendentes: null, loading: false };
+  }
+  
+  const { manutencoesPendentes, loading: loadingManutencoes } = manutencoesHook;
 
   // Verificar se o carregamento inicial está completo
   useEffect(() => {
-    if (!loadingTransacoes && !loadingSubscription && profile) {
-      setIsInitialLoadComplete(true);
-      
-      // Para iOS, aguardar um pouco mais antes de carregar dados secundários
-      const delay = isIOSDevice ? 1000 : 500;
-      
-      setTimeout(() => {
-        setLoadSecondaryData(true);
-      }, delay);
+    try {
+      if (!loadingTransacoes && !loadingSubscription && profile) {
+        setIsInitialLoadComplete(true);
+        
+        // Para iOS, aguardar mais tempo antes de carregar dados secundários
+        const delay = isIOSDevice ? 2000 : 500;
+        
+        const timer = setTimeout(() => {
+          setLoadSecondaryData(true);
+        }, delay);
+        
+        return () => clearTimeout(timer);
+      }
+    } catch (err) {
+      console.error('Erro no useEffect inicial:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
   }, [loadingTransacoes, loadingSubscription, profile, isIOSDevice]);
 
   // Verificar se o carregamento secundário está completo
   useEffect(() => {
-    if (loadSecondaryData && 
-        !loadingItens && 
-        !loadingDividas && 
-        !loadingVeiculos && 
-        !loadingTiposManutencao && 
-        !loadingLembretes && 
-        !loadingManutencoes) {
-      setIsSecondaryLoadComplete(true);
+    try {
+      if (loadSecondaryData && 
+          !loadingItens && 
+          !loadingDividas && 
+          !loadingVeiculos && 
+          !loadingTiposManutencao && 
+          !loadingLembretes && 
+          !loadingManutencoes) {
+        setIsSecondaryLoadComplete(true);
+      }
+    } catch (err) {
+      console.error('Erro no useEffect secundário:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
   }, [
     loadSecondaryData,
@@ -112,9 +179,24 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
     loadingManutencoes
   ]);
 
+  // Log de debug para iPhone
+  useEffect(() => {
+    if (isIOSDevice) {
+      console.log('🍎 Dashboard iOS - Estado atual:', {
+        isInitialLoadComplete,
+        isSecondaryLoadComplete,
+        loadSecondaryData,
+        error,
+        loadingTransacoes,
+        loadingSubscription,
+        profile: !!profile
+      });
+    }
+  }, [isIOSDevice, isInitialLoadComplete, isSecondaryLoadComplete, loadSecondaryData, error, loadingTransacoes, loadingSubscription, profile]);
+
   return {
     // Dados essenciais
-    transacoes,
+    transacoes: transacoes || [],
     loadingTransacoes,
     profile,
     user,
@@ -122,17 +204,17 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
     loadingSubscription,
     
     // Dados secundários
-    itensMercado,
+    itensMercado: itensMercado || [],
     loadingItens,
-    dividas,
+    dividas: dividas || [],
     loadingDividas,
-    veiculos,
+    veiculos: veiculos || [],
     loadingVeiculos,
-    tiposManutencao,
+    tiposManutencao: tiposManutencao || [],
     loadingTiposManutencao,
-    manutencoesPendentes,
+    manutencoesPendentes: manutencoesPendentes || [],
     loadingManutencoes,
-    lembretes,
+    lembretes: lembretes || [],
     loadingLembretes,
     
     // Estados de carregamento

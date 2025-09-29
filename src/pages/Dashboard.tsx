@@ -88,15 +88,6 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const { toast } = useToast();
 
-  // Detectar iPhone e usar versão simplificada
-  const isIPhone = /iPhone/i.test(navigator.userAgent);
-  
-  // Se for iPhone, usar versão ultra básica
-  if (isIPhone) {
-    console.log('iPhone detectado - usando dashboard ultra básico');
-    return <IPhoneBasicDashboard />;
-  }
-
   // Usar hook otimizado para carregamento condicional no iOS
   const {
     transacoes,

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { isIOS } from "@/lib/ios-safe-utils";
 
 export interface Transacao {
   id: string;
@@ -24,17 +25,57 @@ export interface Transacao {
 export const useTransacoes = () => {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const [mainAccountUserId, setMainAccountUserId] = useState<string | null>(
     null
   );
 
+  // Detectar se é iOS para aplicar otimizações específicas
+  const isIOSDevice = isIOS();
+
   const fetchTransacoes = async () => {
     if (!mainAccountUserId) return;
 
     try {
-      // Buscar dados da tabela transacoes
+      setError(null);
+      
+      // Log de debug para iPhone
+      if (isIOSDevice) {
+        console.log('🍎 useTransacoes - Iniciando fetch para iOS');
+      }
+
+      // Para iOS, usar uma abordagem mais simples e robusta
+      if (isIOSDevice) {
+        // Buscar apenas transações principais primeiro
+        const { data: transacoesData, error: transacoesError } = await supabase
+          .from("transacoes")
+          .select("*")
+          .eq("user_id", mainAccountUserId)
+          .limit(50); // Limitar para melhor performance no iPhone
+
+        if (transacoesError) {
+          console.error('Erro ao buscar transações no iOS:', transacoesError);
+          throw transacoesError;
+        }
+
+        // Processar dados de forma mais simples no iOS
+        const processedTransacoes = (transacoesData || []).map((t) => ({
+          ...t,
+          categorias: null // Simplificar para iOS
+        }));
+
+        setTransacoes(processedTransacoes as Transacao[]);
+        
+        if (isIOSDevice) {
+          console.log('🍎 useTransacoes - Dados carregados com sucesso no iOS:', processedTransacoes.length);
+        }
+        
+        return;
+      }
+
+      // Buscar dados da tabela transacoes (versão completa para outros dispositivos)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from("transacoes")
         .select(
@@ -95,11 +136,17 @@ export const useTransacoes = () => {
 
       setTransacoes(sortedTransacoes as Transacao[]);
     } catch (error: any) {
-      toast({
-        title: "Erro ao carregar transações",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Erro no useTransacoes:', error);
+      setError(error.message);
+      
+      // Para iPhone, não mostrar toast de erro para evitar problemas
+      if (!isIOSDevice) {
+        toast({
+          title: "Erro ao carregar transações",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -134,18 +181,22 @@ export const useTransacoes = () => {
       if (error) throw error;
       setTransacoes((prev) => [data as Transacao, ...prev]);
 
-      toast({
-        title: "Transação criada",
-        description: "Transação criada com sucesso!",
-      });
+      if (!isIOSDevice) {
+        toast({
+          title: "Transação criada",
+          description: "Transação criada com sucesso!",
+        });
+      }
 
       return { data, error: null };
     } catch (error: any) {
-      toast({
-        title: "Erro ao criar transação",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (!isIOSDevice) {
+        toast({
+          title: "Erro ao criar transação",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       return { data: null, error };
     }
   };
@@ -171,18 +222,22 @@ export const useTransacoes = () => {
         )
       );
 
-      toast({
-        title: "Transação atualizada",
-        description: "Transação atualizada com sucesso!",
-      });
+      if (!isIOSDevice) {
+        toast({
+          title: "Transação atualizada",
+          description: "Transação atualizada com sucesso!",
+        });
+      }
 
       return { data, error: null };
     } catch (error: any) {
-      toast({
-        title: "Erro ao atualizar transação",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (!isIOSDevice) {
+        toast({
+          title: "Erro ao atualizar transação",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       return { data: null, error };
     }
   };
@@ -194,81 +249,103 @@ export const useTransacoes = () => {
       if (error) throw error;
       setTransacoes((prev) => prev.filter((transacao) => transacao.id !== id));
 
-      toast({
-        title: "Transação removida",
-        description: "Transação removida com sucesso!",
-      });
+      if (!isIOSDevice) {
+        toast({
+          title: "Transação removida",
+          description: "Transação removida com sucesso!",
+        });
+      }
 
       return { error: null };
     } catch (error: any) {
-      toast({
-        title: "Erro ao remover transação",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (!isIOSDevice) {
+        toast({
+          title: "Erro ao remover transação",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       return { error };
     }
   };
 
   useEffect(() => {
-    if (user) {
-      getMainAccountUserId();
+    try {
+      if (user) {
+        getMainAccountUserId();
+      }
+    } catch (err) {
+      console.error('Erro no useEffect do user:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
   }, [user]);
 
   useEffect(() => {
-    if (mainAccountUserId) {
-      fetchTransacoes();
+    try {
+      if (mainAccountUserId) {
+        fetchTransacoes();
 
-      // Configurar realtime para todas as tabelas
-      const transacoesChannel = supabase
-        .channel("all_transacoes_changes")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "transacoes",
-            filter: `user_id=eq.${mainAccountUserId}`,
-          },
-          () => {
-            console.log("Transação alterada, atualizando lista...");
-            fetchTransacoes();
+        // Para iOS, não configurar realtime para evitar problemas
+        if (isIOSDevice) {
+          if (isIOSDevice) {
+            console.log('🍎 useTransacoes - Pulando configuração realtime no iOS');
           }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "receitas",
-            filter: `user_id=eq.${mainAccountUserId}`,
-          },
-          () => {
-            console.log("Receita alterada, atualizando lista...");
-            fetchTransacoes();
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "despesas",
-            filter: `user_id=eq.${mainAccountUserId}`,
-          },
-          () => {
-            console.log("Despesa alterada, atualizando lista...");
-            fetchTransacoes();
-          }
-        )
-        .subscribe();
+          return;
+        }
 
-      return () => {
-        transacoesChannel.unsubscribe();
-      };
+        // Configurar realtime apenas para outros dispositivos
+        const transacoesChannel = supabase
+          .channel("all_transacoes_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "transacoes",
+              filter: `user_id=eq.${mainAccountUserId}`,
+            },
+            () => {
+              console.log("Transação alterada, atualizando lista...");
+              fetchTransacoes();
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "receitas",
+              filter: `user_id=eq.${mainAccountUserId}`,
+            },
+            () => {
+              console.log("Receita alterada, atualizando lista...");
+              fetchTransacoes();
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "despesas",
+              filter: `user_id=eq.${mainAccountUserId}`,
+            },
+            () => {
+              console.log("Despesa alterada, atualizando lista...");
+              fetchTransacoes();
+            }
+          )
+          .subscribe();
+
+        return () => {
+          transacoesChannel.unsubscribe();
+        };
+      }
+    } catch (err) {
+      console.error('Erro no useEffect do mainAccountUserId:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
-  }, [mainAccountUserId]);
+  }, [mainAccountUserId, isIOSDevice]);
 
   const getMainAccountUserId = async () => {
     if (!user) return;
@@ -280,8 +357,13 @@ export const useTransacoes = () => {
 
       if (error) throw error;
       setMainAccountUserId(data);
+      
+      if (isIOSDevice) {
+        console.log('🍎 useTransacoes - Main account user ID obtido:', data);
+      }
     } catch (error) {
       console.error("Erro ao buscar user_id da conta principal:", error);
+      setError(error instanceof Error ? error.message : 'Erro ao buscar conta principal');
     }
   };
 
@@ -294,6 +376,7 @@ export const useTransacoes = () => {
     receitas,
     despesas,
     loading,
+    error,
     createTransacao,
     updateTransacao,
     deleteTransacao,
