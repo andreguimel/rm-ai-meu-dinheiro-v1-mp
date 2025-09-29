@@ -75,62 +75,69 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
   const { profile, user } = profileHook;
   const { subscriptionData, loading: loadingSubscription } = subscriptionHook;
   
-  // Dados secundários (carregados condicionalmente) - com tratamento de erro
+  // Dados secundários - sempre chamar os hooks, mas controlar o comportamento interno
   let itensHook, dividasHook, veiculosHook, tiposHook, lembretesHook;
   
   try {
-    itensHook = loadSecondaryData ? useItensMercado() : { itensMercado: null, loading: false };
+    itensHook = useItensMercado();
   } catch (err) {
     console.error('Erro no hook useItensMercado:', err);
-    itensHook = { itensMercado: null, loading: false };
+    itensHook = { itensMercado: [], loading: false };
   }
   
   try {
-    dividasHook = loadSecondaryData ? useDividas() : { dividas: null, loading: false };
+    dividasHook = useDividas();
   } catch (err) {
     console.error('Erro no hook useDividas:', err);
-    dividasHook = { dividas: null, loading: false };
+    dividasHook = { dividas: [], loading: false };
   }
   
   try {
-    veiculosHook = loadSecondaryData ? useVeiculos() : { veiculos: null, loading: false };
+    veiculosHook = useVeiculos();
   } catch (err) {
     console.error('Erro no hook useVeiculos:', err);
-    veiculosHook = { veiculos: null, loading: false };
+    veiculosHook = { veiculos: [], loading: false };
   }
   
   try {
-    tiposHook = loadSecondaryData ? useTiposManutencao() : { tiposManutencao: null, loading: false };
+    tiposHook = useTiposManutencao();
   } catch (err) {
     console.error('Erro no hook useTiposManutencao:', err);
-    tiposHook = { tiposManutencao: null, loading: false };
+    tiposHook = { tiposManutencao: [], loading: false };
   }
   
   try {
-    lembretesHook = loadSecondaryData ? useLembretes() : { lembretes: null, loading: false };
+    lembretesHook = useLembretes();
   } catch (err) {
     console.error('Erro no hook useLembretes:', err);
-    lembretesHook = { lembretes: null, loading: false };
+    lembretesHook = { lembretes: [], loading: false };
   }
   
-  const { itensMercado, loading: loadingItens } = itensHook;
-  const { dividas, loading: loadingDividas } = dividasHook;
-  const { veiculos, loading: loadingVeiculos } = veiculosHook;
-  const { tiposManutencao, loading: loadingTiposManutencao } = tiposHook;
-  const { lembretes, loading: loadingLembretes } = lembretesHook;
+  // Aplicar lógica condicional nos dados retornados, não na chamada dos hooks
+  const { itensMercado: rawItensMercado, loading: loadingItens } = itensHook;
+  const { dividas: rawDividas, loading: loadingDividas } = dividasHook;
+  const { veiculos: rawVeiculos, loading: loadingVeiculos } = veiculosHook;
+  const { tiposManutencao: rawTiposManutencao, loading: loadingTiposManutencao } = tiposHook;
+  const { lembretes: rawLembretes, loading: loadingLembretes } = lembretesHook;
+
+  // Controlar quais dados são expostos baseado no loadSecondaryData
+  const itensMercado = loadSecondaryData ? rawItensMercado : null;
+  const dividas = loadSecondaryData ? rawDividas : null;
+  const veiculos = loadSecondaryData ? rawVeiculos : null;
+  const tiposManutencao = loadSecondaryData ? rawTiposManutencao : null;
+  const lembretes = loadSecondaryData ? rawLembretes : null;
 
   // Hook de manutenções pendentes (depende de veículos e tipos) - com tratamento de erro
   let manutencoesHook;
   try {
-    manutencoesHook = loadSecondaryData && veiculos && tiposManutencao
-      ? useManutencoesPendentes(veiculos, tiposManutencao)
-      : { manutencoesPendentes: null, loading: false };
+    manutencoesHook = useManutencoesPendentes(rawVeiculos || [], rawTiposManutencao || []);
   } catch (err) {
     console.error('Erro no hook useManutencoesPendentes:', err);
-    manutencoesHook = { manutencoesPendentes: null, loading: false };
+    manutencoesHook = { manutencoesPendentes: [], loading: false };
   }
   
-  const { manutencoesPendentes, loading: loadingManutencoes } = manutencoesHook;
+  const { manutencoesPendentes: rawManutencoesPendentes, loading: loadingManutencoes } = manutencoesHook;
+  const manutencoesPendentes = loadSecondaryData && veiculos && tiposManutencao ? rawManutencoesPendentes : null;
 
   // Verificar se o carregamento inicial está completo
   useEffect(() => {
