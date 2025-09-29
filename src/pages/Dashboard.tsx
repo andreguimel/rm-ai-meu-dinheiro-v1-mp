@@ -24,6 +24,7 @@ import { useTiposManutencao } from "@/hooks/useTiposManutencao";
 import { useManutencoesPendentes } from "@/hooks/useManutencoesPendentes";
 import { useProfile } from "@/hooks/useProfile";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useOptimizedDashboard } from "@/hooks/useOptimizedDashboard";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { TrialStatusBanner } from "@/components/TrialStatusBanner";
 import { BasicAccessBanner } from "@/components/BasicAccessBanner";
@@ -32,126 +33,50 @@ import { NotificacaoLembretes } from "@/components/NotificacaoLembretes";
 import { useToast } from "@/hooks/use-toast";
 import { useLembretes } from "@/hooks/useLembretes";
 import { Bell, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { 
+  formatDateSafe, 
+  getCurrentDateSafe, 
+  getFirstDayOfMonthSafe, 
+  getFirstDayOfWeekSafe, 
+  getFirstDayOfYearSafe,
+  compareDatesSafe,
+  formatMonthSafe,
+  isIOS
+} from "@/lib/ios-safe-utils";
 
 // Funcao para formatar a data corretamente - compatível com Safari iOS
 const formatarData = (dataString: string) => {
-  if (!dataString) return "";
-  try {
-    // Tentar usar ISO string primeiro (mais compatível com Safari)
-    if (dataString.includes('T')) {
-      const date = new Date(dataString);
-      if (!isNaN(date.getTime())) {
-        const dia = String(date.getDate()).padStart(2, "0");
-        const mes = String(date.getMonth() + 1).padStart(2, "0");
-        const ano = date.getFullYear();
-        return `${dia}/${mes}/${ano}`;
-      }
-    }
-    
-    // Fallback para parsing manual
-    const [ano, mes, dia] = dataString.split("T")[0].split("-");
-    return `${dia}/${mes}/${ano}`;
-  } catch (error) {
-    console.warn('Erro ao formatar data:', dataString, error);
-    return "";
-  }
+  return formatDateSafe(dataString, 'dd/MM/yyyy');
 };
 
 // Funcao para obter a data atual no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getDataAtual = () => {
-  try {
-    const now = new Date();
-    // Verificar se a data é válida
-    if (isNaN(now.getTime())) {
-      throw new Error('Data inválida');
-    }
-    const ano = now.getFullYear();
-    const mes = String(now.getMonth() + 1).padStart(2, "0");
-    const dia = String(now.getDate()).padStart(2, "0");
-    return `${ano}-${mes}-${dia}`;
-  } catch (error) {
-    console.warn('Erro ao obter data atual:', error);
-    // Fallback para uma data padrão
-    return new Date().toISOString().split('T')[0];
-  }
+  return getCurrentDateSafe();
 };
 
 // Funcao para obter o primeiro dia da semana no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getPrimeiroDiaSemana = () => {
-  try {
-    const now = new Date();
-    if (isNaN(now.getTime())) {
-      throw new Error('Data inválida');
-    }
-    // Criar nova instância para evitar mutação
-    const primeiroDia = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-    const ano = primeiroDia.getFullYear();
-    const mes = String(primeiroDia.getMonth() + 1).padStart(2, "0");
-    const dia = String(primeiroDia.getDate()).padStart(2, "0");
-    return `${ano}-${mes}-${dia}`;
-  } catch (error) {
-    console.warn('Erro ao obter primeiro dia da semana:', error);
-    return new Date().toISOString().split('T')[0];
-  }
+  return getFirstDayOfWeekSafe();
 };
 
 // Funcao para obter o primeiro dia do mes no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getPrimeiroDiaMes = () => {
-  try {
-    const now = new Date();
-    if (isNaN(now.getTime())) {
-      throw new Error('Data inválida');
-    }
-    const ano = now.getFullYear();
-    const mes = String(now.getMonth() + 1).padStart(2, "0");
-    return `${ano}-${mes}-01`;
-  } catch (error) {
-    console.warn('Erro ao obter primeiro dia do mês:', error);
-    const fallback = new Date().toISOString().split('T')[0];
-    return fallback.substring(0, 8) + '01';
-  }
+  return getFirstDayOfMonthSafe();
 };
 
 // Funcao para obter o primeiro dia do ano no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
 const getPrimeiroDiaAno = () => {
-  try {
-    const now = new Date();
-    if (isNaN(now.getTime())) {
-      throw new Error('Data inválida');
-    }
-    const ano = now.getFullYear();
-    return `${ano}-01-01`;
-  } catch (error) {
-    console.warn('Erro ao obter primeiro dia do ano:', error);
-    const fallback = new Date().toISOString().split('T')[0];
-    return fallback.substring(0, 4) + '-01-01';
-  }
+  return getFirstDayOfYearSafe();
 };
 
 // Funcao para comparar datas no formato do banco (YYYY-MM-DD)
 const compararDatas = (data1: string, data2: string) => {
-  return data1 >= data2;
+  return compareDatesSafe(data1, data2);
 };
 
 // Funcao para formatar o nome do mes
 const formatarMes = (mes: number) => {
-  const meses = [
-    "Janeiro",
-    "Fevereiro",
-    "Marco",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
-  ];
-  return meses[mes - 1];
+  return formatMonthSafe(mes);
 };
 
 const Dashboard = () => {
@@ -160,15 +85,29 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const { toast } = useToast();
 
-  const { transacoes, loading: loadingTransacoes } = useTransacoes();
-  const { itensMercado, loading: loadingItens } = useItensMercado();
-  const { dividas, loading: loadingDividas } = useDividas();
-  const { veiculos, loading: loadingVeiculos } = useVeiculos();
-  const { tiposManutencao, loading: loadingTiposManutencao } = useTiposManutencao();
-  const { manutencoesPendentes, loading: loadingManutencoes } = useManutencoesPendentes(veiculos || [], tiposManutencao || []);
-  const { profile, user } = useProfile();
-  const { subscriptionData, loading: loadingSubscription } = useSubscription();
-  const { lembretes, loading: loadingLembretes } = useLembretes();
+  // Usar hook otimizado para carregamento condicional no iOS
+  const {
+    transacoes,
+    loadingTransacoes,
+    profile,
+    user,
+    subscriptionData,
+    loadingSubscription,
+    itensMercado,
+    loadingItens,
+    dividas,
+    loadingDividas,
+    veiculos,
+    loadingVeiculos,
+    tiposManutencao,
+    loadingTiposManutencao,
+    manutencoesPendentes,
+    loadingManutencoes,
+    lembretes,
+    loadingLembretes,
+    isInitialLoadComplete,
+    isSecondaryLoadComplete
+  } = useOptimizedDashboard();
 
   // Verificar se houve sucesso no pagamento
   useEffect(() => {
@@ -632,14 +571,7 @@ const Dashboard = () => {
                               <div>
                                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{lembrete.titulo}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatarData(lembrete.data_lembrete)} às {(() => {
-                                    try {
-                                      return format(dataLembrete, "HH:mm", { locale: ptBR });
-                                    } catch (error) {
-                                      console.warn('Erro ao formatar hora:', error);
-                                      return '00:00';
-                                    }
-                                  })()}
+                                  {formatarData(lembrete.data_lembrete)} às {formatDateSafe(lembrete.data_lembrete, 'HH:mm')}
                                 </p>
                               </div>
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${
