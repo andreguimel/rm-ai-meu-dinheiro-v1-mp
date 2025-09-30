@@ -22,36 +22,18 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   const [modalDismissedThisSession, setModalDismissedThisSession] =
     useState(false);
 
-  // DEBUG: Log estados de loading
-  console.log("🔍 SubscriptionGuard DEBUG:", {
-    loading,
-    adminLoading,
-    user: user?.email,
-    subscriptionData,
-    location: location.pathname
-  });
-
   useEffect(() => {
     const checkAdminStatus = async () => {
-      console.log("🔍 Verificando status de admin para:", user?.email);
       if (user) {
         try {
-          console.log("📞 Chamando supabase.rpc('is_admin')...");
           const { data, error } = await supabase.rpc("is_admin");
-          console.log("📊 Resultado is_admin:", { data, error });
           if (!error) {
             setIsAdmin(data || false);
-            console.log("✅ Admin status definido:", data || false);
-          } else {
-            console.error("❌ Erro na função is_admin:", error);
           }
         } catch (error) {
-          console.error("❌ Exceção ao verificar admin status:", error);
+          // Silenciar erro de verificação de admin
         }
-      } else {
-        console.log("⚠️ Usuário não encontrado, pulando verificação de admin");
       }
-      console.log("✅ Finalizando verificação de admin, setAdminLoading(false)");
       setAdminLoading(false);
     };
 
@@ -70,30 +52,18 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   // Hierarchical access checking: admin > paid > trial > basic > none
   const accessResult = (() => {
     try {
-      console.log("🔍 Verificando acesso hierárquico:", {
-        isAdmin,
-        adminLoading,
-        loading,
-        hasPaidSubscription: subscriptionData.has_paid_subscription,
-        trialActive: subscriptionData.trial_active,
-        location: location.pathname
-      });
-
       // Level 1: Admin users have full access (highest priority)
       if (isAdmin) {
-        console.log("✅ ADMIN ACCESS GRANTED - Usuário é administrador");
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 2: Users with paid subscription (second priority)
       if (subscriptionData.has_paid_subscription) {
-        console.log("✅ PAID ACCESS GRANTED - Usuário tem assinatura paga");
         return { hasAccess: true, accessType: "full" };
       }
 
       // Level 3: Users with active trial (third priority)
       if (subscriptionData.trial_active) {
-        console.log("✅ TRIAL ACCESS GRANTED - Usuário tem trial ativo");
         return { hasAccess: true, accessType: "full" };
       }
 
@@ -104,12 +74,8 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
       }
 
       // Level 5: No access (lowest priority)
-      console.log("❌ Acesso negado - Sem assinatura ou trial válido");
-      console.log("🔍 Access level:", subscriptionData.access_level);
-      console.log("🔍 Effective subscription:", subscriptionData.effective_subscription);
       return { hasAccess: false, accessType: "none" };
     } catch (err) {
-      console.error("SubscriptionGuard - Error checking access:", err);
       // On error, deny access for security
       return { hasAccess: false, accessType: "none" };
     }

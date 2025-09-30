@@ -196,18 +196,7 @@ export const useOptimizedDashboard = (): OptimizedDashboardData => {
     loadingManutencoes,
   ]);
 
-  // Log de debug
-  useEffect(() => {
-    console.log("Dashboard - Estado atual:", {
-      isInitialLoadComplete,
-      isSecondaryLoadComplete,
-      loadSecondaryData,
-      error,
-      loadingTransacoes,
-      loadingSubscription,
-      profile: !!profile,
-    });
-  }, [isInitialLoadComplete, isSecondaryLoadComplete, loadSecondaryData, error, loadingTransacoes, loadingSubscription, profile]);
+  // Estado do dashboard otimizado
 
   return {
     // Dados essenciais

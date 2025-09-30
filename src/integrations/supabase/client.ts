@@ -51,8 +51,6 @@ const createSafeStorage = () => {
       clear: () => localStorage.clear()
     };
   } catch (e) {
-    console.log('🔒 localStorage não disponível - tentando sessionStorage');
-    
     // Tentar sessionStorage como fallback
     try {
       const testKey = '__session_test__';
@@ -66,8 +64,6 @@ const createSafeStorage = () => {
         clear: () => sessionStorage.clear()
       };
     } catch (e2) {
-      console.warn('sessionStorage não disponível, usando memory storage');
-      
       // Memory storage como último recurso
       const memoryStorage: { [key: string]: string } = {};
       return {
@@ -119,19 +115,7 @@ const createSupabaseClient = (): SupabaseClient => {
     },
   };
 
-  console.log('🔒 Configuração WebSocket:', {
-    isHTTPS,
-    transport: config.realtime.transport,
-    wsUrl: isHTTPS ? config.realtime.wsUrl : 'auto',
-  });
-
   supabaseInstance = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, config);
-
-  // Marcar instância globalmente para debug
-  if (typeof window !== 'undefined') {
-    (window as any).__supabase_client_created = true;
-    (window as any).__supabase_client_platform = 'standard';
-  }
 
   return supabaseInstance;
 };

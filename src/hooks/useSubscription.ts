@@ -134,7 +134,6 @@ export const useSubscription = () => {
     // Debouncing - evitar chamadas muito frequentes
     const now = Date.now();
     if (now - lastCheckRef.current < 1000) { // 1 segundo de debounce
-      console.log("🚫 Debouncing: Ignorando chamada muito frequente");
       return;
     }
     lastCheckRef.current = now;

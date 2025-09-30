@@ -619,11 +619,6 @@ const Dashboard = () => {
                               throw new Error("Data inválida");
                             }
                           } catch (error) {
-                            console.warn(
-                              "Erro ao processar data do lembrete:",
-                              lembrete.data_lembrete,
-                              error
-                            );
                             // Usar data atual como fallback
                             dataLembrete = new Date();
                           }
