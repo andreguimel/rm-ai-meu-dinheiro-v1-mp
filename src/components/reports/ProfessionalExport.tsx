@@ -81,10 +81,10 @@ export const ProfessionalExport: React.FC<ProfessionalExportProps> = ({
 
   const templates = {
     executive: {
-      name: "Executivo",
-      description: "Resumo executivo com métricas principais e insights",
+      name: "Avançado",
+      description: "Resumo avançado com métricas principais e insights",
       sections: [
-        "Resumo Executivo",
+        "Resumo Avançado",
         "Métricas Principais",
         "Insights",
         "Recomendações",
@@ -298,7 +298,7 @@ export const ProfessionalExport: React.FC<ProfessionalExportProps> = ({
 
           <!-- Executive Summary -->
           <div class="executive-summary">
-            <div class="summary-title">Resumo Executivo - ${period}</div>
+            <div class="summary-title">Resumo Avançado - ${period}</div>
             <div class="summary-grid">
               <div class="summary-card">
                 <div class="summary-value">R$ ${currentPeriodData.receitas.toLocaleString(

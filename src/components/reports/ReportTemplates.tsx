@@ -1,9 +1,9 @@
 // Templates de relatórios profissionais
 export const ReportTemplates = {
-  // Template Executivo - Foco em métricas e insights
+  // Template Avançado - Foco em métricas e insights
   executive: {
-    name: "Executivo",
-    description: "Resumo executivo com métricas principais e insights",
+    name: "Avançado",
+    description: "Resumo avançado com métricas principais e insights",
 
     generateCSS: () => `
       <style>
@@ -264,7 +264,7 @@ export const ReportTemplates = {
 
           <!-- Executive Summary -->
           <div class="executive-summary">
-            <div class="summary-title">📊 Resumo Executivo - ${
+            <div class="summary-title">📊 Resumo Avançado - ${
               config.period
             }</div>
             <div class="summary-grid">
@@ -427,7 +427,7 @@ export const ReportTemplates = {
                 : ""
             }
             <div class="recommendation-item">
-              <strong>Monitoramento Contínuo:</strong> Implementar dashboard executivo para acompanhamento em tempo real das métricas críticas.
+              <strong>Monitoramento Contínuo:</strong> Implementar dashboard avançado para acompanhamento em tempo real das métricas críticas.
             </div>
             <div class="recommendation-item">
               <strong>Planejamento Estratégico:</strong> Definir metas quantificáveis e planos de ação para o próximo período fiscal.
@@ -468,7 +468,7 @@ export const ReportTemplates = {
     description: "Análise completa com todos os dados, gráficos e transações",
 
     generateContent: (data: any, config: any) => {
-      // Usar o template executivo como base e adicionar seções detalhadas
+      // Usar o template avançado como base e adicionar seções detalhadas
       const executiveContent = ReportTemplates.executive.generateContent(
         data,
         config

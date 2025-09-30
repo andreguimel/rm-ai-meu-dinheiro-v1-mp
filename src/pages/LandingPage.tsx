@@ -467,8 +467,8 @@ const LandingPage = () => {
 
                   <div className="space-y-4 text-left">
                     {[
-                      "Análise IA Completa",
-                      "Dashboard Executivo",
+                      "Lembretes",
+                      "Dashboard Avançado",
                       "Gestão de Receitas e Despesas",
                       "Controle de Dívidas",
                       "Planejamento de Metas",

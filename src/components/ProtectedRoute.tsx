@@ -22,14 +22,14 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     setTrialCheckLoading(true);
 
     try {
-      // Check if user already has a trial
-      const { data: existingTrial } = await supabase
-        .from("user_trials")
+      // Check if user already has a subscriber record
+      const { data: existingSubscriber } = await supabase
+        .from("subscribers")
         .select("*")
         .eq("user_id", user?.id)
         .single();
 
-      if (existingTrial) {
+      if (existingSubscriber) {
         setTrialCheckComplete(true);
         return;
       }
@@ -47,45 +47,53 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       }
 
       try {
-        // Try direct database insertion first
-        const { data: trialData, error: trialError } = await supabase
-          .from("user_trials")
-          .insert({
-            user_id: user?.id,
-            trial_start: new Date().toISOString(),
-            trial_end: new Date(
-              Date.now() + 7 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-            is_active: true,
-          })
-          .select()
-          .single();
+        // Use the Edge Function to create trial
+        const response = await fetch("/functions/v1/start-trial", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        });
 
-        if (trialError) {
-          // If direct insertion fails, try Edge Function
-          const { data: edgeFunctionData, error: edgeFunctionError } =
-            await supabase.functions.invoke("create-trial", {
-              body: { userId: user?.id },
-            });
-
-          if (edgeFunctionError) {
-            throw edgeFunctionError;
-          }
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Erro na Edge Function start-trial:", errorText);
+          throw new Error(`Edge Function error: ${response.status}`);
         }
 
-        if (trialData || !trialError) {
+        const result = await response.json();
+        console.log("Resultado da Edge Function:", result);
+
+        if (result.success) {
           toast({
             title: "Bem-vindo ao Meu Dinheiro! 🎉",
-            description:
-              "Você ganhou 7 dias grátis para experimentar todas as funcionalidades premium.",
+            description: "Você ganhou 7 dias grátis para experimentar todas as funcionalidades premium.",
           });
         }
       } catch (error) {
-        // Silent error handling - don't block user flow
+        console.error("Erro na criação automática de trial:", error);
+        // Try using the database function as fallback
+        try {
+          const { data: functionResult, error: functionError } = await supabase
+            .rpc('ensure_user_has_trial', { check_user_id: user?.id });
+
+          if (functionError) {
+            console.error("Erro na função de criação de trial:", functionError);
+          } else if (functionResult) {
+            toast({
+              title: "Bem-vindo ao Meu Dinheiro! 🎉",
+              description: "Você ganhou 7 dias grátis para experimentar todas as funcionalidades premium.",
+            });
+          }
+        } catch (fallbackError) {
+          console.error("Erro no fallback de criação de trial:", fallbackError);
+        }
       }
 
       setTrialCheckComplete(true);
     } catch (error) {
+      console.error("Erro geral na verificação de trial:", error);
       // Don't block user flow for trial creation errors
       setTrialCheckComplete(true);
     } finally {

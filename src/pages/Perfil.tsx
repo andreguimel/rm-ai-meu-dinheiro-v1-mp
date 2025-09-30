@@ -461,10 +461,10 @@ const Perfil = () => {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-800">
-                            IA Financeira
+                            Lembretes
                           </p>
                           <p className="text-sm text-gray-600">
-                            Análises inteligentes
+                            Nunca esqueça nada
                           </p>
                         </div>
                       </div>
