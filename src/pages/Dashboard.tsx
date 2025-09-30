@@ -36,50 +36,63 @@ import { NotificacaoLembretes } from "@/components/NotificacaoLembretes";
 import { useToast } from "@/hooks/use-toast";
 import { useLembretes } from "@/hooks/useLembretes";
 import { Bell, Clock } from "lucide-react";
-import { 
-  formatDateSafe, 
-  getCurrentDateSafe, 
-  getFirstDayOfMonthSafe, 
-  getFirstDayOfWeekSafe, 
-  getFirstDayOfYearSafe,
-  compareDatesSafe,
-  formatMonthSafe,
-  isIOS
-} from "@/lib/ios-safe-utils";
+import { formatDate } from "@/lib/utils";
 
-// Funcao para formatar a data corretamente - compatível com Safari iOS
+// Funcao para formatar a data corretamente
 const formatarData = (dataString: string) => {
-  return formatDateSafe(dataString, 'dd/MM/yyyy');
+  const date = new Date(dataString);
+  return date.toLocaleDateString("pt-BR");
 };
 
-// Funcao para obter a data atual no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
+// Funcao para obter a data atual no formato do banco (YYYY-MM-DD)
 const getDataAtual = () => {
-  return getCurrentDateSafe();
+  const today = new Date();
+  return today.toISOString().split("T")[0];
 };
 
-// Funcao para obter o primeiro dia da semana no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
+// Funcao para obter o primeiro dia da semana no formato do banco (YYYY-MM-DD)
 const getPrimeiroDiaSemana = () => {
-  return getFirstDayOfWeekSafe();
+  const today = new Date();
+  const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+  return firstDay.toISOString().split("T")[0];
 };
 
-// Funcao para obter o primeiro dia do mes no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
+// Funcao para obter o primeiro dia do mes no formato do banco (YYYY-MM-DD)
 const getPrimeiroDiaMes = () => {
-  return getFirstDayOfMonthSafe();
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
 };
 
-// Funcao para obter o primeiro dia do ano no formato do banco (YYYY-MM-DD) - compatível com Safari iOS
+// Funcao para obter o primeiro dia do ano no formato do banco (YYYY-MM-DD)
 const getPrimeiroDiaAno = () => {
-  return getFirstDayOfYearSafe();
+  const today = new Date();
+  return new Date(today.getFullYear(), 0, 1).toISOString().split("T")[0];
 };
 
 // Funcao para comparar datas no formato do banco (YYYY-MM-DD)
 const compararDatas = (data1: string, data2: string) => {
-  return compareDatesSafe(data1, data2);
+  return new Date(data1) >= new Date(data2);
 };
 
 // Funcao para formatar o nome do mes
 const formatarMes = (mes: number) => {
-  return formatMonthSafe(mes);
+  const meses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  return meses[mes - 1] || "Mês inválido";
 };
 
 const Dashboard = () => {
@@ -109,7 +122,7 @@ const Dashboard = () => {
     lembretes,
     loadingLembretes,
     isInitialLoadComplete,
-    isSecondaryLoadComplete
+    isSecondaryLoadComplete,
   } = useOptimizedDashboard();
 
   // Verificar se houve sucesso no pagamento
@@ -151,53 +164,55 @@ const Dashboard = () => {
   // Filtrar transacoes do periodo
   const transacoesPeriodo = useMemo(() => {
     if (!transacoes) return [];
-    
+
     // Para o período "mes", filtrar pelo mês completo
     if (selectedPeriod === "mes") {
       const now = new Date();
       const anoAtual = now.getFullYear();
       const mesAtual = now.getMonth() + 1;
-      
+
       return transacoes.filter((transacao) => {
         // Extrair ano e mês da string de data (formato: YYYY-MM-DD)
-        const [anoStr, mesStr] = transacao.data.split('T')[0].split('-');
+        const [anoStr, mesStr] = transacao.data.split("T")[0].split("-");
         const anoTransacao = parseInt(anoStr);
         const mesTransacao = parseInt(mesStr);
-        
+
         return anoTransacao === anoAtual && mesTransacao === mesAtual;
       });
     }
-    
+
     // Para o período "semana", filtrar pela semana atual
     if (selectedPeriod === "semana") {
       const now = new Date();
-      const primeiroDiaSemana = new Date(now.setDate(now.getDate() - now.getDay()));
+      const primeiroDiaSemana = new Date(
+        now.setDate(now.getDate() - now.getDay())
+      );
       const ultimoDiaSemana = new Date(primeiroDiaSemana);
       ultimoDiaSemana.setDate(primeiroDiaSemana.getDate() + 6);
-      
+
       // Formatando as datas para comparação string
-      const primeiroDiaStr = primeiroDiaSemana.toISOString().split('T')[0];
-      const ultimoDiaStr = ultimoDiaSemana.toISOString().split('T')[0];
-      
+      const primeiroDiaStr = primeiroDiaSemana.toISOString().split("T")[0];
+      const ultimoDiaStr = ultimoDiaSemana.toISOString().split("T")[0];
+
       return transacoes.filter((transacao) => {
-        const dataTransacao = transacao.data.split('T')[0];
+        const dataTransacao = transacao.data.split("T")[0];
         return dataTransacao >= primeiroDiaStr && dataTransacao <= ultimoDiaStr;
       });
     }
-    
+
     // Para o período "ano", filtrar pelo ano atual
     if (selectedPeriod === "ano") {
       const now = new Date();
       const anoAtual = now.getFullYear();
-      
+
       return transacoes.filter((transacao) => {
-        const [anoStr] = transacao.data.split('T')[0].split('-');
+        const [anoStr] = transacao.data.split("T")[0].split("-");
         const anoTransacao = parseInt(anoStr);
-        
+
         return anoTransacao === anoAtual;
       });
     }
-    
+
     // Fallback para outros períodos
     return transacoes.filter((transacao) =>
       compararDatas(transacao.data, dataInicio)
@@ -207,7 +222,7 @@ const Dashboard = () => {
   // Calcular receitas do período selecionado
   const receitasPeriodo = useMemo(() => {
     if (!transacoesPeriodo) return 0;
-    
+
     return transacoesPeriodo
       .filter((transacao) => transacao.tipo === "receita")
       .reduce((acc, t) => acc + t.valor, 0);
@@ -216,7 +231,7 @@ const Dashboard = () => {
   // Calcular despesas do período selecionado
   const despesasPeriodo = useMemo(() => {
     if (!transacoesPeriodo) return 0;
-    
+
     return transacoesPeriodo
       .filter((transacao) => transacao.tipo === "despesa")
       .reduce((acc, t) => acc + t.valor, 0);
@@ -260,27 +275,32 @@ const Dashboard = () => {
   const mediaGastosDiarios = despesasPeriodo / 30;
 
   // Itens com estoque baixo
-  const itensEstoqueBaixo = itensMercado?.filter((item) => item.quantidade <= 2) || [];
+  const itensEstoqueBaixo =
+    itensMercado?.filter((item) => item.quantidade <= 2) || [];
 
   // Dividas vencidas
-  const dividasVencidas = dividas?.filter((divida) => {
-    if (!divida.data_vencimento) return false;
-    return compararDatas(dataAtual, divida.data_vencimento) && !divida.pago;
-  }) || [];
+  const dividasVencidas =
+    dividas?.filter((divida) => {
+      if (!divida.data_vencimento) return false;
+      return compararDatas(dataAtual, divida.data_vencimento) && !divida.pago;
+    }) || [];
 
-  const totalDividasVencidas = dividasVencidas.reduce((acc, divida) => acc + divida.valor_parcela, 0);
+  const totalDividasVencidas = dividasVencidas.reduce(
+    (acc, divida) => acc + divida.valor_parcela,
+    0
+  );
 
   // Preparar transacoes para exibicao (ultimas 5)
   const transacoesRecentes = useMemo(() => {
     if (!transacoesPeriodo) return [];
-    
+
     return transacoesPeriodo
       .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
       .slice(0, 5)
       .map((transacao) => {
         const Icon = getCategoryIcon(transacao.categoria);
         const colorClass = getCategoryColor(transacao.categoria);
-        
+
         return {
           ...transacao,
           icon: Icon,
@@ -344,11 +364,23 @@ const Dashboard = () => {
     if (!lembretes) return [];
     return lembretes
       .filter((lembrete) => !lembrete.concluido)
-      .sort((a, b) => new Date(a.data_lembrete).getTime() - new Date(b.data_lembrete).getTime())
+      .sort(
+        (a, b) =>
+          new Date(a.data_lembrete).getTime() -
+          new Date(b.data_lembrete).getTime()
+      )
       .slice(0, 3);
   }, [lembretes]);
 
-  if (loadingTransacoes || loadingItens || loadingDividas || loadingVeiculos || loadingManutencoes || loadingSubscription || loadingLembretes) {
+  if (
+    loadingTransacoes ||
+    loadingItens ||
+    loadingDividas ||
+    loadingVeiculos ||
+    loadingManutencoes ||
+    loadingSubscription ||
+    loadingLembretes
+  ) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -375,7 +407,7 @@ const Dashboard = () => {
 
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Ola, {profile?.name || user?.email?.split('@')[0] || 'Usuário'}
+            Ola, {profile?.name || user?.email?.split("@")[0] || "Usuário"}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
             Bem-vindo ao seu painel financeiro
@@ -414,7 +446,9 @@ const Dashboard = () => {
                           </span>
                         )}
                       </div>
-                      <div className={`p-3 rounded-full bg-gray-50 ${stat.color}`}>
+                      <div
+                        className={`p-3 rounded-full bg-gray-50 ${stat.color}`}
+                      >
                         <stat.icon className="h-6 w-6" />
                       </div>
                     </div>
@@ -463,7 +497,8 @@ const Dashboard = () => {
               )}
 
               {/* Segunda linha de cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">{/* Dividas Vencidas */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                {/* Dividas Vencidas */}
                 <Card className="p-4 md:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
@@ -473,24 +508,36 @@ const Dashboard = () => {
                       </h3>
                     </div>
                   </div>
-                  
+
                   {dividasVencidas.length > 0 ? (
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                        R$ {totalDividasVencidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} &bull; {dividasVencidas.length} divida
+                        R${" "}
+                        {totalDividasVencidas.toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                        })}{" "}
+                        &bull; {dividasVencidas.length} divida
                         {dividasVencidas.length > 1 ? "s" : ""}
                       </p>
                       <div className="space-y-2">
                         {dividasVencidas.slice(0, 3).map((divida) => (
-                          <div key={divida.id} className="flex justify-between items-center p-2 bg-red-50 rounded">
+                          <div
+                            key={divida.id}
+                            className="flex justify-between items-center p-2 bg-red-50 rounded"
+                          >
                             <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{divida.descricao}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {divida.descricao}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
                                 Venceu em {formatarData(divida.data_vencimento)}
                               </p>
                             </div>
                             <span className="text-sm font-semibold text-red-600">
-                              R$ {divida.valor_parcela.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              R${" "}
+                              {divida.valor_parcela.toLocaleString("pt-BR", {
+                                minimumFractionDigits: 2,
+                              })}
                             </span>
                           </div>
                         ))}
@@ -506,7 +553,9 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma divida vencida</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhuma divida vencida
+                      </p>
                     </div>
                   )}
                 </Card>
@@ -521,11 +570,13 @@ const Dashboard = () => {
                       </h3>
                     </div>
                   </div>
-                  
+
                   {lembretesPendentes.length > 0 ? (
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                        {lembretesPendentes.length} lembrete{lembretesPendentes.length > 1 ? "s" : ""} pendente{lembretesPendentes.length > 1 ? "s" : ""}
+                        {lembretesPendentes.length} lembrete
+                        {lembretesPendentes.length > 1 ? "s" : ""} pendente
+                        {lembretesPendentes.length > 1 ? "s" : ""}
                       </p>
                       <div className="space-y-2">
                         {lembretesPendentes.map((lembrete) => {
@@ -533,58 +584,88 @@ const Dashboard = () => {
                           let dataLembrete: Date;
                           try {
                             // Usar ISO string diretamente quando possível (mais compatível com Safari)
-                            if (lembrete.data_lembrete.includes('T')) {
+                            if (lembrete.data_lembrete.includes("T")) {
                               // Garantir que a string está no formato ISO correto
-                              const isoString = lembrete.data_lembrete.endsWith('Z') 
-                                ? lembrete.data_lembrete 
-                                : lembrete.data_lembrete + (lembrete.data_lembrete.includes('+') ? '' : 'Z');
+                              const isoString = lembrete.data_lembrete.endsWith(
+                                "Z"
+                              )
+                                ? lembrete.data_lembrete
+                                : lembrete.data_lembrete +
+                                  (lembrete.data_lembrete.includes("+")
+                                    ? ""
+                                    : "Z");
                               dataLembrete = new Date(isoString);
                             } else {
                               // Fallback para parsing manual mais seguro
-                              const dateTimeParts = lembrete.data_lembrete.split('T');
-                              const dateParts = dateTimeParts[0].split('-');
-                              const timeParts = dateTimeParts[1] ? dateTimeParts[1].split(':') : ['00', '00'];
-                              
+                              const dateTimeParts =
+                                lembrete.data_lembrete.split("T");
+                              const dateParts = dateTimeParts[0].split("-");
+                              const timeParts = dateTimeParts[1]
+                                ? dateTimeParts[1].split(":")
+                                : ["00", "00"];
+
                               // Usar parseInt com radix 10 explícito para Safari
                               dataLembrete = new Date(
-                                parseInt(dateParts[0], 10), 
-                                parseInt(dateParts[1], 10) - 1, 
+                                parseInt(dateParts[0], 10),
+                                parseInt(dateParts[1], 10) - 1,
                                 parseInt(dateParts[2], 10),
                                 parseInt(timeParts[0], 10),
                                 parseInt(timeParts[1], 10)
                               );
                             }
-                            
+
                             // Verificar se a data é válida
                             if (isNaN(dataLembrete.getTime())) {
-                              throw new Error('Data inválida');
+                              throw new Error("Data inválida");
                             }
                           } catch (error) {
-                            console.warn('Erro ao processar data do lembrete:', lembrete.data_lembrete, error);
+                            console.warn(
+                              "Erro ao processar data do lembrete:",
+                              lembrete.data_lembrete,
+                              error
+                            );
                             // Usar data atual como fallback
                             dataLembrete = new Date();
                           }
-                          
+
                           const hoje = new Date();
-                          const isHoje = dataLembrete.toDateString() === hoje.toDateString();
-                          const isProximo = dataLembrete.getTime() - hoje.getTime() <= 3 * 24 * 60 * 60 * 1000;
-                          
+                          const isHoje =
+                            dataLembrete.toDateString() === hoje.toDateString();
+                          const isProximo =
+                            dataLembrete.getTime() - hoje.getTime() <=
+                            3 * 24 * 60 * 60 * 1000;
+
                           return (
-                            <div key={lembrete.id} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-transparent rounded">
+                            <div
+                              key={lembrete.id}
+                              className="flex justify-between items-center p-2 bg-blue-50 dark:bg-transparent rounded"
+                            >
                               <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{lembrete.titulo}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {lembrete.titulo}
+                                </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatarData(lembrete.data_lembrete)} às {formatDateSafe(lembrete.data_lembrete, 'HH:mm')}
+                                  {formatarData(lembrete.data_lembrete)} às{" "}
+                                  {formatDate(
+                                    lembrete.data_lembrete,
+                                    "HH:mm"
+                                  )}
                                 </p>
                               </div>
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                isHoje 
-                                  ? "bg-red-100 text-red-800" 
-                                  : isProximo 
-                                    ? "bg-yellow-100 text-yellow-800" 
+                              <span
+                                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  isHoje
+                                    ? "bg-red-100 text-red-800"
+                                    : isProximo
+                                    ? "bg-yellow-100 text-yellow-800"
                                     : "bg-gray-100 text-gray-800"
-                              }`}>
-                                {isHoje ? "Hoje" : isProximo ? "Proximo" : "Pendente"}
+                                }`}
+                              >
+                                {isHoje
+                                  ? "Hoje"
+                                  : isProximo
+                                  ? "Proximo"
+                                  : "Pendente"}
                               </span>
                             </div>
                           );
@@ -601,7 +682,9 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum lembrete pendente</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhum lembrete pendente
+                      </p>
                     </div>
                   )}
                 </Card>
@@ -612,24 +695,30 @@ const Dashboard = () => {
                     <div className="flex items-center space-x-2">
                       <Car className="h-5 w-5 text-green-600" />
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Meus Veiculos
-            </h3>
+                        Meus Veiculos
+                      </h3>
                     </div>
                   </div>
-                  
+
                   {loadingVeiculos ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Carregando veiculos...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Carregando veiculos...
+                    </p>
                   ) : veiculos && veiculos.length > 0 ? (
                     <div className="space-y-3">
                       {veiculos.slice(0, 2).map((veiculo) => (
-                        <div key={veiculo.id} className="p-3 bg-gray-50 rounded-lg">
+                        <div
+                          key={veiculo.id}
+                          className="p-3 bg-gray-50 rounded-lg"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {veiculo.marca} {veiculo.modelo} ({veiculo.ano})
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {veiculo.ano} &bull; {veiculo.quilometragem.toLocaleString()} km
+                                {veiculo.marca} {veiculo.modelo} ({veiculo.ano})
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {veiculo.ano} &bull;{" "}
+                                {veiculo.quilometragem.toLocaleString()} km
                               </p>
                             </div>
                           </div>
@@ -646,7 +735,9 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum veiculo cadastrado ainda.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhum veiculo cadastrado ainda.
+                      </p>
                     </div>
                   )}
                 </Card>
@@ -656,8 +747,9 @@ const Dashboard = () => {
               <Card className="p-4 md:p-6 mb-6 md:mb-8 mt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Últimas Transações - {selectedPeriod === 'Mes' ? 'Mês' : selectedPeriod}
-            </h2>
+                    Últimas Transações -{" "}
+                    {selectedPeriod === "Mes" ? "Mês" : selectedPeriod}
+                  </h2>
                   <Button
                     variant="outline"
                     size="sm"
@@ -675,20 +767,24 @@ const Dashboard = () => {
                         className="flex items-center justify-between p-3 bg-gray-50 dark:bg-transparent rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-full bg-white dark:bg-gray-800 ${transacao.colorClass}`}>
+                          <div
+                            className={`p-2 rounded-full bg-white dark:bg-gray-800 ${transacao.colorClass}`}
+                          >
                             <transacao.icon className="h-4 w-4" />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {transacao.descricao}
-                      </p>
-                      <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+                              {transacao.descricao}
+                            </p>
+                            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                               <span>{transacao.categoria}</span>
                               <span>&bull;</span>
                               <span>{transacao.dataFormatada}</span>
                               <CreatedByBadge
                                 userId={transacao.user_id}
-                                createdBySharedUserId={transacao.created_by_shared_user_id}
+                                createdBySharedUserId={
+                                  transacao.created_by_shared_user_id
+                                }
                                 size="sm"
                               />
                             </div>
@@ -713,8 +809,8 @@ const Dashboard = () => {
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 dark:text-gray-400">
-                        Nenhuma transacao encontrada para o periodo selecionado.
-                      </p>
+                      Nenhuma transacao encontrada para o periodo selecionado.
+                    </p>
                   </div>
                 )}
               </Card>

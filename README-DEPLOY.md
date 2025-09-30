@@ -5,17 +5,12 @@ Este deploy contém correções específicas para resolver o problema de tela br
 
 ## 🔧 Correções Implementadas
 
-### 1. Substituição do date-fns por Formatação Nativa
-- **Arquivo**: `src/lib/ios-safe-utils.ts`
-- **Problema**: `date-fns` com locale `ptBR` causava problemas no iOS Safari
-- **Solução**: Formatação nativa do JavaScript com `Intl` API
-
-### 2. Otimização de Hooks no Dashboard
+### 1. Otimização de Hooks no Dashboard
 - **Arquivo**: `src/hooks/useOptimizedDashboard.ts`
 - **Problema**: Carregamento simultâneo de múltiplos hooks sobrecarregava o iPhone
 - **Solução**: Carregamento condicional em duas fases com delay para iOS
 
-### 3. Fallback para Componentes SVG
+### 2. Fallback para Componentes SVG
 - **Arquivo**: `src/components/IPhoneChartFallback.tsx`
 - **Problema**: Gráficos SVG complexos causavam travamentos
 - **Solução**: Componente simplificado para iPhone físico
@@ -24,8 +19,6 @@ Este deploy contém correções específicas para resolver o problema de tela br
 
 ```
 src/
-├── lib/
-│   └── ios-safe-utils.ts          # ✨ NOVO - Utilitários seguros para iOS
 ├── hooks/
 │   └── useOptimizedDashboard.ts   # ✨ NOVO - Hook otimizado para Dashboard
 ├── components/

@@ -1,7 +1,9 @@
 # 🔓 Configurar Sistema para HTTP Apenas (Remover HTTPS)
 
 ## ⚠️ **AVISO IMPORTANTE**
+
 Esta configuração remove a segurança HTTPS e deve ser usada apenas para:
+
 - Desenvolvimento local
 - Testes internos
 - Ambientes que não lidam com dados sensíveis
@@ -13,6 +15,7 @@ Esta configuração remove a segurança HTTPS e deve ser usada apenas para:
 ## 📋 **Passos para Aplicar na VPS**
 
 ### 1. **Fazer Backup da Configuração Atual**
+
 ```bash
 # Conectar na VPS
 ssh root@161.97.97.169
@@ -22,6 +25,7 @@ cp docker-compose.yml docker-compose.yml.backup-https
 ```
 
 ### 2. **Atualizar o docker-compose.yml na VPS**
+
 ```bash
 # Parar os containers
 docker compose down
@@ -31,11 +35,13 @@ nano docker-compose.yml
 ```
 
 **Substitua o conteúdo pelas mudanças já feitas no arquivo local:**
+
 - `VITE_APP_URL=http://mdinheiro.com.br` (linha 12)
 - Remover todas as configurações HTTPS dos labels do Traefik
 - Manter apenas configurações HTTP
 
 ### 3. **Recriar a Rede Traefik (Opcional)**
+
 ```bash
 # Remover rede existente (se necessário)
 docker network rm traefik-network
@@ -45,6 +51,7 @@ docker network create traefik-network
 ```
 
 ### 4. **Iniciar Traefik Apenas com HTTP**
+
 ```bash
 # Parar Traefik atual
 docker stop traefik-app
@@ -67,6 +74,7 @@ docker run -d \
 ```
 
 ### 5. **Iniciar a Aplicação**
+
 ```bash
 # Iniciar aplicação com nova configuração
 docker compose up -d
@@ -76,6 +84,7 @@ docker ps
 ```
 
 ### 6. **Testar Conectividade**
+
 ```bash
 # Testar HTTP local
 curl -I http://localhost
@@ -92,11 +101,13 @@ curl -v http://mdinheiro.com.br
 ## 🔍 **Verificações Pós-Configuração**
 
 ### ✅ **O que deve funcionar:**
+
 - `http://mdinheiro.com.br` - ✅ Deve carregar normalmente
 - `http://www.mdinheiro.com.br` - ✅ Deve carregar normalmente
 - Porta 80 aberta e funcionando
 
 ### ❌ **O que NÃO deve funcionar:**
+
 - `https://mdinheiro.com.br` - ❌ Deve dar erro ou timeout
 - Porta 443 não deve estar em uso
 - Certificados SSL não devem ser gerados
@@ -148,19 +159,21 @@ docker compose up -d
 ## 🛠️ **Troubleshooting**
 
 ### Problema: Site não carrega
+
 ```bash
 # Verificar containers
 docker ps
 
 # Verificar logs
 docker logs traefik-app
-docker logs meu-dinheiro-app
+docker logs app-app
 
 # Verificar portas
 ss -tlnp | grep :80
 ```
 
 ### Problema: Ainda redireciona para HTTPS
+
 ```bash
 # Verificar se há cache do navegador
 # Limpar cache ou usar modo incógnito

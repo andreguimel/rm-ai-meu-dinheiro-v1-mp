@@ -80,12 +80,11 @@ export const detectIOSWebSocketIssues = (): {
   issues: string[];
 } => {
   const userAgent = navigator.userAgent;
-  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
   const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
 
   const issues: string[] = [];
 
-  if (isIOS || isSafari) {
+  if (isSafari) {
     // Verificar se está em modo privado
     try {
       localStorage.setItem("__test__", "test");
@@ -96,32 +95,14 @@ export const detectIOSWebSocketIssues = (): {
       );
     }
 
-    // CORREÇÃO: Para iPhone físico acessando via IP de rede, sempre considerar como tendo problemas
-    // pois WebSocket pode não funcionar corretamente com IP em HTTP
-    const isNetworkIP = window.location.hostname.includes("192.168") || 
-                       window.location.hostname.includes("10.") ||
-                       window.location.hostname.includes("172.");
-    
-    if (isNetworkIP && window.location.protocol === "http:") {
-      issues.push("iPhone acessando via IP de rede - WebSocket pode falhar");
-    }
-
     // Verificar se WebSocket está disponível
     if (!window.WebSocket) {
       issues.push("WebSocket não disponível no Safari");
     }
-
-    // Para iPhone físico, sempre reportar como tendo problemas potenciais
-    if (isIOS && isNetworkIP) {
-      issues.push("iPhone físico detectado - usando hooks otimizados");
-    }
   }
 
-  // CORREÇÃO CRÍTICA: Para iPhone físico, sempre usar hooks otimizados
-  const hasRealIssues = isIOS || issues.length > 0;
-
   return {
-    hasIssues: hasRealIssues,
+    hasIssues: issues.length > 0,
     issues,
   };
 };

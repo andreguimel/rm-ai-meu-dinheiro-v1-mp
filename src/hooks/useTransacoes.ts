@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { isIOS } from "@/lib/ios-safe-utils";
 
 export interface Transacao {
   id: string;
@@ -37,26 +36,28 @@ export const useTransacoes = () => {
 
     try {
       setError(null);
-      
-      console.log('📱 useTransacoes - Iniciando fetch universal');
+
+      console.log("📱 useTransacoes - Iniciando fetch universal");
 
       // Buscar transações com categorias (abordagem universal)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from("transacoes")
-        .select(`
+        .select(
+          `
           *,
           categorias (
             nome,
             cor,
             icone
           )
-        `)
+        `
+        )
         .eq("user_id", mainAccountUserId)
         .order("data", { ascending: false })
         .limit(100); // Limite razoável para performance
 
       if (transacoesError) {
-        console.error('Erro ao buscar transações:', transacoesError);
+        console.error("Erro ao buscar transações:", transacoesError);
         throw transacoesError;
       }
 
@@ -108,17 +109,15 @@ export const useTransacoes = () => {
 
       setTransacoes(sortedTransacoes as Transacao[]);
     } catch (error: any) {
-      console.error('Erro no useTransacoes:', error);
+      console.error("Erro no useTransacoes:", error);
       setError(error.message);
-      
-      // Para iPhone, não mostrar toast de erro para evitar problemas
-      if (!isIOS()) {
-        toast({
-          title: "Erro ao carregar transações",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+
+      // Mostrar toast de erro
+      toast({
+        title: "Erro ao carregar transações",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -153,22 +152,18 @@ export const useTransacoes = () => {
       if (error) throw error;
       setTransacoes((prev) => [data as Transacao, ...prev]);
 
-      if (!isIOS()) {
-        toast({
-          title: "Transação criada",
-          description: "Transação criada com sucesso!",
-        });
-      }
+      toast({
+        title: "Transação criada",
+        description: "Transação criada com sucesso!",
+      });
 
       return { data, error: null };
     } catch (error: any) {
-      if (!isIOS()) {
-        toast({
-          title: "Erro ao criar transação",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro ao criar transação",
+        description: error.message,
+        variant: "destructive",
+      });
       return { data: null, error };
     }
   };
@@ -189,27 +184,21 @@ export const useTransacoes = () => {
 
       if (error) throw error;
       setTransacoes((prev) =>
-        prev.map((transacao) =>
-          transacao.id === id ? (data as Transacao) : transacao
-        )
+        prev.map((t) => (t.id === id ? { ...t, ...updatedData } : t))
       );
 
-      if (!isIOS()) {
-        toast({
-          title: "Transação atualizada",
-          description: "Transação atualizada com sucesso!",
-        });
-      }
+      toast({
+        title: "Transação atualizada",
+        description: "Transação atualizada com sucesso!",
+      });
 
       return { data, error: null };
     } catch (error: any) {
-      if (!isIOS()) {
-        toast({
-          title: "Erro ao atualizar transação",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro ao atualizar transação",
+        description: error.message,
+        variant: "destructive",
+      });
       return { data: null, error };
     }
   };
@@ -219,24 +208,20 @@ export const useTransacoes = () => {
       const { error } = await supabase.from("transacoes").delete().eq("id", id);
 
       if (error) throw error;
-      setTransacoes((prev) => prev.filter((transacao) => transacao.id !== id));
+      setTransacoes((prev) => prev.filter((t) => t.id !== id));
 
-      if (!isIOS()) {
-        toast({
-          title: "Transação removida",
-          description: "Transação removida com sucesso!",
-        });
-      }
+      toast({
+        title: "Transação excluída",
+        description: "Transação excluída com sucesso!",
+      });
 
       return { error: null };
     } catch (error: any) {
-      if (!isIOS()) {
-        toast({
-          title: "Erro ao remover transação",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro ao excluir transação",
+        description: error.message,
+        variant: "destructive",
+      });
       return { error };
     }
   };
@@ -247,8 +232,8 @@ export const useTransacoes = () => {
         getMainAccountUserId();
       }
     } catch (err) {
-      console.error('Erro no useEffect do user:', err);
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error("Erro no useEffect do user:", err);
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     }
   }, [user]);
 
@@ -257,15 +242,7 @@ export const useTransacoes = () => {
       if (mainAccountUserId) {
         fetchTransacoes();
 
-        // Para iOS, não configurar realtime para evitar problemas
-        if (isIOS()) {
-          if (isIOS()) {
-            console.log('🍎 useTransacoes - Pulando configuração realtime no iOS');
-          }
-          return;
-        }
-
-        // Configurar realtime apenas para outros dispositivos
+        // Configurar realtime
         const transacoesChannel = supabase
           .channel("all_transacoes_changes")
           .on(
@@ -314,10 +291,10 @@ export const useTransacoes = () => {
         };
       }
     } catch (err) {
-      console.error('Erro no useEffect do mainAccountUserId:', err);
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error("Erro no useEffect do mainAccountUserId:", err);
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     }
-  }, [mainAccountUserId, isIOS()]);
+  }, [mainAccountUserId]);
 
   const getMainAccountUserId = async () => {
     if (!user) return;
@@ -329,13 +306,13 @@ export const useTransacoes = () => {
 
       if (error) throw error;
       setMainAccountUserId(data);
-      
-      if (isIOS()) {
-        console.log('🍎 useTransacoes - Main account user ID obtido:', data);
-      }
     } catch (error) {
       console.error("Erro ao buscar user_id da conta principal:", error);
-      setError(error instanceof Error ? error.message : 'Erro ao buscar conta principal');
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Erro ao buscar conta principal"
+      );
     }
   };
 

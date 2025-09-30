@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { initSafariFixes } from "./utils/safari-router-fix";
+
+// Inicializar correções para Safari antes de renderizar a aplicação
+initSafariFixes();
 
 // TEMPORARIAMENTE DESABILITADO - Sistema avançado de silenciamento de erros de extensões
 // Para investigar tela branca, vamos permitir todos os logs

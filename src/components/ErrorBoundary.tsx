@@ -1,5 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { isIOS } from '../lib/ios-safe-utils';
 
 interface Props {
   children: ReactNode;
@@ -32,14 +31,32 @@ class ErrorBoundary extends Component<Props, State> {
       errorInfo
     });
 
-    // Log específico para iPhone
-    if (isIOS()) {
-      console.error('🍎 Erro capturado no iPhone:', {
-        message: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent
+    // Detectar se é erro específico do Safari/iPhone
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isRouterError = error.message.includes('router') || 
+                         error.stack?.includes('react-router') ||
+                         errorInfo.componentStack.includes('Router') ||
+                         errorInfo.componentStack.includes('Routes');
+
+    // Log detalhado do erro
+    console.error('🔍 Erro capturado:', {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      isSafari,
+      isIOS,
+      isRouterError
+    });
+
+    // Log específico para erros de roteamento no Safari/iPhone
+    if ((isSafari || isIOS) && isRouterError) {
+      console.error('🍎 ERRO CRÍTICO: Problema de roteamento no Safari/iPhone detectado!', {
+        errorType: 'Safari Router Compatibility Issue',
+        possibleCause: 'react-router-dom compatibility with Safari',
+        recommendation: 'Consider using HashRouter or adding polyfills'
       });
     }
 
@@ -85,10 +102,7 @@ class ErrorBoundary extends Component<Props, State> {
             </h1>
             
             <p className="text-gray-600 mb-4">
-              {isIOS() 
-                ? "Detectamos um problema específico do iPhone. Estamos trabalhando para resolver isso."
-                : "Ocorreu um erro inesperado. Por favor, recarregue a página."
-              }
+              Ocorreu um erro inesperado. Por favor, recarregue a página.
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -128,13 +142,6 @@ class ErrorBoundary extends Component<Props, State> {
               >
                 Tentar novamente
               </button>
-              
-              {isIOS() && (
-                <div className="text-xs text-gray-500 mt-4 p-2 bg-blue-50 rounded">
-                  💡 <strong>Dica para iPhone:</strong> Tente fechar e reabrir o navegador Safari, 
-                  ou use o modo privado se o problema persistir.
-                </div>
-              )}
             </div>
           </div>
         </div>
