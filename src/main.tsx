@@ -2,6 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+// Importar correção de WebSocket para HTTPS
+import "./utils/websocket-fix";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { initSafariFixes } from "./utils/safari-router-fix";
 

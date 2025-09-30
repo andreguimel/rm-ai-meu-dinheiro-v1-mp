@@ -91,6 +91,9 @@ const createSupabaseClient = (): SupabaseClient => {
 
   console.log('🆕 Criando nova instância do Supabase');
   
+  // Detectar se estamos em HTTPS
+  const isHTTPS = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  
   // Configurações padrão do Supabase
   const config = {
     auth: {
@@ -100,7 +103,27 @@ const createSupabaseClient = (): SupabaseClient => {
       detectSessionInUrl: true,
       flowType: "pkce" as const,
     },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+      // Forçar WSS em produção HTTPS
+      transport: isHTTPS ? 'websocket' : undefined,
+      // Configurações específicas para WebSocket seguro
+      ...(isHTTPS && {
+        heartbeatIntervalMs: 30000,
+        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 10000),
+        // Forçar uso de WSS substituindo ws:// por wss://
+        wsUrl: SUPABASE_URL.replace('https://', 'wss://').replace('http://', 'ws://') + '/realtime/v1/websocket',
+      }),
+    },
   };
+
+  console.log('🔒 Configuração WebSocket:', {
+    isHTTPS,
+    transport: config.realtime.transport,
+    wsUrl: isHTTPS ? config.realtime.wsUrl : 'auto',
+  });
 
   supabaseInstance = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, config);
 
