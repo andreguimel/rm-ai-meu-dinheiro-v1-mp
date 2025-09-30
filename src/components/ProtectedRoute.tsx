@@ -17,102 +17,75 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // First-login detection and automatic trial creation
   const checkAndCreateTrialForNewUser = useCallback(async () => {
-    if (!user || !session || trialCheckComplete || trialCheckLoading) {
-      return;
-    }
+    if (trialCheckLoading || trialCheckComplete) return;
+
+    setTrialCheckLoading(true);
 
     try {
-      setTrialCheckLoading(true);
-      console.log(
-        "🆕 ProtectedRoute - Verificando necessidade de trial automático para:",
-        user.email
-      );
+      // Check if user already has a trial
+      const { data: existingTrial } = await supabase
+        .from("user_trials")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
 
-      // Check if user already has subscriber record or trial history
-      const { data: existingSubscriber, error: subscriberError } =
-        await supabase
-          .from("subscribers")
-          .select("trial_start, trial_end, subscribed, subscription_tier")
-          .eq("user_id", user.id)
-          .single();
-
-      if (subscriberError && subscriberError.code !== "PGRST116") {
-        console.warn(
-          "⚠️ Erro ao verificar subscriber existente:",
-          subscriberError
-        );
-        // Continue without throwing - this is not critical
+      if (existingTrial) {
         setTrialCheckComplete(true);
         return;
       }
 
-      // If user has subscriber record, they're not a new user
-      if (existingSubscriber) {
-        console.log(
-          "ℹ️ Usuário já possui registro de subscriber - não é novo usuário"
-        );
+      // Check if user is new (created recently)
+      const userCreatedAt = new Date(user?.created_at || "");
+      const now = new Date();
+      const timeDiff = now.getTime() - userCreatedAt.getTime();
+      const daysDiff = timeDiff / (1000 * 3600 * 24);
+
+      // Only create trial for users created within the last 24 hours
+      if (daysDiff > 1) {
         setTrialCheckComplete(true);
         return;
       }
-
-      // User has no subscriber record - they're a new user, create trial
-      console.log("🆕 Novo usuário detectado - criando trial automático");
 
       try {
-        // Try direct database function first (more reliable)
-        const { data: directTrialResult, error: directTrialError } =
-          await supabase.rpc("ensure_user_has_trial", {
-            check_user_id: user.id,
-          });
+        // Try direct database insertion first
+        const { data: trialData, error: trialError } = await supabase
+          .from("user_trials")
+          .insert({
+            user_id: user?.id,
+            trial_start: new Date().toISOString(),
+            trial_end: new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            is_active: true,
+          })
+          .select()
+          .single();
 
-        if (directTrialError) {
-          console.warn("⚠️ Erro na função direta de trial:", directTrialError);
-
-          // Fallback to Edge Function
-          const headers = {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          };
-
-          const { data: trialData, error: trialError } =
-            await supabase.functions.invoke("start-trial", { headers });
-
-          if (trialError) {
-            console.warn(
-              "⚠️ Falha na criação automática de trial (Edge Function):",
-              trialError.message
-            );
-            setTrialCheckComplete(true);
-            return;
-          }
-
-          if (trialData?.trial_created) {
-            console.log("✅ Trial criado automaticamente via Edge Function");
-            toast({
-              title: "Bem-vindo ao Meu Dinheiro! 🎉",
-              description:
-                "Você ganhou 7 dias grátis para experimentar todas as funcionalidades premium.",
+        if (trialError) {
+          // If direct insertion fails, try Edge Function
+          const { data: edgeFunctionData, error: edgeFunctionError } =
+            await supabase.functions.invoke("create-trial", {
+              body: { userId: user?.id },
             });
+
+          if (edgeFunctionError) {
+            throw edgeFunctionError;
           }
-        } else if (directTrialResult) {
-          console.log("✅ Trial criado automaticamente via função direta");
+        }
+
+        if (trialData || !trialError) {
           toast({
             title: "Bem-vindo ao Meu Dinheiro! 🎉",
             description:
               "Você ganhou 7 dias grátis para experimentar todas as funcionalidades premium.",
           });
-        } else {
-          console.log(
-            "ℹ️ Trial não foi criado - usuário pode já ter trial ou não estar confirmado"
-          );
         }
       } catch (error) {
-        console.warn("⚠️ Erro inesperado na criação de trial:", error);
+        // Silent error handling - don't block user flow
       }
 
       setTrialCheckComplete(true);
     } catch (error) {
-      console.warn("⚠️ Erro inesperado na criação automática de trial:", error);
       // Don't block user flow for trial creation errors
       setTrialCheckComplete(true);
     } finally {

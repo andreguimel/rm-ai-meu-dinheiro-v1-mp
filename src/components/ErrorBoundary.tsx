@@ -9,23 +9,23 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  retryCount: number;
 }
 
 class ErrorBoundary extends Component<Props, State> {
+  private retryTimer?: NodeJS.Timeout;
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, retryCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     // Atualiza o state para mostrar a UI de fallback
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log do erro para debugging
-    console.error('ErrorBoundary capturou um erro:', error, errorInfo);
-    
     this.setState({
       error,
       errorInfo
@@ -39,33 +39,43 @@ class ErrorBoundary extends Component<Props, State> {
                          errorInfo.componentStack.includes('Router') ||
                          errorInfo.componentStack.includes('Routes');
 
-    // Log detalhado do erro
-    console.error('🔍 Erro capturado:', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      isSafari,
-      isIOS,
-      isRouterError
-    });
+    // Para erros menores ou de carregamento, tentar recuperação automática
+    const isMinorError = error.message.includes('Loading chunk') ||
+                        error.message.includes('ChunkLoadError') ||
+                        error.message.includes('Loading CSS chunk') ||
+                        error.name === 'ChunkLoadError';
 
-    // Log específico para erros de roteamento no Safari/iPhone
-    if ((isSafari || isIOS) && isRouterError) {
-      console.error('🍎 ERRO CRÍTICO: Problema de roteamento no Safari/iPhone detectado!', {
-        errorType: 'Safari Router Compatibility Issue',
-        possibleCause: 'react-router-dom compatibility with Safari',
-        recommendation: 'Consider using HashRouter or adding polyfills'
-      });
+    if (isMinorError && this.state.retryCount < 2) {
+      // Tentar recuperação automática após 1 segundo
+      this.retryTimer = setTimeout(() => {
+        this.setState(prevState => ({ 
+          hasError: false, 
+          error: undefined, 
+          errorInfo: undefined,
+          retryCount: prevState.retryCount + 1
+        }));
+      }, 1000);
+      return;
     }
 
-    // Tentar reportar o erro (opcional)
-    try {
-      // Aqui você pode adicionar integração com serviços de monitoramento
-      // como Sentry, LogRocket, etc.
-    } catch (reportError) {
-      console.error('Falha ao reportar erro:', reportError);
+    // Log apenas para erros críticos
+    if (!isMinorError) {
+      console.error('🔍 Erro capturado:', {
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        isSafari,
+        isIOS,
+        isRouterError
+      });
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
     }
   }
 
@@ -136,7 +146,7 @@ class ErrorBoundary extends Component<Props, State> {
               
               <button
                 onClick={() => {
-                  this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+                  this.setState({ hasError: false, error: undefined, errorInfo: undefined, retryCount: 0 });
                 }}
                 className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
               >
