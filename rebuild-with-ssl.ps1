@@ -126,7 +126,7 @@ Start-Sleep -Seconds 30
 # 10. Verificar status dos containers
 Write-LogInfo "Verificando status dos containers..."
 $traefik_running = docker ps --format "{{.Names}}" | Select-String "traefik-app"
-$app_running = docker ps --format "{{.Names}}" | Select-String "app"
+$app_running = docker ps --format "{{.Names}}" | Select-String "app-app"
 
 if ($traefik_running -and $app_running) {
     Write-LogSuccess "Containers rodando corretamente!"
@@ -202,10 +202,10 @@ Write-Host "   • Reiniciar tudo: docker-compose down; .\rebuild-with-ssl.ps1"
 Write-Host ""
 
 $final_traefik = docker ps --format "{{.Names}}" | Select-String "traefik-app"
-$final_app = docker ps --format "{{.Names}}" | Select-String "app"
+$final_app = docker ps --format "{{.Names}}" | Select-String "app-app"
 
 if ($final_traefik -and $final_app) {
-    Write-LogSuccess "🎉 SISTEMA FUNCIONANDO COM SSL AUTOMÁTICO!"
+    Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ✅ 🎉 SISTEMA FUNCIONANDO COM SSL AUTOMÁTICO!" -ForegroundColor Green
     Write-Host ""
     Write-Host "💡 DICA: Agora você pode usar este script sempre que fizer rebuild" -ForegroundColor Yellow
     Write-Host "   O SSL será configurado automaticamente, sem necessidade de intervenção manual!" -ForegroundColor Yellow

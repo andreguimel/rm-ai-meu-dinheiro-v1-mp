@@ -121,7 +121,7 @@ sleep 30
 
 # 10. Verificar status dos containers
 log_info "Verificando status dos containers..."
-if docker ps | grep -q "traefik-app.*Up" && docker ps | grep -q "app.*Up"; then
+if docker ps | grep -q "traefik-app.*Up" && docker ps | grep -q "app-app.*Up"; then
     log_success "Containers rodando corretamente!"
 else
     log_warning "Alguns containers podem ter problemas"
@@ -201,7 +201,7 @@ echo "   • Verificar SSL: curl -I https://mdinheiro.com.br"
 echo "   • Reiniciar tudo: docker-compose down && ./build-and-deploy.sh"
 echo ""
 
-if docker ps | grep -q "traefik-app.*Up" && docker ps | grep -q "app.*Up"; then
+if docker ps | grep -q "traefik-app.*Up" && docker ps | grep -q "app-app.*Up"; then
     log_success "🎉 SISTEMA FUNCIONANDO COM SSL AUTOMÁTICO!"
     echo ""
     echo "💡 DICA: O SSL agora é configurado automaticamente em todos os deploys!"
