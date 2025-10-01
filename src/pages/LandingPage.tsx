@@ -205,57 +205,34 @@ const LandingPage = () => {
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
                         <h3 className="text-xl font-semibold">
-                          Dashboard Financeiro
+                          Demonstração do Sistema
                         </h3>
                         <Badge className="bg-green-100 text-green-700">
-                          +32% este mês
+                          <PlayCircle className="h-4 w-4 mr-1" />
+                          Vídeo
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <Card>
-                          <CardContent className="p-4">
-                            <div className="flex items-center space-x-2">
-                              <TrendingUp className="h-8 w-8 text-green-500" />
-                              <div>
-                                <p className="text-sm text-gray-600">
-                                  Receitas
-                                </p>
-                                <p className="text-xl font-bold text-green-600">
-                                  R$ 12.580
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardContent className="p-4">
-                            <div className="flex items-center space-x-2">
-                              <Wallet className="h-8 w-8 text-blue-500" />
-                              <div>
-                                <p className="text-sm text-gray-600">
-                                  Economia
-                                </p>
-                                <p className="text-xl font-bold text-blue-600">
-                                  R$ 3.247
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                      <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+                        <iframe
+                          src="https://www.youtube.com/embed/O22S-Pai4sA"
+                          title="Sistema MDinheiro - Tenha o controle financeiro"
+                          className="w-full h-full"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        ></iframe>
                       </div>
 
                       <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl p-4">
                         <div className="flex items-center space-x-3">
-                          <Brain className="h-8 w-8 text-orange-500" />
+                          <PlayCircle className="h-8 w-8 text-orange-500" />
                           <div>
                             <p className="font-medium text-gray-800">
-                              IA Recomenda:
+                              Veja como funciona:
                             </p>
                             <p className="text-sm text-gray-600">
-                              Invista R$ 500 em renda fixa para otimizar seus
-                              ganhos
+                              Demonstração completa do sistema de controle financeiro
                             </p>
                           </div>
                         </div>

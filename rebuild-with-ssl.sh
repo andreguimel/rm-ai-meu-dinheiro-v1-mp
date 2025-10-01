@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# 🚀 BUILD E DEPLOY COMPLETO COM SSL - mdinheiro.com.br
-# Script para build e deploy da aplicação com Docker e SSL automático
+# 🔒 REBUILD COM SSL AUTOMÁTICO - mdinheiro.com.br
+# Script que garante SSL funcionando após rebuild da aplicação
+# Resolve o problema de ter que reativar SSL manualmente
 
 set -e
 
@@ -33,11 +34,11 @@ log_error() {
 # Banner
 echo -e "${BLUE}"
 echo "═══════════════════════════════════════════════════════════════"
-echo "🚀 BUILD E DEPLOY COMPLETO COM SSL - mdinheiro.com.br"
+echo "🔒 REBUILD COM SSL AUTOMÁTICO - mdinheiro.com.br"
 echo "═══════════════════════════════════════════════════════════════"
 echo -e "${NC}"
 
-# Verificar dependências
+# 1. Verificar dependências
 log_info "Verificando dependências..."
 if ! command -v docker &> /dev/null; then
     log_error "Docker não encontrado!"
@@ -49,7 +50,7 @@ fi
 
 log_success "Dependências verificadas"
 
-# 2. Parar containers existentes
+# 2. Parar todos os containers
 log_info "Parando containers existentes..."
 docker-compose down 2>/dev/null || true
 docker stop traefik-app app-app 2>/dev/null || true
@@ -106,7 +107,7 @@ fi
 log_info "Aguardando Traefik inicializar (15s)..."
 sleep 15
 
-# 7. Build da imagem Docker (com build da aplicação incluído)
+# 7. Build da aplicação
 log_info "Fazendo build da aplicação..."
 docker-compose build --no-cache
 log_success "Build da aplicação concluído"
@@ -174,7 +175,7 @@ docker-compose logs --tail 10
 # 15. Resumo final
 echo -e "${GREEN}"
 echo "═══════════════════════════════════════════════════════════════"
-echo "🎯 BUILD E DEPLOY COM SSL CONCLUÍDO!"
+echo "🎯 REBUILD COM SSL CONCLUÍDO!"
 echo "═══════════════════════════════════════════════════════════════"
 echo -e "${NC}"
 
@@ -196,16 +197,15 @@ echo "   • Certificados: docker exec traefik-app ls -la /certificates/"
 echo ""
 echo "🚨 COMANDOS ÚTEIS:"
 echo "   • Rebuild completo: ./rebuild-with-ssl.sh"
-echo "   • Deploy rápido: ./build-and-deploy.sh"
 echo "   • Verificar SSL: curl -I https://mdinheiro.com.br"
-echo "   • Reiniciar tudo: docker-compose down && ./build-and-deploy.sh"
+echo "   • Reiniciar tudo: docker-compose down && ./rebuild-with-ssl.sh"
 echo ""
 
 if docker ps | grep -q "traefik-app.*Up" && docker ps | grep -q "app.*Up"; then
     log_success "🎉 SISTEMA FUNCIONANDO COM SSL AUTOMÁTICO!"
     echo ""
-    echo "💡 DICA: O SSL agora é configurado automaticamente em todos os deploys!"
-    echo "   Não é mais necessário reativar SSL manualmente após rebuild."
+    echo "💡 DICA: Agora você pode usar este script sempre que fizer rebuild"
+    echo "   O SSL será configurado automaticamente, sem necessidade de intervenção manual!"
 else
     log_warning "⚠️  Alguns containers podem precisar de atenção"
     echo ""
@@ -215,4 +215,4 @@ else
     echo "   3. Aguarde mais alguns minutos para SSL"
 fi
 
-log_success "Deploy concluído!"
+log_success "Script concluído!"
